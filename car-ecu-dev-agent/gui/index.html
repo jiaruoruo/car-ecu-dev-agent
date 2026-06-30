@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>car-ecu-dev-agent · 研发流水线</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#161b22; --panel2:#1c2430; --line:#2a3340;
+    --fg:#e6edf3; --mut:#8b98a9; --ok:#2ea043; --bad:#e5534b; --acc:#388bfd;
+    --warn:#d29922;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 -apple-system,"Segoe UI",Roboto,"Microsoft YaHei",sans-serif;
+       background:var(--bg);color:var(--fg)}
+  header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:12px}
+  header h1{font-size:17px;margin:0}
+  header .sub{color:var(--mut);font-size:12px}
+  .wrap{display:flex;min-height:calc(100vh - 52px)}
+  aside{width:260px;border-right:1px solid var(--line);padding:14px;flex:none;overflow:auto}
+  main{flex:1;padding:18px 22px;overflow:auto}
+  h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:18px 0 8px}
+  aside h3:first-child{margin-top:0}
+  .dom{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);
+       border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--panel)}
+  .dom:hover{border-color:var(--acc)}
+  .dom.sel{border-color:var(--acc);background:var(--panel2)}
+  .dom .k{flex:1;font-weight:600}
+  .badge{font-size:11px;padding:1px 7px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+  .badge.asil{color:var(--warn);border-color:var(--warn)}
+  .badge.rich{color:var(--acc);border-color:var(--acc)}
+  label.chk{display:flex;align-items:center;gap:8px;margin:10px 0;color:var(--mut);cursor:pointer}
+  button{width:100%;padding:9px;margin-top:8px;border:0;border-radius:8px;background:var(--acc);
+         color:#fff;font-weight:600;cursor:pointer}
+  button.sec{background:var(--panel2);color:var(--fg);border:1px solid var(--line)}
+  button:disabled{opacity:.5;cursor:wait}
+  .verdict{display:inline-flex;align-items:center;gap:8px;font-weight:700;padding:4px 12px;
+           border-radius:8px;border:1px solid var(--line)}
+  .verdict.ok{color:var(--ok);border-color:var(--ok)} .verdict.bad{color:var(--bad);border-color:var(--bad)}
+  .stages{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+  .st{flex:1;min-width:118px;border:1px solid var(--line);border-radius:10px;padding:10px;
+      background:var(--panel);cursor:pointer;position:relative}
+  .st:hover{border-color:var(--acc)}
+  .st.sel{outline:2px solid var(--acc)}
+  .st.ok{border-left:3px solid var(--ok)} .st.bad{border-left:3px solid var(--bad)}
+  .st .nm{font-weight:600;display:flex;justify-content:space-between}
+  .st .gs{color:var(--mut);font-size:12px;margin-top:4px;min-height:32px}
+  .st .att{position:absolute;top:8px;right:10px;font-size:11px;color:var(--warn)}
+  .tabs{display:flex;gap:6px;margin:16px 0 10px;border-bottom:1px solid var(--line)}
+  .tab{padding:7px 14px;cursor:pointer;color:var(--mut);border-bottom:2px solid transparent}
+  .tab.sel{color:var(--fg);border-bottom-color:var(--acc)}
+  pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;
+      overflow:auto;white-space:pre-wrap;font:12px/1.55 "Cascadia Code",Consolas,monospace;max-height:60vh}
+  table{border-collapse:collapse;width:100%;font-size:12.5px}
+  th,td{border:1px solid var(--line);padding:6px 9px;text-align:left}
+  th{background:var(--panel2);color:var(--mut)}
+  .chkrow{display:flex;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .pill{font-size:11px;padding:1px 7px;border-radius:6px}
+  .pill.ok{background:rgba(46,160,67,.15);color:var(--ok)} .pill.bad{background:rgba(229,83,75,.15);color:var(--bad)}
+  .mut{color:var(--mut)} .hint{color:var(--mut);margin-top:40px;text-align:center}
+  .mx td.c{text-align:center} .ok-t{color:var(--ok)} .bad-t{color:var(--bad)}
+  .logs{font:12px/1.5 monospace;color:var(--mut);white-space:pre-wrap}
+</style>
+</head>
+<body>
+<header>
+  <h1>🚗 car-ecu-dev-agent</h1>
+  <span class="sub">车载域控研发流水线 · 域 × V模型七阶段 · 门禁 + 双向追溯 + 自修复</span>
+</header>
+<div class="wrap">
+  <aside>
+    <h3>驱动域</h3>
+    <div id="domains"></div>
+    <label class="chk"><input type="checkbox" id="inject"> 注入缺陷（演示门禁驳回→自修复）</label>
+    <button id="runBtn" disabled>▶ 运行该域闭环</button>
+    <button id="mxBtn" class="sec">▦ 运行全域矩阵</button>
+    <h3>说明</h3>
+    <div class="mut" style="font-size:12px">
+      <b style="color:var(--acc)">rich</b> = 自带 codegen 模板 + G01-G13；
+      <b>generic</b> = 由 agent-spec 解析 + MISRA 门禁。
+    </div>
+  </aside>
+  <main id="main">
+    <div class="hint">← 选择一个驱动域并运行，或点「运行全域矩阵」。</div>
+  </main>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let DOMAINS = [], SEL = null, RESULT = null, TAB = "artifact", STAGE = 0;
+
+async function jget(u){ return (await fetch(u)).json(); }
+async function jpost(u,b){ return (await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)})).json(); }
+
+async function loadDomains(){
+  const d = await jget("/api/domains");
+  DOMAINS = d.domains || [];
+  $("#domains").innerHTML = DOMAINS.map(x => `
+    <div class="dom" data-k="${x.key}">
+      <span class="k">${x.key}</span>
+      <span class="badge asil">${x.asil}</span>
+      <span class="badge ${x.kind==='rich'?'rich':''}">${x.kind}</span>
+    </div>`).join("");
+  document.querySelectorAll(".dom").forEach(el=>el.onclick=()=>selectDomain(el.dataset.k));
+}
+function selectDomain(k){
+  SEL = k;
+  document.querySelectorAll(".dom").forEach(e=>e.classList.toggle("sel",e.dataset.k===k));
+  $("#runBtn").disabled=false;
+}
+
+$("#runBtn").onclick = async () => {
+  if(!SEL) return;
+  $("#runBtn").disabled=true; $("#runBtn").textContent="运行中…";
+  RESULT = await jpost("/api/run",{domain:SEL,inject_defect:$("#inject").checked});
+  STAGE=0; TAB="artifact"; renderResult();
+  $("#runBtn").disabled=false; $("#runBtn").textContent="▶ 运行该域闭环";
+};
+$("#mxBtn").onclick = async () => {
+  $("#mxBtn").disabled=true; $("#mxBtn").textContent="运行矩阵中…";
+  const r = await jpost("/api/matrix",{inject_defect:$("#inject").checked});
+  renderMatrix(r);
+  $("#mxBtn").disabled=false; $("#mxBtn").textContent="▦ 运行全域矩阵";
+};
+
+function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+function renderResult(){
+  const r = RESULT;
+  if(r.error){ $("#main").innerHTML=`<div class="verdict bad">运行出错：${esc(r.error)}</div>`; return; }
+  const ft = r.forward_trace;
+  const board = r.stages.map((s,i)=>`
+    <div class="st ${s.success?'ok':'bad'} ${i===STAGE?'sel':''}" data-i="${i}">
+      <div class="nm"><span>${s.label}</span><span>${s.success?'✅':'❌'}</span></div>
+      ${s.attempts>1?`<div class="att">尝试 ${s.attempts} 次</div>`:''}
+      <div class="gs">${esc(s.gate_summary)}</div>
+    </div>`).join('<span style="align-self:center;color:var(--mut)">›</span>');
+
+  $("#main").innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <h2 style="margin:0">${r.domain} <span class="badge asil">ASIL-${r.asil}</span>
+        <span class="badge ${r.kind==='rich'?'rich':''}">${r.kind}</span></h2>
+      <span class="verdict ${r.all_ok?'ok':'bad'}">${r.all_ok?'✅ 闭环通过':'❌ 闭环未过'}</span>
+      <span class="verdict ${ft.passed?'ok':'bad'}">前向追溯 ${ft.verified}/${ft.total_reqs}${ft.passed?'':' ❗'+ft.missing.join(',')}</span>
+    </div>
+    <div class="stages">${board}</div>
+    <div class="tabs">
+      ${tabBtn('artifact','工件')} ${tabBtn('checks','门禁明细')}
+      ${tabBtn('trace','追溯矩阵 ('+r.matrix.length+')')} ${tabBtn('logs','六层日志')}
+    </div>
+    <div id="tabbody"></div>`;
+  document.querySelectorAll(".st").forEach(e=>e.onclick=()=>{STAGE=+e.dataset.i;renderResult();});
+  document.querySelectorAll(".tab").forEach(e=>e.onclick=()=>{TAB=e.dataset.t;renderTab();});
+  renderTab();
+}
+function tabBtn(t,label){return `<div class="tab ${TAB===t?'sel':''}" data-t="${t}">${label}</div>`;}
+
+function renderTab(){
+  const r=RESULT, s=r.stages[STAGE], b=$("#tabbody");
+  if(TAB==="artifact"){
+    b.innerHTML = `<div class="mut" style="margin-bottom:6px">${s.label} · ${esc(s.artifact_name)} · ${s.items} 条目</div>
+                   <pre>${esc(s.artifact)||'(无文本工件)'}</pre>`;
+  } else if(TAB==="checks"){
+    b.innerHTML = `<div class="mut" style="margin-bottom:6px">${s.label} 门禁：${esc(s.gate_name)}</div>` +
+      (s.checks.map(c=>`<div class="chkrow"><span class="pill ${c.passed?'ok':'bad'}">${c.passed?'PASS':'FAIL'}</span>
+         <b>${esc(c.name)}</b><span class="mut">${esc(c.detail)}</span></div>`).join('') || '<div class="mut">无门禁项</div>');
+  } else if(TAB==="trace"){
+    b.innerHTML = `<table><tr><th>source</th><th>relation</th><th>target</th><th>stage</th></tr>` +
+      r.matrix.map(m=>`<tr><td>${esc(m.source)}</td><td class="mut">${esc(m.relation)}</td><td>${esc(m.target)}</td><td class="mut">${esc(m.stage)}</td></tr>`).join('') + `</table>`;
+  } else {
+    b.innerHTML = `<div class="logs">${esc(r.logs.join('\n'))}</div>`;
+  }
+}
+
+function renderMatrix(r){
+  if(r.error){ $("#main").innerHTML=`<div class="verdict bad">${esc(r.error)}</div>`; return; }
+  const labels = (r.rows.find(x=>x.stages)||{stages:[]}).stages.map(s=>s.label);
+  const head = `<tr><th>域</th><th>ASIL</th><th>kind</th>${labels.map(l=>`<th>${l}</th>`).join('')}<th>前向追溯</th><th>结果</th></tr>`;
+  const body = r.rows.map(row=>{
+    if(row.error) return `<tr><td>${row.domain}</td><td colspan="11" class="bad-t">${esc(row.error)}</td></tr>`;
+    const cells = row.stages.map(s=>`<td class="c ${s.success?'ok-t':'bad-t'}">${s.success?'✅':'❌'}${s.attempts>1?'<sup>'+s.attempts+'</sup>':''}</td>`).join('');
+    const ft=row.forward_trace;
+    return `<tr><td><b>${row.domain}</b></td><td>${row.asil}</td><td class="mut">${row.kind}</td>${cells}
+      <td class="c">${ft.verified}/${ft.total_reqs}</td>
+      <td class="c ${row.all_ok?'ok-t':'bad-t'}">${row.all_ok?'✅':'❌'}</td></tr>`;
+  }).join('');
+  $("#main").innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+      <h2 style="margin:0">域 × 流程矩阵</h2>
+      <span class="verdict ${r.all_ok?'ok':'bad'}">${r.all_ok?'✅ 全域全绿':'❌ 存在未过域'}</span>
+    </div>
+    <table class="mx">${head}${body}</table>
+    <div class="mut" style="margin-top:10px">上标数字 = 该阶段尝试次数（>1 表示触发自修复 REPLAN）。</div>`;
+}
+
+loadDomains();
+</script>
+</body>
+</html>

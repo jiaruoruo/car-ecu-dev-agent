@@ -1,0 +1,6 @@
+# 核心 Mock 演示零依赖：python examples/run_demo.py 仅需 Python 3.10+ 标准库。
+# 以下为可选增强（真实 LLM / 配置 / 美化输出），缺失不影响 Mock 跑通。
+anthropic>=0.40        # llm.mode=anthropic 时调用 Claude
+pyyaml>=6.0            # 解析 config/settings.yaml（factory 可选加载）
+rich>=13.0             # 控制台美化（可选）
+pytest>=8.0            # 运行 tests/

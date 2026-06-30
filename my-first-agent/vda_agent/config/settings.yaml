@@ -1,0 +1,23 @@
+# 车载域控开发 Agent 运行配置
+# 注：run_demo.py 默认用内置缺省值，本文件为生产/调参参考（可由 factory 扩展加载）。
+
+llm:
+  mode: mock                 # mock | anthropic
+  model: claude-opus-4-8     # anthropic 模式下使用的模型（最新 Claude）
+  api_key_env: ANTHROPIC_API_KEY
+
+orchestrator:
+  max_backtrack: 2           # V 模型反向流（驳回上游）最大回退次数
+
+agent:
+  max_attempts: 2            # 单阶段渐进式重做上限
+
+# 质量门禁阈值（与各阶段 QualityGate 中常量对应）
+gates:
+  misra_density_per_kloc_limit: 5.0
+  unit_branch_coverage_target: 90    # ASIL B
+  unit_mcdc_target: 80
+  anti_pinch_react_limit_ms: 100     # REQ-APW-004
+
+human_gate:
+  auto_approve: true         # CI 自动批准；交互式可接入人工审批回调

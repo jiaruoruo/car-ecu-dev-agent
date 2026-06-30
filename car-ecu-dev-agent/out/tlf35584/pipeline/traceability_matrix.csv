@@ -1,0 +1,55 @@
+source_id,relation,target_id,stage
+REQ-PMIC-001,derives,TLF35584 datasheet §SPI,requirement
+REQ-PMIC-002,derives,datasheet §Protection,requirement
+REQ-PMIC-003,derives,datasheet §Watchdog,requirement
+REQ-PMIC-004,derives,datasheet §Fault,requirement
+REQ-PMIC-005,derives,datasheet §Device State,requirement
+REQ-PMIC-006,derives,datasheet §ABIST,requirement
+REQ-PMIC-007,derives,ISO 26262-6,requirement
+REQ-PMIC-008,derives,SKILL 一致性契约,requirement
+ARC-PMIC-SPI,satisfies,REQ-PMIC-001,architecture
+ARC-PMIC-PROT,satisfies,REQ-PMIC-002,architecture
+ARC-PMIC-WDG,satisfies,REQ-PMIC-003,architecture
+ARC-PMIC-FAULT,satisfies,REQ-PMIC-004,architecture
+ARC-PMIC-SM,satisfies,REQ-PMIC-005,architecture
+ARC-PMIC-BIST,satisfies,REQ-PMIC-006,architecture
+ARC-PMIC-MEM,satisfies,REQ-PMIC-007,architecture
+ARC-PMIC-API,satisfies,REQ-PMIC-008,architecture
+DSN-PMIC-FRAME,satisfies,REQ-PMIC-001,detailed_design
+DSN-PMIC-SEQ,satisfies,REQ-PMIC-002,detailed_design
+DSN-PMIC-FWD,satisfies,REQ-PMIC-003,detailed_design
+DSN-PMIC-FAULT,satisfies,REQ-PMIC-004,detailed_design
+DSN-PMIC-STATE,satisfies,REQ-PMIC-005,detailed_design
+DSN-PMIC-STATE,satisfies,REQ-PMIC-007,detailed_design
+DSN-PMIC-SAFE,satisfies,REQ-PMIC-007,detailed_design
+DSN-PMIC-API,satisfies,REQ-PMIC-008,detailed_design
+ZCU_TLF35584.c,implements,DSN-PMIC-FRAME,coding
+ZCU_TLF35584.c,implements,DSN-PMIC-SEQ,coding
+ZCU_TLF35584.c,implements,DSN-PMIC-FWD,coding
+ZCU_TLF35584.c,implements,DSN-PMIC-FAULT,coding
+ZCU_TLF35584.c,implements,DSN-PMIC-STATE,coding
+ZCU_TLF35584.c,implements,DSN-PMIC-SAFE,coding
+ZCU_TLF35584.c,implements,DSN-PMIC-API,coding
+DSN-PMIC-FRAME,satisfies,REQ-PMIC-001,code_review
+DSN-PMIC-SEQ,satisfies,REQ-PMIC-002,code_review
+DSN-PMIC-FWD,satisfies,REQ-PMIC-003,code_review
+DSN-PMIC-FAULT,satisfies,REQ-PMIC-004,code_review
+DSN-PMIC-STATE,satisfies,REQ-PMIC-005,code_review
+DSN-PMIC-STATE,satisfies,REQ-PMIC-007,code_review
+DSN-PMIC-SAFE,satisfies,REQ-PMIC-007,code_review
+DSN-PMIC-API,satisfies,REQ-PMIC-008,code_review
+TC-UT-PMIC-01,verifies,REQ-PMIC-001,unit_test
+TC-UT-PMIC-02,verifies,REQ-PMIC-002,unit_test
+TC-UT-PMIC-03,verifies,REQ-PMIC-002,unit_test
+TC-UT-PMIC-04,verifies,REQ-PMIC-003,unit_test
+TC-UT-PMIC-05,verifies,REQ-PMIC-004,unit_test
+TC-UT-PMIC-06,verifies,REQ-PMIC-005,unit_test
+TC-UT-PMIC-07,verifies,REQ-PMIC-005,unit_test
+TC-UT-PMIC-07,verifies,REQ-PMIC-007,unit_test
+TC-UT-PMIC-08,verifies,REQ-PMIC-006,unit_test
+TC-UT-PMIC-09,verifies,REQ-PMIC-008,unit_test
+TC-IT-PMIC-01,verifies,REQ-PMIC-001,integration_test
+TC-IT-PMIC-01,verifies,REQ-PMIC-005,integration_test
+TC-IT-PMIC-02,verifies,REQ-PMIC-003,integration_test
+TC-IT-PMIC-03,verifies,REQ-PMIC-004,integration_test
+TC-IT-PMIC-04,verifies,REQ-PMIC-006,integration_test

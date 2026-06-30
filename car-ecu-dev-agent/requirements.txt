@@ -1,0 +1,6 @@
+# 引擎（engine/vda_agent）本身零依赖（标准库即可跑）。
+# PoC 适配层新增唯一依赖：Jinja2（渲染 driver-hal 的 codegen 模板）。
+jinja2>=3.1
+# 可选：真实 LLM / 测试
+# anthropic>=0.40
+# pytest>=8.0
