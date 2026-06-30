@@ -1,0 +1,320 @@
+
+============================================================
+  pcOpenFile  (lines 7125-7200)
+============================================================
+ 7125 |   const map = {md:'📝', json:'📋', yaml:'📋', yml:'📋', js:'📜', py:'🐍', txt:'📄', html:'🌐', css:'🎨', c:'⚙', h:'⚙'};
+ 7126 |   return map[ext] || '📄';
+ 7127 | }
+ 7128 | 
+ 7129 | // ── 文件编辑器 ────────────────────────────────────────────────
+ 7130 | async function pcOpenFile(filePath) {
+ 7131 |   if (editorDirty) {
+ 7132 |     if (!confirm('当前文件有未保存修改，继续打开新文件将丢弃更改？')) return;
+ 7133 |   }
+ 7134 |   try {
+ 7135 |     const res = await fetch('/api/projects/' + currentProjectId + '/file?path=' + encodeURIComponent(filePath));
+ 7136 |     const data = await res.json();
+ 7137 |     if (data.error) { toast('读取文件失败: ' + data.error, 'd'); return; }
+ 7138 |     currentEditFile = filePath;
+ 7139 |     editorDirty = false;
+ 7140 |     document.getElementById('pc-editor').value = data.content;
+ 7141 |     document.getElementById('pc-editor-wrap').style.display = 'flex';
+ 7142 |     document.getElementById('pc-overview').style.display = 'none';
+ 7143 |     document.getElementById('pc-current-path').textContent = filePath;
+ 7144 |     document.getElementById('pc-save-status').textContent = '';
+ 7145 |     // -- 只读模式：agents/ 或 skills/ 下的文件不允许在项目配置中编辑 --
+ 7146 |     const isReadOnly = /^(agents[/]|skills[/])/.test(filePath);
+ 7147 |     const editorEl = document.getElementById('pc-editor');
+ 7148 |     editorEl.readOnly = isReadOnly;
+ 7149 |     editorEl.style.opacity = isReadOnly ? '0.72' : '1';
+ 7150 |     const saveBtn = document.getElementById('pc-editor-save-btn');
+ 7151 |     if (saveBtn) saveBtn.style.display = isReadOnly ? 'none' : '';
+ 7152 |     const roHint = document.getElementById('pc-editor-readonly-hint');
+ 7153 |     if (roHint) roHint.style.display = isReadOnly ? 'inline-flex' : 'none';
+ 7154 |     pcLoadFileTree();
+ 7155 |   } catch(e) { toast('读取文件失败: ' + e.message, 'd'); }
+ 7156 | }
+ 7157 | 
+ 7158 | function pcMarkEditorDirty() {
+ 7159 |   if (!editorDirty) {
+ 7160 |     editorDirty = true;
+ 7161 |     document.getElementById('pc-save-status').textContent = '● 未保存';
+ 7162 |   }
+ 7163 | }
+ 7164 | 
+ 7165 | async function pcSaveFile() {
+ 7166 |   if (!currentProjectId || !currentEditFile) return;
+ 7167 |   const content = document.getElementById('pc-editor').value;
+ 7168 |   try {
+ 7169 |     const res = await fetch('/api/projects/' + currentProjectId + '/file', {
+ 7170 |       method: 'POST',
+ 7171 |       headers: {'Content-Type': 'application/json'},
+ 7172 |       body: JSON.stringify({ path: currentEditFile, content: content })
+ 7173 |     });
+ 7174 |     const data = await res.json();
+ 7175 |     if (data.error) { toast('保存失败: ' + data.error, 'd'); return; }
+ 7176 |     editorDirty = false;
+ 7177 |     document.getElementById('pc-save-status').textContent = '✓ 已保存';
+ 7178 |     setTimeout(function() { document.getElementById('pc-save-status').textContent = ''; }, 2000);
+ 7179 |     toast('文件已保存', 's');
+ 7180 |   } catch(e) { toast('保存失败: ' + e.message, 'd'); }
+ 7181 | }
+ 7182 | 
+ 7183 | function pcCloseFile() {
+ 7184 |   if (editorDirty && !confirm('有未保存修改，确认关闭？')) return;
+ 7185 |   currentEditFile = null; editorDirty = false;
+ 7186 |   // -- 重置只读状态 --
+ 7187 |   var editorEl = document.getElementById('pc-editor');
+ 7188 |   editorEl.readOnly = false;
+ 7189 |   editorEl.style.opacity = '1';
+ 7190 |   var saveBtn = document.getElementById('pc-editor-save-btn');
+ 7191 |   if (saveBtn) saveBtn.style.display = '';
+ 7192 |   var roHint = document.getElementById('pc-editor-readonly-hint');
+ 7193 |   if (roHint) roHint.style.display = 'none';
+ 7194 |   document.getElementById('pc-editor-wrap').style.display = 'none';
+ 7195 |   document.getElementById('pc-overview').style.display = 'flex';
+ 7196 |   const proj = pcProjects.find(function(p) { return p.id === currentProjectId; });
+ 7197 |   document.getElementById('pc-current-path').textContent = proj ? proj.path : '';
+ 7198 |   pcLoadFileTree();
+ 7199 | }
+ 7200 | 
+
+============================================================
+  pcCloseFile  (lines 7183-7210)
+============================================================
+ 7183 | function pcCloseFile() {
+ 7184 |   if (editorDirty && !confirm('有未保存修改，确认关闭？')) return;
+ 7185 |   currentEditFile = null; editorDirty = false;
+ 7186 |   // -- 重置只读状态 --
+ 7187 |   var editorEl = document.getElementById('pc-editor');
+ 7188 |   editorEl.readOnly = false;
+ 7189 |   editorEl.style.opacity = '1';
+ 7190 |   var saveBtn = document.getElementById('pc-editor-save-btn');
+ 7191 |   if (saveBtn) saveBtn.style.display = '';
+ 7192 |   var roHint = document.getElementById('pc-editor-readonly-hint');
+ 7193 |   if (roHint) roHint.style.display = 'none';
+ 7194 |   document.getElementById('pc-editor-wrap').style.display = 'none';
+ 7195 |   document.getElementById('pc-overview').style.display = 'flex';
+ 7196 |   const proj = pcProjects.find(function(p) { return p.id === currentProjectId; });
+ 7197 |   document.getElementById('pc-current-path').textContent = proj ? proj.path : '';
+ 7198 |   pcLoadFileTree();
+ 7199 | }
+ 7200 | 
+ 7201 | // ── 新建文件 ──────────────────────────────────────────────────
+ 7202 | function pcNewFile() {
+ 7203 |   if (!currentProjectId) return;
+ 7204 |   document.getElementById('pc-newfile-path').value = '';
+ 7205 |   document.getElementById('pc-newfile-hint').textContent = '';
+ 7206 |   pcShowModal('pc-newfile-modal');
+ 7207 |   setTimeout(function() { document.getElementById('pc-newfile-path').focus(); }, 50);
+ 7208 | }
+ 7209 | async function pcDoNewFile() {
+ 7210 |   const path = document.getElementById('pc-newfile-path').value.trim();
+
+============================================================
+  pcShowTeamModal  (lines 7575-7605)
+============================================================
+ 7575 | // ══════════════════════════════════════════════════════════════════════
+ 7576 | // 组建项目团队弹窗
+ 7577 | // ══════════════════════════════════════════════════════════════════════
+ 7578 | function pcShowTeamModal() {
+ 7579 |   if (!currentProjectId) { toast('请先选择一个项目', 'w'); return; }
+ 7580 |   pcTeamSwitchTab('agent');
+ 7581 |   pcTeamSwitchSource('agent', 'pool');
+ 7582 |   pcTeamSwitchSource('skill', 'pool');
+ 7583 |   pcTeamRefreshPool('agent');
+ 7584 |   pcTeamRefreshPool('skill');
+ 7585 |   pcTeamRefresh('agent');
+ 7586 |   pcTeamRefresh('skill');
+ 7587 |   pcShowModal('pc-team-modal');
+ 7588 | }
+ 7589 | 
+ 7590 | function pcTeamSwitchTab(tab) {
+ 7591 |   const isAgent = tab === 'agent';
+ 7592 |   document.getElementById('pc-team-tab-agent').classList.toggle('active', isAgent);
+ 7593 |   document.getElementById('pc-team-tab-skill').classList.toggle('active', !isAgent);
+ 7594 |   document.getElementById('pc-team-panel-agent').classList.toggle('active', isAgent);
+ 7595 |   document.getElementById('pc-team-panel-skill').classList.toggle('active', !isAgent);
+ 7596 | }
+ 7597 | 
+ 7598 | function pcTeamSwitchSource(type, src) {
+ 7599 |   const isPool   = src === 'pool';
+ 7600 |   const isLocal  = src === 'local';
+ 7601 |   const isGithub = src === 'github';
+ 7602 |   var poolTab   = document.getElementById('pc-team-' + type + '-tab-pool');
+ 7603 |   var localTab  = document.getElementById('pc-team-' + type + '-tab-local');
+ 7604 |   var githubTab = document.getElementById('pc-team-' + type + '-tab-github');
+ 7605 |   var poolSrc   = document.getElementById('pc-team-' + type + '-src-pool');
+
+============================================================
+  pcTeamSwitchSource  (lines 7595-7650)
+============================================================
+ 7595 |   document.getElementById('pc-team-panel-skill').classList.toggle('active', !isAgent);
+ 7596 | }
+ 7597 | 
+ 7598 | function pcTeamSwitchSource(type, src) {
+ 7599 |   const isPool   = src === 'pool';
+ 7600 |   const isLocal  = src === 'local';
+ 7601 |   const isGithub = src === 'github';
+ 7602 |   var poolTab   = document.getElementById('pc-team-' + type + '-tab-pool');
+ 7603 |   var localTab  = document.getElementById('pc-team-' + type + '-tab-local');
+ 7604 |   var githubTab = document.getElementById('pc-team-' + type + '-tab-github');
+ 7605 |   var poolSrc   = document.getElementById('pc-team-' + type + '-src-pool');
+ 7606 |   var localSrc  = document.getElementById('pc-team-' + type + '-src-local');
+ 7607 |   var githubSrc = document.getElementById('pc-team-' + type + '-src-github');
+ 7608 |   if (poolTab)   poolTab.classList.toggle('active', isPool);
+ 7609 |   if (localTab)  localTab.classList.toggle('active', isLocal);
+ 7610 |   if (githubTab) githubTab.classList.toggle('active', isGithub);
+ 7611 |   if (poolSrc)   poolSrc.style.display   = isPool   ? '' : 'none';
+ 7612 |   if (localSrc)  localSrc.style.display  = isLocal  ? '' : 'none';
+ 7613 |   if (githubSrc) githubSrc.style.display = isGithub ? '' : 'none';
+ 7614 | }
+ 7615 | 
+ 7616 | function pcTeamRefresh(type) {
+ 7617 |   const listEl = document.getElementById('pc-team-' + type + '-list');
+ 7618 |   if (!listEl) return;
+ 7619 |   const items  = (type === 'agent') ? (pcAgentsList || []) : (pcSkillsList || []);
+ 7620 |   if (items.length === 0) {
+ 7621 |     listEl.innerHTML = '<div style="color:var(--tx-m);font-size:12px;padding:8px;text-align:center">暂无 '
+ 7622 |       + (type === 'agent' ? 'Agent' : 'Skill') + '</div>';
+ 7623 |     return;
+ 7624 |   }
+ 7625 |   listEl.innerHTML = items.map(function(item) {
+ 7626 |     const name = (typeof item === 'object') ? (item.name || item.id || JSON.stringify(item)) : String(item);
+ 7627 |     const icon = type === 'agent' ? '🤖' : '🛠';
+ 7628 |     const safeType = JSON.stringify(type);
+ 7629 |     const safeName = JSON.stringify(name);
+ 7630 |     return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;'
+ 7631 |       + 'border-radius:4px;margin-bottom:2px;background:var(--bg)">'
+ 7632 |       + '<span style="font-size:12px;font-family:monospace">' + icon + ' ' + escHtml(name) + '</span>'
+ 7633 |       + '<button onclick="pcTeamDelete(' + safeType + ',' + safeName + ')" '
+ 7634 |       + 'style="border:none;background:transparent;color:var(--cr);cursor:pointer;font-size:12px;padding:2px 6px" '
+ 7635 |       + 'title="移除">🗑</button>'
+ 7636 |       + '</div>';
+ 7637 |   }).join('');
+ 7638 | }
+ 7639 | 
+ 7640 | async function pcTeamAdd(type) {
+ 7641 |   const isAgent     = type === 'agent';
+ 7642 |   const localPathId = 'pc-team-' + type + '-local-path';
+ 7643 |   const githubUrlId = 'pc-team-' + type + '-github-url';
+ 7644 |   const poolTabEl   = document.getElementById('pc-team-' + type + '-tab-pool');
+ 7645 |   const localTabEl  = document.getElementById('pc-team-' + type + '-tab-local');
+ 7646 |   const isPool      = poolTabEl  && poolTabEl.classList.contains('active');
+ 7647 |   const isLocal     = !isPool && localTabEl && localTabEl.classList.contains('active');
+ 7648 |   const spinnerId   = 'pc-team-' + type + '-spinner';
+ 7649 |   const btnId       = 'pc-team-' + type + '-add-btn';
+ 7650 |   let body = {};
+
+============================================================
+  pcTeamAdd  (lines 7638-7710)
+============================================================
+ 7638 | }
+ 7639 | 
+ 7640 | async function pcTeamAdd(type) {
+ 7641 |   const isAgent     = type === 'agent';
+ 7642 |   const localPathId = 'pc-team-' + type + '-local-path';
+ 7643 |   const githubUrlId = 'pc-team-' + type + '-github-url';
+ 7644 |   const poolTabEl   = document.getElementById('pc-team-' + type + '-tab-pool');
+ 7645 |   const localTabEl  = document.getElementById('pc-team-' + type + '-tab-local');
+ 7646 |   const isPool      = poolTabEl  && poolTabEl.classList.contains('active');
+ 7647 |   const isLocal     = !isPool && localTabEl && localTabEl.classList.contains('active');
+ 7648 |   const spinnerId   = 'pc-team-' + type + '-spinner';
+ 7649 |   const btnId       = 'pc-team-' + type + '-add-btn';
+ 7650 |   let body = {};
+ 7651 |   if (isPool) {
+ 7652 |     const selectedEl = document.querySelector('#pc-team-' + type + '-pool-list .pc-pool-item.selected');
+ 7653 |     if (!selectedEl) { toast('请先从资源池中点击选中一项', 'w'); return; }
+ 7654 |     body = { source: 'pool', path: selectedEl.dataset.path };
+ 7655 |   } else if (isLocal) {
+ 7656 |     const path = document.getElementById(localPathId).value.trim();
+ 7657 |     if (!path) { toast('请输入或浏览选择路径', 'w'); return; }
+ 7658 |     body = { source: 'local', path: path };
+ 7659 |   } else {
+ 7660 |     const url = document.getElementById(githubUrlId).value.trim();
+ 7661 |     if (!url) { toast('请输入 GitHub URL', 'w'); return; }
+ 7662 |     body = { source: 'github', url: url };
+ 7663 |   }
+ 7664 |   document.getElementById(btnId).disabled = true;
+ 7665 |   document.getElementById(spinnerId).style.display = 'inline-block';
+ 7666 |   try {
+ 7667 |     const endpoint = isAgent
+ 7668 |       ? ('/api/projects/' + currentProjectId + '/add_agent')
+ 7669 |       : ('/api/projects/' + currentProjectId + '/add_skill');
+ 7670 |     const res  = await fetch(endpoint, {
+ 7671 |       method: 'POST',
+ 7672 |       headers: {'Content-Type': 'application/json'},
+ 7673 |       body: JSON.stringify(body)
+ 7674 |     });
+ 7675 |     const data = await res.json();
+ 7676 |     if (data.error) { toast('添加失败: ' + data.error, 'd'); return; }
+ 7677 |     toast((isAgent ? 'Agent' : 'Skill') + ' 已添加', 's');
+ 7678 |     if (isLocal) document.getElementById(localPathId).value = '';
+ 7679 |     var selEl = document.querySelector('#pc-team-' + type + '-pool-list .pc-pool-item.selected');
+ 7680 |     if (selEl) selEl.classList.remove('selected');
+ 7681 |     if (isAgent) { await pcLoadAgents(); pcTeamRefresh('agent'); pcTeamRefreshPool('agent'); }
+ 7682 |     else         { await pcLoadSkills(); pcTeamRefresh('skill'); pcTeamRefreshPool('skill'); }
+ 7683 |     pcLoadFileTree();
+ 7684 |   } catch(e) { toast('添加失败: ' + e.message, 'd'); }
+ 7685 |   finally {
+ 7686 |     document.getElementById(btnId).disabled = false;
+ 7687 |     document.getElementById(spinnerId).style.display = 'none';
+ 7688 |   }
+ 7689 | }
+ 7690 | 
+ 7691 | 
+ 7692 | function pcTeamRefreshPool(type) {
+ 7693 |   var poolListEl = document.getElementById('pc-team-' + type + '-pool-list');
+ 7694 |   if (!poolListEl) return;
+ 7695 |   // 使用全局 projectData（由 WebSocket project_update 事件填充）
+ 7696 |   var items = (type === 'agent')
+ 7697 |     ? ((window.projectData && window.projectData.agents) || [])
+ 7698 |     : ((window.projectData && window.projectData.skills) || []);
+ 7699 |   var existingNames = ((type === 'agent') ? (pcAgentsList || []) : (pcSkillsList || []))
+ 7700 |     .map(function(x) { return (typeof x === 'object') ? (x.name || x.id || '') : String(x); });
+ 7701 |   var available = items.filter(function(item) {
+ 7702 |     return !existingNames.includes(item.name || item.id || '');
+ 7703 |   });
+ 7704 |   if (available.length === 0) {
+ 7705 |     var msg = items.length === 0
+ 7706 |       ? ('开发资源池中暂无 ' + (type === 'agent' ? 'Agent' : 'Skill'))
+ 7707 |       : '资源池中的项目已全部添加到团队';
+ 7708 |     poolListEl.innerHTML = '<div style="color:var(--tx-m);font-size:12px;padding:8px;text-align:center">' + msg + '</div>';
+ 7709 |     return;
+ 7710 |   }
+
+============================================================
+  End of file  (lines 7720-7751)
+============================================================
+ 7720 |       + (desc ? '<div class="pc-pool-item-desc">' + escHtml(desc) + '</div>' : '')
+ 7721 |       + '</div></div>';
+ 7722 |   }).join('');
+ 7723 | }
+ 7724 | 
+ 7725 | function pcPoolSelect(el) {
+ 7726 |   var list = el.closest('[id$="-pool-list"]');
+ 7727 |   if (list) list.querySelectorAll('.pc-pool-item.selected').forEach(function(e) { e.classList.remove('selected'); });
+ 7728 |   el.classList.toggle('selected');
+ 7729 | }
+ 7730 | 
+ 7731 | async function pcTeamDelete(type, name) {
+ 7732 |   if (!confirm('确认移除 ' + name + '？此操作将从项目目录中删除该文件。')) return;
+ 7733 |   try {
+ 7734 |     const isAgent  = type === 'agent';
+ 7735 |     const endpoint = isAgent
+ 7736 |       ? ('/api/projects/' + currentProjectId + '/agents/'  + encodeURIComponent(name))
+ 7737 |       : ('/api/projects/' + currentProjectId + '/skills/' + encodeURIComponent(name));
+ 7738 |     const res  = await fetch(endpoint, { method: 'DELETE' });
+ 7739 |     const data = await res.json();
+ 7740 |     if (data.error) { toast('删除失败: ' + data.error, 'd'); return; }
+ 7741 |     toast(name + ' 已移除', 's');
+ 7742 |     if (isAgent) { await pcLoadAgents(); pcTeamRefresh('agent'); }
+ 7743 |     else         { await pcLoadSkills(); pcTeamRefresh('skill'); }
+ 7744 |     pcLoadFileTree();
+ 7745 |   } catch(e) { toast('删除失败: ' + e.message, 'd'); }
+ 7746 | }
+ 7747 | 
+ 7748 | </script>
+ 7749 | 
+ 7750 | </body>
+ 7751 | </html>

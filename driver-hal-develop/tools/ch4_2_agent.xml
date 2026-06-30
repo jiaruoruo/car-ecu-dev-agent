@@ -1,0 +1,1 @@
+<p>点击 Agent 卡片的配置按钮后，弹出 YAML 可视化编辑器。编辑器将 Agent 的 .md 配置文件解析为多个交互节（Section）：<b>description</b>（职责描述）、<b>expertise</b>（Chip 标签形式的专长列表，如 SPI/DMA/MISRA-C）、<b>skills</b>（关联 Skill 路径，带可视化勾选下拉）、<b>rules</b>（约束规则）、<b>knowledge</b>（引用知识库）、<b>tools</b>（工具绑定，分 required/optional 两级）。编辑完成后点击"保存到文件"，内容直接写回对应 .md 源文件，FileWatcher 触发实时热重载，整个操作不离开浏览器完成。</p>

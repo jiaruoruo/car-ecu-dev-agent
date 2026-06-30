@@ -1,0 +1,2 @@
+OK: inserted JS functions before pcPoolSelect
+Total len: 312419

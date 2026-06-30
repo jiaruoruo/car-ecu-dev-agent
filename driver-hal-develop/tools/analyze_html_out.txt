@@ -1,0 +1,65 @@
+﻿Total lines: 7342
+Found 507 matching lines:
+  108: .ccard.active-route{border-color:var(--ca) !important;
+  109:   box-shadow:0 0 14px rgba(56,139,253,.35) !important;
+  233:   box-shadow:0 0 16px rgba(240,136,62,.5) !important;
+  234:   border-color:#f0883e !important;color:#f0883e !important
+  282: .modal-overlay{
+  287: .modal-overlay.open{display:flex}
+  288: .modal-box{
+  296: .modal-hdr{
+  300: .modal-hdr-icon{font-size:16px}
+  301: #modal-title{font-size:14px;font-weight:700;color:var(--tx-p);flex:1}
+  302: .modal-close{
+  306: .modal-close:hover{color:var(--cr);background:rgba(248,81,73,.12)}
+  307: .modal-body{
+  328: .modal-footer{
+  332: .modal-footer-hint{flex:1;font-size:10px;color:var(--tx-m)}
+  333: .modal-btn-cancel{
+  338: .modal-btn-cancel:hover{color:var(--tx-p);border-color:var(--tx-m)}
+  339: .modal-btn-save{
+  345: .modal-btn-save:hover{background:#58a6ff}
+  346: .modal-btn-save:active{transform:scale(.97)}
+  347: .modal-btn-save.saving{opacity:.65;cursor:wait;pointer-events:none}
+  355: .modal-wide{width:min(820px,96vw) !important}
+  356: .modal-mid{display:flex;flex:1;overflow:hidden;min-height:0}
+  359: .modal-l1nav{
+  388: .l1nav-del-btn:hover{opacity:1 !important;color:var(--cr) !important;background:rgba(248,81,73,.12)}
+  399: .modal-rpane{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+  402: .modal-bc{
+  417: .modal-l2list{flex:1;overflow-y:auto;padding:0}
+  436: .modal-editor{
+  448: .modal-hint{
+  845: #create-agent-modal .modal-box{width:min(440px,94vw)}
+  861: .ccard-del-btn:hover{ opacity:1 !important; background:rgba(248,81,73,.22) !important }
+  862: #delete-agent-modal .modal-box{ width:min(400px,94vw) }
+  873: .modal-btn-danger{
+  878: .modal-btn-danger:hover{ filter:brightness(1.15) }
+  879: .modal-btn-danger.saving{ opacity:.55;cursor:not-allowed }
+  888: .ccard-zoom-btn:hover{ opacity:1 !important; background:rgba(56,139,253,.22) !important }
+  889: .ccard.ccard-expanded .ccard-zoom-btn{ opacity:0.9 !important }
+  911: /* ── Modal Resize & Maximize ────────────────────────────────── */
+  912: .modal-box{ position:relative; display:flex; flex-direction:column }
+  913: .modal-mid{ flex:1; min-height:0 }
+  914: .modal-box.modal-maximized{
+  915:   width:95vw !important; max-width:95vw !important;
+  916:   height:90vh !important; max-height:90vh !important;
+  918: .modal-box.modal-maximized .modal-mid{ overflow:hidden }
+  921: .modal-resize-handle{
+  931: .modal-box:hover .modal-resize-handle{ opacity:.85 }
+  932: .modal-resize-handle:hover{ opacity:1 !important }
+  935: .modal-maximize-btn{
+  941: .modal-maximize-btn:hover{
+  1037: #project-config-view{
+  1040: #project-config-view.visible{display:flex}
+  1160: .pc-list-item .item-del:hover{opacity:1!important;background:#3d1f1f}
+  1244: /* ── Project Config Modals ── */
+  1245: .pc-modal-overlay{
+  1250: .pc-modal-overlay.hidden{display:none}
+  1251: .pc-modal-box{
+  1256: .pc-modal-hdr{
+  1260: .pc-modal-title{font-size:14px;font-weight:700;flex:1;color:var(--tx-p)}
+  1261: .pc-modal-close{
+  1265: .pc-modal-close:hover{color:var(--cr);background:#3d1f1f}
+  1266: .pc-modal-body{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+  1284: .pc-modal-footer{

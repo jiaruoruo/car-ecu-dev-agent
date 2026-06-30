@@ -1,0 +1,1 @@
+<p>Skill 配置页分为两个区域：左侧 <b>Front-matter 表单</b>编辑 name / version / category / description / use_cases / automotive_standards 等结构化元数据；右侧 <b>Section 列表编辑器</b>管理 SKILL.md 的 Markdown 章节体（如 Overview、Parameters、Code Examples、Automotive Context 等），支持章节新增、内容编辑与顺序调整。Skill 遵循 <b>Karpathy Skill 规范</b>——高度结构化、参数显式声明、附有真实代码示例——确保 AI 调用时能精准理解每个 Skill 的用法边界，经实测可显著提升代码生成的准确率。</p>

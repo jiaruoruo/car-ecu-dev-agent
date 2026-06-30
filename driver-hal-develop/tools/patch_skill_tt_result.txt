@@ -1,0 +1,4 @@
+OK: patched skill list item events
+OK: inserted Skill tooltip CSS
+SKIP: Skill tooltip HTML already exists
+OK: inserted Skill tooltip JS functions

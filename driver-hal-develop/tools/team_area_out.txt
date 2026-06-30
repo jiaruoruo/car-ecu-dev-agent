@@ -1,0 +1,133 @@
+
+[1] Team button HTML (line 1555 area):
+1552:           <div class="pc-overview-title" id="pc-overview-name">📦 项目名称</div>
+1553:           <div class="pc-overview-meta" id="pc-overview-meta"></div>
+1554:           <div style="margin-top:12px">
+1555:             <button id="pc-btn-team" onclick="pcShowTeamModal()" title="管理本项目的 Agents 和 Skills"
+1556:               onmouseover="this.style.borderColor='#3a7bd5';this.style.color='#89afd4'"
+1557:               onmouseout="this.style.borderColor='#243d5c';this.style.color='#5a84a8'"
+1558:               style="display:inline-flex;align-items:center;gap:6px;
+1559:               padding:6px 14px;font-size:12px;font-weight:600;letter-spacing:0.4px;
+1560:               background:var(--bg-card2);
+1561:               border:1px solid #243d5c;border-radius:6px;
+1562:               color:#5a84a8;cursor:pointer;transition:all .2s;">
+1563:               <span style="font-size:13px;opacity:.8">⬡</span> 组建项目团队
+1564:             </button>
+1565:           </div>
+1566:           <div class="pc-stat-grid" id="pc-stat-grid" style="margin-top:14px"></div>
+1567:         </div>
+1568:       </div>
+1569: 
+1570:     </div><!-- /pc-main -->
+
+============================================================
+=== pcShowTeamModal function ===
+============================================================
+7638: // 组建项目团队弹窗
+7639: // ══════════════════════════════════════════════════════════════════════
+7640: function pcShowTeamModal() {
+7641:   if (!currentProjectId) { toast('请先选择一个项目', 'w'); return; }
+7642:   pcTeamSwitchTab('agent');
+7643:   pcTeamSwitchSource('agent', 'pool');
+7644:   pcTeamSwitchSource('skill', 'pool');
+7645:   pcTeamRefreshPool('agent');
+7646:   pcTeamRefreshPool('skill');
+7647:   pcTeamRefresh('agent');
+7648:   pcTeamRefresh('skill');
+7649:   pcShowModal('pc-team-modal');
+7650: }
+7651: 
+7652: function pcTeamSwitchTab(tab) {
+7653:   const isAgent = tab === 'agent';
+7654:   document.getElementById('pc-team-tab-agent').classList.toggle('active', isAgent);
+7655:   document.getElementById('pc-team-tab-skill').classList.toggle('active', !isAgent);
+7656:   document.getElementById('pc-team-panel-agent').classList.toggle('active', isAgent);
+7657:   document.getElementById('pc-team-panel-skill').classList.toggle('active', !isAgent);
+7658: }
+7659: 
+7660: function pcTeamSwitchSource(type, src) {
+7661:   const isPool   = src === 'pool';
+7662:   const isLocal  = src === 'local';
+7663:   const isGithub = src === 'github';
+7664:   var poolTab   = document.getElementById('pc-team-' + type + '-tab-pool');
+7665:   var localTab  = document.getElementById('pc-team-' + type + '-tab-local');
+7666:   var githubTab = document.getElementById('pc-team-' + type + '-tab-github');
+7667:   var poolSrc   = document.getElementById('pc-team-' + type + '-src-pool');
+7668:   var localSrc  = document.getElementById('pc-team-' + type + '-src-local');
+7669:   var githubSrc = document.getElementById('pc-team-' + type + '-src-github');
+7670:   if (poolTab)   poolTab.classList.toggle('active', isPool);
+7671:   if (localTab)  localTab.classList.toggle('active', isLocal);
+7672:   if (githubTab) githubTab.classList.toggle('active', isGithub);
+7673:   if (poolSrc)   poolSrc.style.display   = isPool   ? '' : 'none';
+7674:   if (localSrc)  localSrc.style.display  = isLocal  ? '' : 'none';
+7675:   if (githubSrc) githubSrc.style.display = isGithub ? '' : 'none';
+7676: }
+7677: 
+7678: function pcTeamRefresh(type) {
+7679:   const listEl = document.getElementById('pc-team-' + type + '-list');
+7680:   if (!listEl) return;
+
+============================================================
+=== pcTeamAdd function ===
+============================================================
+7700: }
+7701: 
+7702: async function pcTeamAdd(type) {
+7703:   const isAgent     = type === 'agent';
+7704:   const localPathId = 'pc-team-' + type + '-local-path';
+7705:   const githubUrlId = 'pc-team-' + type + '-github-url';
+7706:   const poolTabEl   = document.getElementById('pc-team-' + type + '-tab-pool');
+7707:   const localTabEl  = document.getElementById('pc-team-' + type + '-tab-local');
+7708:   const isPool      = poolTabEl  && poolTabEl.classList.contains('active');
+7709:   const isLocal     = !isPool && localTabEl && localTabEl.classList.contains('active');
+7710:   const spinnerId   = 'pc-team-' + type + '-spinner';
+7711:   const btnId       = 'pc-team-' + type + '-add-btn';
+7712:   let body = {};
+7713:   if (isPool) {
+7714:     const selectedEl = document.querySelector('#pc-team-' + type + '-pool-list .pc-pool-item.selected');
+7715:     if (!selectedEl) { toast('请先从资源池中点击选中一项', 'w'); return; }
+7716:     body = { source: 'pool', path: selectedEl.dataset.path };
+7717:   } else if (isLocal) {
+7718:     const path = document.getElementById(localPathId).value.trim();
+7719:     if (!path) { toast('请输入或浏览选择路径', 'w'); return; }
+7720:     body = { source: 'local', path: path };
+7721:   } else {
+7722:     const url = document.getElementById(githubUrlId).value.trim();
+7723:     if (!url) { toast('请输入 GitHub URL', 'w'); return; }
+7724:     body = { source: 'github', url: url };
+7725:   }
+7726:   document.getElementById(btnId).disabled = true;
+7727:   document.getElementById(spinnerId).style.display = 'inline-block';
+7728:   try {
+7729:     const endpoint = isAgent
+7730:       ? ('/api/projects/' + currentProjectId + '/add_agent')
+7731:       : ('/api/projects/' + currentProjectId + '/add_skill');
+7732:     const res  = await fetch(endpoint, {
+7733:       method: 'POST',
+7734:       headers: {'Content-Type': 'application/json'},
+7735:       body: JSON.stringify(body)
+7736:     });
+7737:     const data = await res.json();
+7738:     if (data.error) { toast('添加失败: ' + data.error, 'd'); return; }
+7739:     toast((isAgent ? 'Agent' : 'Skill') + ' 已添加', 's');
+7740:     if (isLocal) document.getElementById(localPathId).value = '';
+7741:     var selEl = document.querySelector('#pc-team-' + type + '-pool-list .pc-pool-item.selected');
+7742:     if (selEl) selEl.classList.remove('selected');
+7743:     if (isAgent) { await pcLoadAgents(); pcTeamRefresh('agent'); pcTeamRefreshPool('agent'); }
+7744:     else         { await pcLoadSkills(); pcTeamRefresh('skill'); pcTeamRefreshPool('skill'); }
+7745:     pcLoadFileTree();
+7746:   } catch(e) { toast('添加失败: ' + e.message, 'd'); }
+7747:   finally {
+7748:     document.getElementById(btnId).disabled = false;
+7749:     document.getElementById(spinnerId).style.display = 'none';
+7750:   }
+7751: }
+7752: 
+7753: 
+7754: function pcTeamRefreshPool(type) {
+7755:   var poolListEl = document.getElementById('pc-team-' + type + '-pool-list');
+7756:   if (!poolListEl) return;
+7757:   // 使用全局 projectData（由 WebSocket project_update 事件填充）
+7758:   var items = (type === 'agent')
+7759:     ? ((projectData && projectData.agents) || [])
+7760:     : ((projectData && projectData.skills) || []);

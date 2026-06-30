@@ -1,0 +1,10 @@
+.ok = bool(True)
+.identity = str(4) = 'user'
+.data.document.content = str(13850) = '<title>Embedded Software Develop Agents Team</title><h1 seq="auto" seq-level="auto">解决什么问题</h1><p text-indent="1">在垂直专业领域的工程团队中，AI Agent 的技能（Skill）设计普遍缺乏统一规范，导致不同成员产出质量参差不齐，且技能知识难以沉淀传承，形成"孤岛效应"——每次项目启'
+.data.document.document_id = str(27) = 'FtuLdlCNAov8ytxuieJcnbFNnPd'
+.data.document.revision_id = int(698)
+.data.log_id = str(34) = '20260608112107E12B641766D84A307406'
+._notice.update.command = str(15) = 'lark-cli update'
+._notice.update.current = str(6) = '1.0.45'
+._notice.update.latest = str(6) = '1.0.48'
+._notice.update.message = str(63) = 'lark-cli 1.0.48 available, current 1.0.45, run: lark-cli update'

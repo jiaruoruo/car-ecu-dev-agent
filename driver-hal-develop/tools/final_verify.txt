@@ -1,0 +1,12 @@
+=== Task 1: ss-card-arr arrow position ===
+Arrow found at byte position: 198196
+Arrow is LEFT of index number: False
+Context around arrow:
+': \'\')) || \'（空）\';\n      const bodyId = \'ssc-\' + _ssTitle.replace(/\\W/g,\'\') + \'-\' + idx;\n      return `<div class="wf-card" style="margin-bottom:6px;padding:0;overflow:hidden">\n        <div onclick="toggleSSCard(\'${bodyId}\',this)" style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;user-select:none">\n          <span class="ss-card-arr" style="color:var(--tx-m);font-size:15px;font-weight:700;transition:transform .15s;flex-shrink:0">›</span>\n          <span style="font-size:11px;color:var(--tx-d);font-weight:600;min-width'
+
+=== Task 2: Remaining editor-level ## / ### spans ===
+  NONE - ALL ## and ### editor-level labels have been removed!
+
+Remaining editor-level FM (correctly kept): 2
+  Line 1801:       <span class="editor-level">FM</span>
+  Line 4659:       <span class="editor-level">FM</span>

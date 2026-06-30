@@ -1,0 +1,32 @@
+=== skillPath branch in _rebuildSSEditor ===
+  5332:           }</select>`;
+  5333:         } else if (f.skillPath) {
+  5334:           const _lid = 'skp-'+_ssTitle.replace(/\W/g,'')+'-'+idx+'-'+f.key;
+  5335:           inputEl = `<input class="form-input" style="${sty}" value="${val}"
+  5336:             placeholder="${escHtml(f.placeholder||'')}" list="${_lid}"
+  5337:             oninput="_ssSetField(${idx},'${f.key}',this.value)"><datalist id="${_lid}">${
+  5338:               (_availSkillPaths||[]).map(p=>`<option value="${escHtml(p)}">`).join('')
+  5339:             }</datalist>`;
+  5340:         } else if (f.multiline) {
+  5341:           inputEl = `<textarea class="form-textarea" rows="${f.rows || 3}" style="${sty};min-height:${(f.rows || 3) * 22}px"
+  5342:             oninput="_ssSetField(${idx},'${f.key}',this.value)">${val}</textarea>`;
+  5343:         } else {
+  5344:           inputEl = `<input class="form-input" style="${sty}" value="${val}"
+  5345:             placeholder="${escHtml(f.placeholder || '')}" oninput="_ssSetField(${idx},'${f.key}',this.value)">`;
+
+=======================================================
+  PASS: 11   FAIL: 0
+=======================================================
+  ✓ A: skillPath:true in related_skills config
+  ✓ A: placeholder updated to skills/spi/SKILL.md
+  ✓ B: _availSkillPaths global declared
+  ✓ B: _loadAvailSkillPaths function declared
+  ✓ B: fetch /api/list_skills call present
+  ✓ B: init call _loadAvailSkillPaths() present
+  ✓ C: skillPath rendering branch present
+  ✓ C: datalist element present in template
+  ✓ C: _availSkillPaths used in datalist rendering
+  ✓ server.py: api_list_skills endpoint present
+  ✓ server.py: skill path construction correct
+
+  All checks passed!

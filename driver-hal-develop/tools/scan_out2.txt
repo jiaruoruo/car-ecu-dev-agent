@@ -1,0 +1,228 @@
+
+=== CREATE MODAL HTML ===
+1650: 
+1651: <!-- 创建项目 Modal -->
+1652: <div class="pc-modal-overlay hidden" id="pc-create-modal">
+1653:   <div class="pc-modal-box">
+1654:     <div class="pc-modal-hdr">
+1655:       <span>➕</span>
+1656:       <span class="pc-modal-title">新建项目</span>
+1657:       <button class="pc-modal-close" onclick="pcHideModal('pc-create-modal')">✕</button>
+1658:     </div>
+1659:     <div class="pc-modal-body">
+1660:       <div class="pc-form-group">
+1661:         <label class="pc-form-label">项目名称 *</label>
+1662:         <input class="pc-form-input" id="pc-create-name" placeholder="例如：my-hal-project"
+1663:           autocomplete="off" onkeydown="if(event.key==='Enter')pcDoCreate()">
+1664:         <span class="pc-form-hint">建议使用小写字母、数字和连字符</span>
+1665:       </div>
+1666:       <div class="pc-form-group">
+1667:         <label class="pc-form-label">本地路径 *</label>
+1668:         <div style="display:flex;gap:6px;align-items:center">
+1669:           <input class="pc-form-input" id="pc-create-path" placeholder="例如：D:/projects/my-hal-project"
+1670:             autocomplete="off" onkeydown="if(event.key==='Enter')pcDoCreate()" style="flex:1">
+1671:           <button class="pc-tb-btn" onclick="pcBrowse('pc-create-path','dir')" title="浏览文件夹" style="padding:6px 10px;flex-shrink:0">📂</button>
+1672:         </div>
+1673:         <span class="pc-form-hint">项目目录将在此路径下创建（会自动建立 agents/skills/rules/knowledge/tools 子目录）</span>
+1674:       </div>
+1675:     </div>
+1676:     <div class="pc-modal-footer">
+1677:       <button class="pc-btn-cancel" onclick="pcHideModal('pc-create-modal')">取消</button>
+1678:       <button class="pc-btn-primary" onclick="pcDoCreate()">➕ 创建项目</button>
+1679:     </div>
+1680:   </div>
+1681: </div>
+1682: 
+1683: <!-- 导入项目 Modal -->
+1684: <div class="pc-modal-overlay hidden" id="pc-open-modal">
+1685:   <div class="pc-modal-box" style="width:min(520px,96vw)">
+1686:     <div class="pc-modal-hdr">
+1687:       <span>📂</span>
+1688:       <span class="pc-modal-title" id="pc-open-modal-title">导入/下载项目</span>
+1689:       <button class="pc-modal-close" onclick="pcHideModal('pc-open-modal')">✕</button>
+1690:     </div>
+1691:     <!-- Tab 切换 -->
+1692:     <div style="display:flex;gap:4px;padding:10px 20px 0;border-bottom:1px solid var(--bd)">
+1693:       <button class="pc-form-tab active" id="pc-open-tab-local"
+1694:         onclick="pcSwitchOpenTab('local')" style="flex:1">📁 本地导入</button>
+1695:       <button class="pc-form-tab" id="pc-open-tab-github"
+
+=== pcDoCreate ===
+7381: async function pcDoCreate() {
+7382:   const name = document.getElementById('pc-create-name').value.trim();
+7383:   const path = document.getElementById('pc-create-path').value.trim();
+7384:   if (!name || !path) { toast('请填写项目名称和路径', 'w'); return; }
+7385:   try {
+7386:     const res = await fetch('/api/projects/create', {
+7387:       method: 'POST', headers: {'Content-Type': 'application/json'},
+7388:       body: JSON.stringify({ name: name, path: path })
+7389:     });
+7390:     const data = await res.json();
+7391:     if (data.error) { toast('创建失败: ' + data.error, 'd'); return; }
+7392:     pcHideModal('pc-create-modal');
+7393:     toast('项目 "' + name + '" 已创建', 's');
+7394:     await pcLoadProjects();
+7395:     pcSelectProject(data.project.id);
+7396:   } catch(e) { toast('创建失败: ' + e.message, 'd'); }
+7397: }
+7398: 
+7399: async function pcDoOpen() {
+7400:   const path = document.getElementById('pc-open-path').value.trim();
+7401:   if (!path) { toast('请输入目录路径', 'w'); return; }
+7402:   try {
+7403:     const res = await fetch('/api/projects/open', {
+7404:       method: 'POST', headers: {'Content-Type': 'application/json'},
+7405:       body: JSON.stringify({ path: path })
+7406:     });
+7407:     const data = await res.json();
+7408:     if (data.error) { toast('导入失败: ' + data.error, 'd'); return; }
+7409:     pcHideModal('pc-open-modal');
+7410:     toast('项目 "' + data.project.name + '" 已导入', 's');
+7411:     await pcLoadProjects();
+7412:     pcSelectProject(data.project.id);
+7413:   } catch(e) { toast('导入失败: ' + e.message, 'd'); }
+7414: }
+7415: 
+
+=== pcDeleteAgent ===
+7545: async function pcDeleteAgent(agentName) {
+7546:   if (!confirm('确认从项目中删除 Agent: ' + agentName + '？')) return;
+7547:   try {
+7548:     const res = await fetch('/api/projects/' + currentProjectId + '/agents/' + encodeURIComponent(agentName), { method: 'DELETE' });
+7549:     const data = await res.json();
+7550:     if (data.error) { toast('删除失败: ' + data.error, 'd'); return; }
+7551:     toast('Agent "' + agentName + '" 已删除', 's');
+7552:     pcLoadAgents(); pcLoadFileTree();
+7553:   } catch(e) { toast('删除失败: ' + e.message, 'd'); }
+7554: }
+7555: 
+7556: // ── Skills 管理 ────────────────────────────────────────────────
+7557: async function pcLoadSkills() {
+7558:   if (!currentProjectId) return;
+7559:   try {
+7560:     const res = await fetch('/api/projects/' + currentProjectId + '/skills');
+7561:     const data = await res.json();
+7562:     pcSkillsList = data.skills || [];
+7563:     pcRefreshSkillsDisplay();
+7564:     pcUpdateStatGrid();
+7565:   } catch(e) { console.error('加载 skills 失败', e); }
+7566: }
+7567: 
+7568: // ── 获取合并技能列表（手动 + agent 关联）─────────────────────────────────
+7569: function pcGetMergedSkillList() {
+7570:   var manualSkills = pcSkillsList.map(function(s) {
+7571:     return { name: s.name, path: s.path, source: 'manual' };
+7572:   });
+7573:   var manualNames = new Set(pcSkillsList.map(function(s) { return s.name; }));
+7574:   var agentSkills = [];
+7575:   if (projectData && projectData.agents) {
+
+=== pcDeleteSkill ===
+7660: async function pcDeleteSkill(skillName) {
+7661:   if (!confirm('确认从项目中删除 Skill: ' + skillName + '？\n（将删除 skills/' + skillName + '/ 整个目录）')) return;
+7662:   try {
+7663:     const res = await fetch('/api/projects/' + currentProjectId + '/skills/' + encodeURIComponent(skillName), { method: 'DELETE' });
+7664:     const data = await res.json();
+7665:     if (data.error) { toast('删除失败: ' + data.error, 'd'); return; }
+7666:     toast('Skill "' + skillName + '" 已删除', 's');
+7667:     pcLoadSkills(); pcLoadFileTree();
+7668:   } catch(e) { toast('删除失败: ' + e.message, 'd'); }
+7669: }
+7670: 
+7671: // ── 键盘快捷键 ────────────────────────────────────────────────
+7672: document.addEventListener('keydown', function(e) {
+7673:   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+7674:     const pcView = document.getElementById('project-config-view');
+7675:     if (pcView && pcView.classList.contains('visible') && currentEditFile) {
+7676:       e.preventDefault();
+7677:       pcSaveFile();
+7678:     }
+7679:   }
+7680:   if (e.key === 'Escape') {
+7681:     document.querySelectorAll('.pc-modal-overlay:not(.hidden)').forEach(function(m) { m.classList.add('hidden'); });
+7682:   }
+7683: });
+7684: 
+7685: // ── 辅助：HTML 转义 ───────────────────────────────────────────
+7686: function escHtml(str) {
+7687:   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+7688: }
+7689: 
+7690: 
+
+=== pcTeamDelete ===
+8028: async function pcTeamDelete(type, name) {
+8029:   if (!confirm('确认移除 ' + name + '？此操作将从项目目录中删除该文件。')) return;
+8030:   try {
+8031:     const isAgent  = type === 'agent';
+8032:     const endpoint = isAgent
+8033:       ? ('/api/projects/' + currentProjectId + '/agents/'  + encodeURIComponent(name))
+8034:       : ('/api/projects/' + currentProjectId + '/skills/' + encodeURIComponent(name));
+8035:     const res  = await fetch(endpoint, { method: 'DELETE' });
+8036:     const data = await res.json();
+8037:     if (data.error) { toast('删除失败: ' + data.error, 'd'); return; }
+8038:     toast(name + ' 已移除', 's');
+8039:     if (isAgent) { await pcLoadAgents(); pcTeamRefresh('agent'); }
+8040:     else         { await pcLoadSkills(); pcTeamRefresh('skill'); }
+8041:     pcLoadFileTree();
+8042:   } catch(e) { toast('删除失败: ' + e.message, 'd'); }
+8043: }
+8044: 
+8045: 
+8046: // ══════════════════════════════════════════════════════════════════════════════
+8047: // CLI 扫描 & 团队目录 & 文件复制
+8048: // ══════════════════════════════════════════════════════════════════════════════
+8049: 
+8050: var pcSelectedCLI   = null;   // {id, name, folder}
+8051: var pcCLIScanDone   = false;  // whether scan has been done once
+8052: var pcCopyFileData  = [];     // current copy dialog file list
+8053: var pcCopyAgentName = '';
+8054: 
+8055: // ── CLI Scanner ──────────────────────────────────────────────────────────────
+
+=== pc-stat render ===
+7145:   document.getElementById('pc-overview-meta').textContent = '路径: ' + proj.path;
+7146: }
+7147: 
+7148: function pcUpdateStatGrid() {
+7149:   const grid = document.getElementById('pc-stat-grid');
+7150:   if (!grid) return;
+7151:   grid.innerHTML = '<div class="pc-stat-card agents"><div class="pc-stat-label">Agents</div><div class="pc-stat-value">' + pcAgentsList.length + '</div></div>'
+7152:     + '<div class="pc-stat-card skills"><div class="pc-stat-label">Skills</div><div class="pc-stat-value">' + pcSkillsList.length + '</div></div>';
+7153: }
+7154: 
+7155: // ── 文件树 ────────────────────────────────────────────────────
+7156: async function pcLoadFileTree() {
+7157:   if (!currentProjectId) return;
+7158:   try {
+7159:     const res = await fetch('/api/projects/' + currentProjectId + '/tree');
+7160:     const data = await res.json();
+7161:     pcRenderFileTree(data.tree || []);
+7162:   } catch(e) { console.error('文件树加载失败', e); }
+7163: }
+7164: 
+7165: function pcRenderFileTree(nodes, container, depth) {
+
+=== pcGetMergedSkillList ===
+7514:   else { var _ml = pcGetMergedSkillList(); pcRenderSkillList(_ml.filter(function(s) { return s.name.toLowerCase().indexOf(q) >= 0; })); }
+7569: function pcGetMergedSkillList() {
+7600:   var merged = pcGetMergedSkillList();
+
+=== pcShowCreateModal (6994-7010) ===
+6994: function pcShowCreateModal() {
+6995:   document.getElementById('pc-create-name').value = '';
+6996:   document.getElementById('pc-create-path').value = '';
+6997:   pcShowModal('pc-create-modal');
+6998:   setTimeout(() => document.getElementById('pc-create-name').focus(), 50);
+6999: }
+7000: function pcShowOpenModal() {
+7001:   document.getElementById('pc-open-path').value = '';
+7002:   document.getElementById('pc-from-github-url').value = '';
+7003:   document.getElementById('pc-from-github-name').value = '';
+7004:   document.getElementById('pc-from-github-path').value = '';
+7005:   pcSwitchOpenTab('local');
+7006:   pcShowModal('pc-open-modal');
+7007:   setTimeout(() => document.getElementById('pc-open-path').focus(), 50);
+7008: }
+7009: function pcSwitchOpenTab(tab) {
+7010:   const isLocal = tab === 'local';

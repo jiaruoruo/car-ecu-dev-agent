@@ -1,0 +1,6 @@
+File saved.
+
+Results:
+  A: updated related_skills skill field (skillPath:true)
+  B: inserted _availSkillPaths + _loadAvailSkillPaths before _SS_CFGS
+  C: inserted skillPath rendering branch in _rebuildSSEditor

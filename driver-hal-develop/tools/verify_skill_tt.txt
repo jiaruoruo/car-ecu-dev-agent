@@ -1,0 +1,9 @@
+[OK]   function pcSkillItemClick
+[OK]   function pcSkillItemDblClick
+[OK]   function pcShowSkillTooltip
+[OK]   HTML: id=pc-skill-tooltip
+[OK]   HTML: pc-skill-tt-name
+[OK]   HTML: pc-skill-tt-chips
+[OK]   CSS: pc-sk-tt-chip
+[OK]   skill onclick event
+[OK]   skill ondblclick event

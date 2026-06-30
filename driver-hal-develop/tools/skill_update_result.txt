@@ -1,0 +1,26 @@
+rc: 0
+=== stdout ===
+{
+  "ok": true,
+  "identity": "user",
+  "data": {
+    "doc_id": "FtuLdlCNAov8ytxuieJcnbFNnPd",
+    "log_id": "202606081527009BF9AE3FEC1F0E7126B7",
+    "message": "文档更新成功（replace_range模式）",
+    "mode": "replace_range",
+    "success": true
+  },
+  "_notice": {
+    "update": {
+      "command": "lark-cli update",
+      "current": "1.0.45",
+      "latest": "1.0.48",
+      "message": "lark-cli 1.0.48 available, current 1.0.45, run: lark-cli update"
+    }
+  }
+}
+
+=== stderr ===
+[deprecated] docs +update is using the v1 API. Check the installed lark-doc skill first; if it is not the v2 skill, run `lark-cli update` to upgrade skills.
+warning: --mode=replace_range does not split a block into multiple paragraphs; the blank line in --markdown will render as literal text. For multiple paragraphs, use --mode=delete_range followed by --mode=insert_before.
+

@@ -1,0 +1,2 @@
+OK: inserted pcGetMergedSkillList + pcRefreshSkillsDisplay before pcRenderSkillList
+Total len: 314307

@@ -1,0 +1,5 @@
+File saved.
+
+Results:
+  A: skillPath field changed from datalist to select
+  B: _renderSSEditor auto-loads skill paths before rebuild

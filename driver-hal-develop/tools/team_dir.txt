@@ -1,0 +1,46 @@
+720:         agents_dir.mkdir(exist_ok=True)
+736:         agents_dir.mkdir(exist_ok=True)
+2532: @app.route("/api/projects/<project_id>/setup_team_dir", methods=["POST"])
+2533: def api_setup_team_dir(project_id):
+
+=== api_setup_team_dir function ===
+2531: 
+2532: @app.route("/api/projects/<project_id>/setup_team_dir", methods=["POST"])
+2533: def api_setup_team_dir(project_id):
+2534:     """在项目目录下创建以 CLI 命名的团队目录及子目录。"""
+2535:     body = request.get_json(silent=True) or {}
+2536:     folder_name = body.get("folder", "").strip()
+2537:     if not folder_name:
+2538:         return jsonify({"error": "folder 为必填项"}), 400
+2539:     project = project_manager.get_project(project_id)
+2540:     if not project:
+2541:         return jsonify({"error": "项目不存在"}), 404
+2542:     project_path = Path(project["path"])
+2543:     team_dir = project_path / folder_name
+2544:     subdirs = ["agents", "skills", "knowledge", "rules", "tools"]
+2545:     try:
+2546:         already_existed = team_dir.exists()
+2547:         team_dir.mkdir(parents=True, exist_ok=True)
+2548:         for sub in subdirs:
+2549:             (team_dir / sub).mkdir(exist_ok=True)
+2550:         return jsonify({
+2551:             "status": "ok", "team_dir": str(team_dir),
+2552:             "subdirs": subdirs, "already_existed": already_existed,
+2553:         })
+2554:     except Exception as e:
+2555:         return jsonify({"error": str(e)}), 500
+2556: 
+2557: 
+2558: def _resolve_ref_path(ref, subdir):
+2559:     """Resolve a reference to an absolute Path, or None."""
+2560:     if not ref:
+2561:         return None
+2562:     p = Path(str(ref).strip())
+2563:     if p.is_absolute() and p.exists():
+2564:         return p
+2565:     for base in [PROJECT_ROOT / p, PROJECT_ROOT / subdir / p]:
+2566:         if base.exists():
+2567:             return base
+2568:     return None
+2569: 
+2570: 

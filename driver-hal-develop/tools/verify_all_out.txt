@@ -1,0 +1,20 @@
+=======================================================
+  PASS: 13   FAIL: 0
+=======================================================
+
+PASS:
+  ✓ A - YAML removed from _rebuildSSEditor hdr: OK
+  ✓ B - stringlist items collapsible: OK
+  ✓ C - YAML removed from _renderKnAreaEditor hdr: OK
+  ✓ C - OLD YAML absent: OK
+  ✓ D - toggle arrow in kna-card-hdr: OK
+  ✓ E - kna body-div ID: OK
+  ✓ E - kna delete stopPropagation: OK
+  ✓ F - cardsHtml toggle: OK
+  ✓ F - Markdown badge removed from cardsHtml: OK
+  ✓ G - newCardsHtml collapsible: OK
+  ✓ H - Markdown tag removed from instr hdr: OK
+  ✓ H - Markdown tag removed from instr hdr: OK
+  ✓ toggleSSCard function referenced: OK
+
+  All checks passed!

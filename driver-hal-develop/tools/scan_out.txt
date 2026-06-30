@@ -1,0 +1,102 @@
+Total lines: 8350
+
+--- [pcDoCreate] (4 hits) ---
+  1663:           autocomplete="off" onkeydown="if(event.key==='Enter')pcDoCreate()">
+  1670:             autocomplete="off" onkeydown="if(event.key==='Enter')pcDoCreate()" style="flex:1">
+  1678:       <button class="pc-btn-primary" onclick="pcDoCreate()">➕ 创建项目</button>
+  7381: async function pcDoCreate() {
+
+--- [pcDeleteAgent] (2 hits) ---
+  7506:       + '<span class="item-del" onclick="event.stopPropagation();pcDeleteAgent(\'' + escHtml(a.name) + '\')" title="删除 Agent">✕</span>'
+  7545: async function pcDeleteAgent(agentName) {
+
+--- [pcDeleteSkill] (2 hits) ---
+  7623:       + (isManual ? '<span class="item-del" onclick="event.stopPropagation();pcDeleteSkill(\'' + escHtml(s.name) + '\')" title="删除 Skill">✕<
+  7660: async function pcDeleteSkill(skillName) {
+
+--- [pcShowCreate] (3 hits) ---
+  1488:           <button class="pc-action-btn" onclick="pcShowCreateModal()" title="新建项目">➕ 新建</button>
+  1575:             <button class="pc-btn-primary" onclick="pcShowCreateModal()">➕ 新建项目</button>
+  6994: function pcShowCreateModal() {
+
+--- [confirm(] (8 hits) ---
+  3627:   if (!confirm('确定删除「' + name + '」？')) return;
+  3651:   if (!confirm('确定删除 Step「' + name + '」？')) return;
+  7118:     if (!confirm('当前文件有未保存的修改，切换项目将丢弃更改，继续？')) return;
+  7217:     if (!confirm('当前文件有未保存修改，继续打开新文件将丢弃更改？')) return;
+  7269:   if (editorDirty && !confirm('有未保存修改，确认关闭？')) return;
+  7546:   if (!confirm('确认从项目中删除 Agent: ' + agentName + '？')) return;
+  7661:   if (!confirm('确认从项目中删除 Skill: ' + skillName + '？\n（将删除 skills/' + skillName + '/ 整个目录）')) return;
+  8029:   if (!confirm('确认移除 ' + name + '？此操作将从项目目录中删除该文件。')) return;
+
+--- [pcSkillsList] (8 hits) ---
+  6973: let pcSkillsList     = [];
+  7152:     + '<div class="pc-stat-card skills"><div class="pc-stat-label">Skills</div><div class="pc-stat-value">' + pcSkillsList.length + '</div><
+  7470:       pcAgentsList = []; pcSkillsList = [];
+  7562:     pcSkillsList = data.skills || [];
+  7570:   var manualSkills = pcSkillsList.map(function(s) {
+  7573:   var manualNames = new Set(pcSkillsList.map(function(s) { return s.name; }));
+  7753:   const items  = (type === 'agent') ? (pcAgentsList || []) : (pcSkillsList || []);
+  7836:   var existingNames = ((type === 'agent') ? (pcAgentsList || []) : (pcSkillsList || []))
+
+--- [api/projects/create] (1 hits) ---
+  7386:     const res = await fetch('/api/projects/create', {
+
+--- [deleteAgent] (12 hits) ---
+  2120: <div id="delete-agent-modal" class="modal-overlay" onclick="if(event.target===this)closeDeleteAgentModal()">
+  2125:       <button class="modal-close" onclick="closeDeleteAgentModal()" title="关闭 (ESC)">✕</button>
+  2139:       <button class="modal-btn-cancel" onclick="closeDeleteAgentModal()">取消</button>
+  2140:       <button class="modal-btn-danger" id="delete-agent-confirm-btn" onclick="doDeleteAgent()">🗑️ 确认删除</button>
+  2393:         <span class="ccard-del-btn" title="删除此 Agent" onclick="event.stopPropagation();openDeleteAgentModal('${a.id}','${escHtml(a.name)}')"
+  5722: function openDeleteAgentModal(agentId, agentName) {
+  5730: function closeDeleteAgentModal() {
+  5734: async function doDeleteAgent() {
+
+--- [deleteSkill] (15 hits) ---
+  2259: <div id="delete-skill-modal" class="modal-overlay" onclick="if(event.target===this)closeDeleteSkillModal()">
+  2264:       <button class="modal-close" onclick="closeDeleteSkillModal()" title="关闭 (ESC)">✕</button>
+  2276:       <button class="modal-btn-cancel" onclick="closeDeleteSkillModal()">取消</button>
+  2277:       <button class="modal-btn-danger" id="delete-skill-confirm-btn" onclick="doDeleteSkill()">🗑️ 确认删除</button>
+  2461:         <span class="ccard-del-btn" title="删除此 Skill" onclick="event.stopPropagation();openDeleteSkillModal('${s.id}','${escHtml(s.name)}')"
+  2526:       <button class="sp-btn sp-btn-del" onclick="openDeleteSkillModal('${s.id}','${escHtml(s.name)}')">🗑️ 删除</button>
+  3803:   delBtn.addEventListener('click', () => _deleteSkill(idx));
+  3893: function _deleteSkill(idx) {
+
+--- [pcSelectProject] (5 hits) ---
+  7107:     return '<div class="pc-proj-item' + active + '" onclick="pcSelectProject(\'' + p.id + '\')" title="' + escHtml(p.path) + '">'
+  7116: async function pcSelectProject(projectId) {
+  7395:     pcSelectProject(data.project.id);
+  7412:     pcSelectProject(data.project.id);
+  7442:     pcSelectProject(data.project.id);
+
+--- [pcLoadProject] (6 hits) ---
+  6987:   if (isProject) { pcLoadProjects(); }
+  7089: async function pcLoadProjects() {
+  7394:     await pcLoadProjects();
+  7411:     await pcLoadProjects();
+  7441:     await pcLoadProjects();
+  7475:     await pcLoadProjects();
+
+--- [pc-stat] (11 hits) ---
+  1224: .pc-stat-grid{
+  1227: .pc-stat-card{
+  1231: .pc-stat-label{font-size:11px;color:var(--tx-m);margin-bottom:4px}
+  1232: .pc-stat-value{font-size:22px;font-weight:700;color:var(--tx-p)}
+  1233: .pc-stat-card.agents .pc-stat-value{color:var(--ca)}
+  1234: .pc-stat-card.skills .pc-stat-value{color:var(--cs)}
+  1235: .pc-stat-card.files .pc-stat-value{color:var(--cc)}
+  1637:           <div class="pc-stat-grid" id="pc-stat-grid" style="margin-top:14px"></div>
+
+--- [pcTeamDelete] (2 hits) ---
+  7767:       + '<button onclick="pcTeamDelete(' + safeType + ',' + safeName + ')" '
+  8028: async function pcTeamDelete(type, name) {
+
+--- [pcRenderAgentList] (3 hits) ---
+  7486:     pcRenderAgentList(pcAgentsList);
+  7493: function pcRenderAgentList(agents) {
+  7513:   if (type === 'agent') pcRenderAgentList(pcAgentsList.filter(function(a) { return a.name.toLowerCase().indexOf(q) >= 0; }));
+
+--- [pcRenderSkillList] (3 hits) ---
+  7514:   else { var _ml = pcGetMergedSkillList(); pcRenderSkillList(_ml.filter(function(s) { return s.name.toLowerCase().indexOf(q) >= 0; })); }
+  7602:   pcRenderSkillList(merged);
+  7605: function pcRenderSkillList(skills) {

@@ -1,0 +1,148 @@
+{
+  "description": "TLF35584 PMIC Driver - Default Parameters",
+  "note": "ALL register addresses verified against Infineon TLF35584 datasheet v02_00-EN",
+  "_locked_params_warning": "Parameters with locked=true MUST NOT be modified by LLM or user",
+
+  "version": "2.0.0",
+  "prefix": "Gp_TLF35584",
+  "module_prefix": "TLF35584",
+
+  "spi": {
+    "max_freq_hz": 10000000,
+    "recommended_freq_hz": 5000000,
+    "cpol": 0,
+    "cpha": 1,
+    "timeout_us": 1000,
+    "retry_max": 3,
+    "locked": true,
+    "comment": "CPOL=0, CPHA=1 is the only supported SPI mode for TLF35584"
+  },
+
+  "init": {
+    "retry_max": 4,
+    "retry_delay_us": 100,
+    "state_change_delay_us": 5000,
+    "locked": true,
+    "comment": "Init retry max 4 per datasheet recommendation"
+  },
+
+  "watchdog": {
+    "fwd_fail_max": 5,
+    "fwd_service_interval_ms": 10,
+    "wwd_service_interval_ms": 10,
+    "locked": false,
+    "comment": "Watchdog timing is application-dependent, user may override"
+  },
+
+  "bist": {
+    "enable_on_init": 1,
+    "timeout_us": 100000,
+    "locked": false
+  },
+
+  "emb_recovery": {
+    "fast_delay_us": 100,
+    "slow_delay_us": 1000,
+    "locked": false
+  },
+
+  "fault_monitoring": {
+    "poll_interval_ms": 10,
+    "sample_max": 3,
+    "clear_value": 255,
+    "clear_value_hex": "0xFF",
+    "readback_verify": true,
+    "locked": true,
+    "comment": "0xFF clear (rw1c) + readback verify for stuck-at immunity"
+  },
+
+  "registers": [
+    { "name": "PROTCFG",     "addr": 3,     "type": "config", "locked": true },
+    { "name": "SYSPCFG0",    "addr": 4,     "type": "config", "locked": true },
+    { "name": "SYSPCFG1",    "addr": 5,     "type": "config", "locked": true },
+    { "name": "WDCFG0",      "addr": 6,     "type": "config", "locked": true },
+    { "name": "WDCFG1",      "addr": 7,     "type": "config", "locked": true },
+    { "name": "FWDCFG",      "addr": 8,     "type": "config", "locked": true },
+    { "name": "WWDCFG0",     "addr": 9,     "type": "config", "locked": true },
+    { "name": "WWDCFG1",     "addr": 10,    "type": "config", "locked": true },
+    { "name": "RSYSPCFG0",   "addr": 12,    "type": "shadow", "locked": true },
+    { "name": "RSYSPCFG1",   "addr": 13,    "type": "shadow", "locked": true },
+    { "name": "RWDCFG0",     "addr": 14,    "type": "shadow", "locked": true },
+    { "name": "RWDCFG1",     "addr": 15,    "type": "shadow", "locked": true },
+    { "name": "RFWDCFG",     "addr": 16,    "type": "shadow", "locked": true },
+    { "name": "RWWDCFG0",    "addr": 17,    "type": "shadow", "locked": true },
+    { "name": "RWWDCFG1",    "addr": 18,    "type": "shadow", "locked": true },
+    { "name": "WKTIMCFG0",   "addr": 19,    "type": "config", "locked": true },
+    { "name": "WKTIMCFG1",   "addr": 20,    "type": "config", "locked": true },
+    { "name": "WKTIMCFG2",   "addr": 21,    "type": "config", "locked": true },
+    { "name": "DEVCTRL",     "addr": 22,    "type": "control", "locked": true },
+    { "name": "DEVCTRLN",    "addr": 23,    "type": "control", "locked": true },
+    { "name": "WWDSCMD",     "addr": 24,    "type": "control", "locked": true },
+    { "name": "FWDRSP",      "addr": 25,    "type": "control", "locked": true },
+    { "name": "FWDRSPSYNC",  "addr": 26,    "type": "control", "locked": true },
+    { "name": "SYSFAIL",     "addr": 27,    "type": "fault", "locked": true },
+    { "name": "INITERR",     "addr": 28,    "type": "fault", "locked": true },
+    { "name": "IF",          "addr": 29,    "type": "fault", "locked": true },
+    { "name": "SYSSF",       "addr": 30,    "type": "fault", "locked": true },
+    { "name": "WKSF",        "addr": 31,    "type": "fault", "locked": true },
+    { "name": "SPISF",       "addr": 32,    "type": "fault", "locked": true },
+    { "name": "MONSF0",      "addr": 33,    "type": "fault", "locked": true },
+    { "name": "MONSF1",      "addr": 34,    "type": "fault", "locked": true },
+    { "name": "MONSF2",      "addr": 35,    "type": "fault", "locked": true },
+    { "name": "MONSF3",      "addr": 36,    "type": "fault", "locked": true },
+    { "name": "OTFAIL",      "addr": 37,    "type": "fault", "locked": true },
+    { "name": "OTWRNSF",     "addr": 38,    "type": "fault", "locked": true },
+    { "name": "VMONSTAT",    "addr": 39,    "type": "status", "locked": true },
+    { "name": "DEVSTAT",     "addr": 40,    "type": "status", "locked": true },
+    { "name": "PROTSTAT",    "addr": 41,    "type": "status", "locked": true },
+    { "name": "WWDSTAT",     "addr": 42,    "type": "status", "locked": true },
+    { "name": "FWDSTAT0",    "addr": 43,    "type": "status", "locked": true },
+    { "name": "FWDSTAT1",    "addr": 44,    "type": "status", "locked": true },
+    { "name": "ABIST_CTRL0", "addr": 45,    "type": "bist", "locked": true },
+    { "name": "ABIST_CTRL1", "addr": 46,    "type": "bist", "locked": true },
+    { "name": "ABIST_SEL0",  "addr": 47,    "type": "bist", "locked": true },
+    { "name": "ABIST_SEL1",  "addr": 48,    "type": "bist", "locked": true },
+    { "name": "ABIST_SEL2",  "addr": 49,    "type": "bist", "locked": true },
+    { "name": "BCK_FREQ",    "addr": 50,    "type": "config", "locked": true },
+    { "name": "GTM",         "addr": 63,    "type": "status", "locked": true }
+  ],
+
+  "protection_sequence": {
+    "unlock": [171, 239, 86, 18],
+    "lock": [223, 52, 190, 202],
+    "locked": true,
+    "comment": "Values verified against Infineon TLF35584 datasheet. Decimal values: 0xAB,0xEF,0x56,0x12 / 0xDF,0x34,0xBE,0xCA"
+  },
+
+  "fwd_response_table": {
+    "entries": [
+      4279230464, 2955673423, 3912532502, 2792061273,
+      1973412490, 985147845, 1670440092, 752353747,
+      3528016429, 2640238690, 3288118075, 2339496052,
+      1487568807, 401830248, 1321588145, 33619966
+    ],
+    "locked": true,
+    "comment": "16-entry lookup table matched to chip internal algorithm. Decimal equivalents of hex table."
+  },
+
+  "device_states": {
+    "INIT": 0,
+    "NORMAL": 1,
+    "STANDBY": 2,
+    "SLEEP": 3,
+    "WAKE": 4,
+    "FAILSAFE": 5,
+    "POWERDOWN": 6,
+    "locked": true
+  },
+
+  "fault_groups": {
+    "CHIP": 0,
+    "POWER": 1,
+    "WATCHDOG": 2,
+    "BIST": 3,
+    "SPI": 4,
+    "COUNT": 5,
+    "locked": true
+  }
+}

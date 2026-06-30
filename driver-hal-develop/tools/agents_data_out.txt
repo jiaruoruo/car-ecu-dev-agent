@@ -1,0 +1,18 @@
+2326:   window._skillsData = skills;
+2404:   const s = (window._skillsData || []).find(x => x.id === skillId);
+2858: let _skillsData   = []; // 当前编辑的 skills 数组（parsed）
+2876:   _skillsData   = [];
+3627:   _skillsData = _parseSkillsYaml(raw);
+3642:     `<span style="margin-left:auto;font-size:10px;color:var(--tx-m)">${_skillsData.length} 个已关联</span>`;
+3650:   if (_skillsData.length === 0) {
+3658:     _skillsData.forEach((sk, idx) => list.appendChild(_buildSkillRow(sk, idx)));
+3710:     _skillsData[idx].proficiency = profSel.value;
+3711:     _editSec['skills'] = _dumpSkillsYaml(_skillsData);
+3734:   const addedPaths = new Set(_skillsData.map(s => s.skill));
+3800:   if (_skillsData.some(s => s.skill === skillId)) {
+3803:   _skillsData.push({ skill: skillId, proficiency: 'advanced' });
+3804:   _editSec['skills'] = _dumpSkillsYaml(_skillsData);
+3810:   const name = _skillsData[idx]?.skill || 'Skill';
+3811:   _skillsData.splice(idx, 1);
+3812:   _editSec['skills'] = _dumpSkillsYaml(_skillsData);
+7695:   var items = (type === 'agent') ? (agentsData || []) : (skillsData || []);

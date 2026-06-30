@@ -1,0 +1,6 @@
+File saved.
+
+Results:
+  B: stringlist items converted to collapsible cards
+  E: added ID to kna body div + stopPropagation on delete btn
+  G: newCardsHtml - added toggle arrow

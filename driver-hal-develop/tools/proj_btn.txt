@@ -1,0 +1,46 @@
+=== Header area (1376-1420) ===
+1376: <header id="hdr">
+1377:   <div class="logo">
+1378:     <span>🚗</span>
+1379:     <span>Embedded Software Develop Agents Team</span>
+1380:   </div>
+1381:   <div class="spacer"></div>
+1382:   <!-- 视图切换 -->
+1383:   <button class="btn-view active" id="btn-view-route" onclick="switchMainView('route')" title="开发资源池">🗃 开发资源池</button>
+1384:   <button class="btn-view" id="btn-view-project" onclick="switchMainView('project')" title="项目配置">🗂 项目配置</button>
+1385:   <div style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>
+1386:   <div class="conn off" id="conn">
+1387:     <div class="dot"></div>
+1388:     <span id="conn-txt">连接中…</span>
+1389:   </div>
+1390:   <button class="btn-h" onclick="doRefresh()">🔄 刷新</button>
+1391: </header>
+1392: 
+1393: <div id="page">
+1394: 
+1395:   <!-- ── DASHBOARD (上方：组件信息) ── -->
+1396:   <section id="dashboard">
+1397:     <div class="tab-bar">
+1398:       <button class="tab active" data-tab="agents"   onclick="switchTab('agents')">
+1399:         🤖 Agents <span class="tab-count" id="cnt-agents">-</span>
+1400:       </button>
+1401:       <button class="tab" data-tab="skills"   onclick="switchTab('skills')">
+1402:         ⚙️ Skills <span class="tab-count" id="cnt-skills">-</span>
+1403:       </button>
+1404:       <button class="tab" data-tab="rules"    onclick="switchTab('rules')">
+1405:         📋 Rules <span class="tab-count" id="cnt-rules">-</span>
+1406:       </button>
+1407:       <button class="tab" data-tab="knowledge" onclick="switchTab('knowledge')">
+1408:         📚 Knowledge <span class="tab-count" id="cnt-knowledge">-</span>
+1409:       </button>
+1410:       <button class="tab" data-tab="tools"   onclick="switchTab('tools')">
+1411:         🔧 Tools <span class="tab-count" id="cnt-tools">-</span>
+1412:       </button>
+1413:     </div>
+1414:     <div id="tab-agents"    class="tab-panel active"><div class="cards" id="cards-agents"></div></div>
+1415:     <div id="tab-skills"    class="tab-panel" style="padding:0;overflow:hidden">
+1416:       <div class="skills-layout">
+1417:         <div class="skills-sidebar" id="sidebar-skills"></div>
+1418:         <div class="sb-resize-handle" id="sb-resize-handle"></div>
+1419:         <div style="flex:1;overflow-y:auto;padding:12px 14px">
+1420:           <div class="cards" id="cards-skills"></div>

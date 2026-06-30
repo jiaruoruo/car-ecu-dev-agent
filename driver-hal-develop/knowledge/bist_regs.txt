@@ -1,0 +1,507 @@
+
+============================================================
+KEYWORD: [ABIST]  found on pages: [4, 86, 87, 94, 112, 138, 139, 140, 141, 142, 143, 144, 145, 168, 190, 192, 208, 209, 210, 211, 212, 213, 219]
+
+--- Page 4 ---
+. . . . . . .  136
+11.6
+Built In Self Test (BIST) Features . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  138
+11.6.1
+Analog Built In Self Test (ABIST) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  138
+11.6.1.1
+How to run the ABIST  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  139
+11.6.1.2
+Testing the comparator logic only  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  141
+11.6.1.3
+Testing the comparator logic and the corresponding deglitching logic  . . . . . . . . . . . . . . . . . . .  142
+11.6.1.4
+Testing the complete monitoring chain (comparators, deglitching and output) . . . . . . . . . . . . .  144
+11.6.1.5
+Abort conditions for ABIST operation  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  145
+11.6.2
+Logic Built 
+
+--- Page 86 ---
+ERDOWN
+ Internal Supplies
+ Supply VS    
+UV, OV
+UV  
+*   : Switched ON by entering the INIT state, then selectable via SPI
+** : Switched ON by default after POR, then selectable via SPI
+SPI: 
+Start ABIST
+-> Generate Interrupt
+SPI: 
+Go to NORMAL
+ENA = /WAK = 1
+Wakeup-Timer expired/
+SPI: Go to 
+NORMAL
+ (config)
+Power-On-Reset 
+(POR) released.
+(int. supplies ok)
+ENA =  or
+ WAK = 1
+&
+SPI: Go to 
+STANDBY/
+μC current not 
+below threshold
+-> Generate 
+RESET
+NO ENA    , 
+WAK = 0
+&
+SPI: Go to 
+STANDBY
+SPI: Go to 
+STANDBY
+ENA = /
+WAK = 1/
+Timer expired
+LDO_μC
+ON
+LDO_Com
+SELECTED
+Tr 1 & 2
+SELECTED
+Core_Sup adj
+ADJUSTED
+LDO_Stby
+SELECTED
+Volt_Ref
+SELECTED
+PreReg
+ON
+WatchDogs
+SELECTED
+RESET
+HIGH
+Wakeup-T
+SELECTED
+SSC, SS1&2
+LOW
+SLEEP
+Error Monitoring
+SELECTED
+ENA = 1 or WAK = 1
+&
+SPI: Go to SLEEP/
+μC current not below 
+threshold
+-> Generate Interrupt
+NO ENA = ,
+ WAK = 0
+&
+SPI: Go to 
+SLEEP
+ENA = 1or WAK = 1
+or
+SPI: Go to WAKE/
+Wakeup-Timer expired/
+μC current  not below 
+threshold
+-> Generate Int
+
+============================================================
+KEYWORD: [INITERR]  found on pages: [68, 139, 142, 143, 144, 168, 191]
+
+--- Page 68 ---
+r event is
+detected, pins Safe State Control Outputs (SS1 and SS2) and ROT will be pulled to ground. The safe state control
+trigger event will be stored in a SPI register (respective bits in SYSFAIL, INITERR, MONSF1, MONSF2, MONSF3
+or OTFAIL). For trigger conditions of safe state signal SS1 please refer to chapter Safe State Control Function.
+Reset output pin
+The reset output pin ROT is an open drain structure. As soon as a reset condition occurs, the ROT pin is pulled
+below VROT,low. An internal pull up current is pulling the output towards VQUC.
+Figure 19
+Principle reset function
+OV
+UV
+OV
+UV
+OV
+UV
+OV
+UV
+VRT,QUC,low 
+VRT,QUC,high
+VRT,VCI,low 
+VRT,VCI,high 
+Bandgap 2
+For Safety block
+VRT,QVR,high 
+Actual value 
+Q_LDO_μC
+Actual value 
+PreReg
+Actual value 
+Volt_Ref.
+Actual value 
+Core_sup adj.
+VRT,QVR,low 
+VRT,FB,high 
+VRT,FB,low 
+SPI Status Register
+ROT
+≥ 1
+EVC
+OV
+VRT,QST,low 
+VRT,QST,high  
+Actual value 
+Q_STBY_LDO
+Shutdown all Regs.
+UV
+Internal Supply 
+Monitoring
+≥ 1
+≥ tStG
+≥ 1
+≥ tStG
+
+--- Page 139 ---
+g can be disabled during ABIST
+operation via a protected register access. In this case, no servicing is required.
+During a performed ABIST including the deglitching logic the FLAG registers (SYSFAIL, INITERR, IF) as well as
+the status information (MONSF1, MONSF2, MONSF3) are triggered and updated by out of range conditions
+caused by the ABIST functionality, which has to be considered beside the results provided in the ABIST related
+registers (ABIST_CTRL0 to ABIST_SELECT2).
+During the time, when the ABIST is performed by internal hardware, the assertion of ROT due to the occurrence
+of any event which is supposed to trigger the respective action and is part of the logic which is affected by the
+ABIST control is blocked. In addition, the state machine will not change its state according to the reaction on
+detected faults described in Chapter 11.4. In case an ABIST contributing to the secondary safety shutdown path
+is started and the device is in NORMAL state, the state machine will move f
+
+============================================================
+KEYWORD: [MONSF2]  found on pages: [43, 49, 53, 56, 59, 67, 68, 70, 71, 72, 77, 119, 139, 142, 143, 144, 145, 168, 191, 192, 199]
+
+--- Page 43 ---
+ed in the SPI status 
+register (MONSF1). In case of under voltage at pin QUC, the device will move into INIT state, pin ROT will be 
+pulled low and the event will be stored in an SPI status register (MONSF2). The regulator will not be switched 
+off in case of output under voltage, which is shorter than the short to ground detection time tStG. If the under 
+voltage should be present for more than tStG, the device will move into FAILSAFE state. This event will be 
+stored in an SPI status register as well (MONSF0).
+•
+There is a dedicated temperature sensor for this regulator. In case the power stage temperature exceeds the 
+pre warning threshold, an interrupt will indicate this event and it will be stored in an SPI status register 
+(OTWRNSF). If the power stage temperature exceeds the temperature shutdown threshold, the device will 
+move into FAILSAFE state, the regulator will be switched off and the event will be stored in an SPI status 
+register (OTFAIL). The off time due to temperature
+
+--- Page 49 ---
+ll be indicated by an interrupt and stored in an SPI status register (MONSF1). 
+In case of under voltage at pin QCO, the event will be indicated by an interrupt and stored in an SPI status 
+register (MONSF2). The regulator will not be switched off in case of output under voltage, which is shorter than 
+the short to ground detection time tStG. If the under voltage should be present for more than tStG, the regulator 
+will be switched off. This event will be stored in the SPI status register (MONSF0) and an interrupt will be 
+generated.
+•
+There is a dedicated temperature sensor for this regulator. In case the power stage temperature exceeds the 
+pre warning threshold, an interrupt will indicate this event and it will be stored in an SPI status register 
+(OTWRNSF). If the power stage temperature exceeds the temperature shutdown threshold, this event will be 
+stored in an SPI status register (OTFAIL), the regulator will be switched off and an interrupt will be generated. 
+After a temperatur
+
+============================================================
+KEYWORD: [MONSF0]  found on pages: [43, 49, 53, 56, 59, 67, 70, 71, 72, 77, 119, 127, 168, 190, 192, 197]
+
+--- Page 43 ---
+hort to ground detection time tStG. If the under 
+voltage should be present for more than tStG, the device will move into FAILSAFE state. This event will be 
+stored in an SPI status register as well (MONSF0).
+•
+There is a dedicated temperature sensor for this regulator. In case the power stage temperature exceeds the 
+pre warning threshold, an interrupt will indicate this event and it will be stored in an SPI status register 
+(OTWRNSF). If the power stage temperature exceeds the temperature shutdown threshold, the device will 
+move into FAILSAFE state, the regulator will be switched off and the event will be stored in an SPI status 
+register (OTFAIL). The off time due to temperature shut down will be at least one second.
+If the device enters FAILSAFE state the ROT is pulled low and all supplies are switched off.
+If the device enters STANDBY state the LDO_µC is switched off
+For further details please refer to Chapter 11 State Machine.
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+--- Page 49 ---
+er than 
+the short to ground detection time tStG. If the under voltage should be present for more than tStG, the regulator 
+will be switched off. This event will be stored in the SPI status register (MONSF0) and an interrupt will be 
+generated.
+•
+There is a dedicated temperature sensor for this regulator. In case the power stage temperature exceeds the 
+pre warning threshold, an interrupt will indicate this event and it will be stored in an SPI status register 
+(OTWRNSF). If the power stage temperature exceeds the temperature shutdown threshold, this event will be 
+stored in an SPI status register (OTFAIL), the regulator will be switched off and an interrupt will be generated. 
+After a temperature shut down the LDO_Com can be re enabled via SPI command.
+The regulator LDO_Com is switched off in STANDBY and FAILSAFE state. In INIT, SLEEP, NORMAL and WAKE
+state LDO_Com is ON or OFF depending on the SPI configuration.
+For further details please refer to Chapter 11 State Machine.
+Downloaded
+
+============================================================
+KEYWORD: [MONSF1]  found on pages: [43, 49, 53, 56, 59, 67, 68, 70, 71, 72, 77, 119, 139, 142, 143, 144, 145, 168, 190, 192, 198]
+
+--- Page 43 ---
+red by the voltage monitoring. In case of over voltage at pin QUC, the LDO_µC 
+will be switched off and the device will move into FAILSAFE state. The event will be stored in the SPI status 
+register (MONSF1). In case of under voltage at pin QUC, the device will move into INIT state, pin ROT will be 
+pulled low and the event will be stored in an SPI status register (MONSF2). The regulator will not be switched 
+off in case of output under voltage, which is shorter than the short to ground detection time tStG. If the under 
+voltage should be present for more than tStG, the device will move into FAILSAFE state. This event will be 
+stored in an SPI status register as well (MONSF0).
+•
+There is a dedicated temperature sensor for this regulator. In case the power stage temperature exceeds the 
+pre warning threshold, an interrupt will indicate this event and it will be stored in an SPI status register 
+(OTWRNSF). If the power stage temperature exceeds the temperature shutdown threshold, the dev
+
+--- Page 49 ---
+oltage is monitored by the voltage monitoring. In case of over voltage at pin QCO, the LDO_Com 
+will be switched off, the event will be indicated by an interrupt and stored in an SPI status register (MONSF1). 
+In case of under voltage at pin QCO, the event will be indicated by an interrupt and stored in an SPI status 
+register (MONSF2). The regulator will not be switched off in case of output under voltage, which is shorter than 
+the short to ground detection time tStG. If the under voltage should be present for more than tStG, the regulator 
+will be switched off. This event will be stored in the SPI status register (MONSF0) and an interrupt will be 
+generated.
+•
+There is a dedicated temperature sensor for this regulator. In case the power stage temperature exceeds the 
+pre warning threshold, an interrupt will indicate this event and it will be stored in an SPI status register 
+(OTWRNSF). If the power stage temperature exceeds the temperature shutdown threshold, this event will be 
+sto
+
+============================================================
+KEYWORD: [BIST]  found on pages: [4, 86, 87, 94, 112, 138, 139, 140, 141, 142, 143, 144, 145, 168, 190, 192, 208, 209, 210, 211, 212, 213, 219]
+
+--- Page 4 ---
+. . . . . . . . .  135
+11.5
+Electrical Characteristics  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  136
+11.6
+Built In Self Test (BIST) Features . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  138
+11.6.1
+Analog Built In Self Test (ABIST) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  138
+11.6.1.1
+How to run the ABIST  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  139
+11.6.1.2
+Testing the comparator logic only  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  141
+11.6.1.3
+Testing the comparator logic and the corresponding deglitching logic  . . . . . . . . . . . . . . . . . . .  142
+11.6.1.4
+Testing the complete monitoring chain (comparators, deglitching and output) . . . . . . . . . . . . .  144
+11.
+
+--- Page 86 ---
+RDOWN
+ Internal Supplies
+ Supply VS    
+UV, OV
+UV  
+*   : Switched ON by entering the INIT state, then selectable via SPI
+** : Switched ON by default after POR, then selectable via SPI
+SPI: 
+Start ABIST
+-> Generate Interrupt
+SPI: 
+Go to NORMAL
+ENA = /WAK = 1
+Wakeup-Timer expired/
+SPI: Go to 
+NORMAL
+ (config)
+Power-On-Reset 
+(POR) released.
+(int. supplies ok)
+ENA =  or
+ WAK = 1
+&
+SPI: Go to 
+STANDBY/
+μC current not 
+below threshold
+-> Generate 
+RESET
+NO ENA    , 
+WAK = 0
+&
+SPI: Go to 
+STANDBY
+SPI: Go to 
+STANDBY
+ENA = /
+WAK = 1/
+Timer expired
+LDO_μC
+ON
+LDO_Com
+SELECTED
+Tr 1 & 2
+SELECTED
+Core_Sup adj
+ADJUSTED
+LDO_Stby
+SELECTED
+Volt_Ref
+SELECTED
+PreReg
+ON
+WatchDogs
+SELECTED
+RESET
+HIGH
+Wakeup-T
+SELECTED
+SSC, SS1&2
+LOW
+SLEEP
+Error Monitoring
+SELECTED
+ENA = 1 or WAK = 1
+&
+SPI: Go to SLEEP/
+μC current not below 
+threshold
+-> Generate Interrupt
+NO ENA = ,
+ WAK = 0
+&
+SPI: Go to 
+SLEEP
+ENA = 1or WAK = 1
+or
+SPI: Go to WAKE/
+Wakeup-Timer expired/
+μC current  not below 
+threshold
+-> Generate Inte
+
+============================================================
+KEYWORD: [ABIST_CTRL]  found on pages: [138, 139, 141, 142, 143, 144, 145, 168, 208, 209]
+
+--- Page 138 ---
+t.
+The following status information on ABIST operation is generated by the system:
+•
+In case an ABIST operation has been requested by the µC, a status is provided after the ABIST has been 
+performed (ABIST_CTRL0.STATUS). This status needs to be evaluated by the µC. The provided status is just 
+a GO-NOGO information, which means information about a particularly tested path is provided. The basic 
+comparator function is tested, but not the respective threshold values.
+The test of the monitoring and safety relevant output functions is run on three different areas in the system:
+•
+The functionality of a comparator and its corresponding deglitching logic can be tested by a “comparator only” 
+test. This test is performed by generating the failure condition for a time shorter than the deglitching time, 
+accordingly the secondary safety shutdown path nor the interrupt is triggered due to the detected failure. 
+During this test only the selected comparator(s) are tested. In case more than one c
+
+--- Page 139 ---
+(MONSF1, MONSF2, MONSF3) are triggered and updated by out of range conditions
+caused by the ABIST functionality, which has to be considered beside the results provided in the ABIST related
+registers (ABIST_CTRL0 to ABIST_SELECT2).
+During the time, when the ABIST is performed by internal hardware, the assertion of ROT due to the occurrence
+of any event which is supposed to trigger the respective action and is part of the logic which is affected by the
+ABIST control is blocked. In addition, the state machine will not change its state according to the reaction on
+detected faults described in Chapter 11.4. In case an ABIST contributing to the secondary safety shutdown path
+is started and the device is in NORMAL state, the state machine will move from NORMAL to WAKE state.
+Furthermore, all voltages will be kept enabled regardless of any out of range detection caused by ABIST itself.
+The test of a single functionality is basically always performed in the same way:
+•
+All comparators are assum
+
+============================================================
+KEYWORD: [ABIST_SELECT]  found on pages: [139, 140, 141, 142, 144, 145, 168, 210, 211, 212]
+
+--- Page 139 ---
+, MONSF3) are triggered and updated by out of range conditions
+caused by the ABIST functionality, which has to be considered beside the results provided in the ABIST related
+registers (ABIST_CTRL0 to ABIST_SELECT2).
+During the time, when the ABIST is performed by internal hardware, the assertion of ROT due to the occurrence
+of any event which is supposed to trigger the respective action and is part of the logic which is affected by the
+ABIST control is blocked. In addition, the state machine will not change its state according to the reaction on
+detected faults described in Chapter 11.4. In case an ABIST contributing to the secondary safety shutdown path
+is started and the device is in NORMAL state, the state machine will move from NORMAL to WAKE state.
+Furthermore, all voltages will be kept enabled regardless of any out of range detection caused by ABIST itself.
+The test of a single functionality is basically always performed in the same way:
+•
+All comparators are assumed to be enable
+
+--- Page 140 ---
+TLF35584
+State Machine
+  
+Data Sheet
+140
+Rev. 2.0, 2017-03-16
+ 
+Volt_Ref Overvoltage 
+X
+ABIST_SELECT0.VREFUV
+PreReg Overvoltage 
+X
+ABIST_SELECT0.PREGOV
+LDO_µC Undervoltage 
+X
+ABIST_SELECT1.UCUV
+Core_Sup Undervoltage 
+X
+ABIST_SELECT1.VCOREUV
+LDO_Stby Undervoltage 
+X
+ABIST_SELECT1.STBYUV
+BIAS current low 
+X
+ABIST_SELECT2.BIASLOW
+BIAS current high 
+X
+ABIST_SELECT2.BIASHI
+Supply VS Overvoltage 
+X
+ABIST_SELECT2.VBATOV
+Internal Supply Overvoltage 
+X 1)
+ABIST_SELECT2.INTOV
+Tracker 1 Overvoltage 
+X
+ABIST_SELECT0.TRK1OV
+Tracker 2 Overvoltage 
+X
+ABIST_SELECT0.TRK2OV
+LDO_Com Overvoltage 
+X
+ABIST_SELECT0.COMOV
+Volt_Ref Undervoltage 
+X
+ABIST_SELECT1.VREFUV
+Tracker 1 Undervoltage 
+X
+ABIST_SELECT1.TRK1UV
+Tracker 2 Undervoltage 
+X
+ABIST_SELECT1.TRK2UV
+LDO_Com Undervoltage 
+X
+ABIST_SELECT1.COMUV
+Pre_Reg Undervoltage 
+X
+ABIST_SELECT1.PREGUV
+VBG1 - 4% ≤ VBG2 
+X
+ABIST_SELECT2.BG12UV
+VBG1 + 4% ≥ 
+
+============================================================
+KEYWORD: [IF register]  found on pages: [219]
+
+--- Page 219 ---
+terrupt is signaled by pulling the interrupt line low for at least tINT (interrupt min. pulse width) after an internal
+interrupt condition occurs. The interrupt line will be driven high if all of the IF register flag(s) has/have been cleared
+via SPI operation earliest after tINT has expired but latest after tINTTO has expired.
+Special cases:
+•
+If an interrupt is signaled by pulling INT low and not all interrupt status flags are cleared by the uC within tINTTO, 
+the INT will stay low until tINTTO has expired, but no additional interrupt will be generated. Information about a 
+pending interrupt event can be derived via the INTMISS status flag. This status flag is cleared each time the 
+interrupt line is driven low.
+•
+If an interrupt is signaled by pulling INT low and an additional bit is set in the IF register interrupt flag after the 
+interrupt bits have been read by the uC and this outdated information is used to clear the interrupt flags, the 
+interrupt line will stay low until tINTTO

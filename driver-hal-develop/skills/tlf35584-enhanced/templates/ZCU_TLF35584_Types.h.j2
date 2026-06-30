@@ -1,0 +1,184 @@
+/**
+ * @file           ZCU_TLF35584_Types.h
+ * @brief          TLF35584 PMIC Driver - Type Definitions & Register Map
+ * @version        {{ VERSION }}
+ * @asil           ASIL-D
+ * @standard       AUTOSAR Classic Platform R4.x
+ * @compliance     MISRA-C:2012 Mandatory Rules
+ * =============================================================================
+ * [TEMPLATE LOCKED] - This file is generated from a locked template.
+ *                    DO NOT modify the structure. Only {{ VAR }} placeholders
+ *                    may be substituted.
+ * =============================================================================
+ */
+#ifndef ZCU_TLF35584_TYPES_H
+#define ZCU_TLF35584_TYPES_H
+
+#include "Std_Types.h"
+#include "ZCU_TLF35584_MemMap.h"
+
+/*===========================================================================*/
+/* SPI Protocol Constants - LOCKED from consistency_contract.spi_spec        */
+/*===========================================================================*/
+#define {{ PREFIX }}_SPI_CMD_BIT         (0U)
+#define {{ PREFIX }}_SPI_ADDR_BIT_POS    (1U)
+#define {{ PREFIX }}_SPI_ADDR_MASK       (0x3FU)
+#define {{ PREFIX }}_SPI_DATA_BIT_POS    (7U)
+#define {{ PREFIX }}_SPI_DATA_MASK       (0xFFU)
+#define {{ PREFIX }}_SPI_PARITY_BIT_POS  (15U)
+#define {{ PREFIX }}_SPI_CMD_READ        (0U)
+#define {{ PREFIX }}_SPI_CMD_WRITE       (1U)
+#define {{ PREFIX }}_SPI_FRAME_SIZE      (16U)
+
+/*===========================================================================*/
+/* Register Address Map - LOCKED from params/default_params.json             */
+/* All 43 register addresses verified against Infineon TLF35584 datasheet    */
+/*===========================================================================*/
+{% for reg in REGISTERS %}
+#define {{ PREFIX }}_REG_{{ reg.NAME }}         ({{ reg.ADDR }}U)
+{% endfor %}
+
+/*===========================================================================*/
+/* Protection Sequence - LOCKED from consistency_contract.locked_constants   */
+/*===========================================================================*/
+#define {{ PREFIX }}_PROT_SEQ_LEN        (4U)
+#define {{ PREFIX }}_UNLOCK_BYTE0        (0xABU)
+#define {{ PREFIX }}_UNLOCK_BYTE1        (0xEFU)
+#define {{ PREFIX }}_UNLOCK_BYTE2        (0x56U)
+#define {{ PREFIX }}_UNLOCK_BYTE3        (0x12U)
+#define {{ PREFIX }}_LOCK_BYTE0          (0xDFU)
+#define {{ PREFIX }}_LOCK_BYTE1          (0x34U)
+#define {{ PREFIX }}_LOCK_BYTE2          (0xBEU)
+#define {{ PREFIX }}_LOCK_BYTE3          (0xCAU)
+
+/*===========================================================================*/
+/* Device State Constants - LOCKED                                           */
+/*===========================================================================*/
+#define {{ PREFIX }}_DEVCTRL_STATE_MSK   (0x07U)
+#define {{ PREFIX }}_DEVCTRLN_CMPL(v)    ((uint8)(0xFFU - (v)))
+
+/*===========================================================================*/
+/* FWD Watchdog Constants                                                    */
+/*===========================================================================*/
+#define {{ PREFIX }}_FWD_SEED_MASK       (0x0FU)
+#define {{ PREFIX }}_FWD_ERRCNT_MASK     (0x0FU)
+#define {{ PREFIX }}_FWD_RESP_BYTE_CNT   (4U)
+#define {{ PREFIX }}_FWD_RES_TABLE_SIZE  ({{ FWD_TABLE_SIZE }}U)
+#define {{ PREFIX }}_WWD_BIT0_MASK       (0x01U)
+
+/*===========================================================================*/
+/* ABIST Register Bit Masks                                                  */
+/*===========================================================================*/
+#define {{ PREFIX }}_ABIST_INT_BIT       ((uint8)0x08U)
+#define {{ PREFIX }}_ABIST_SINGLE_BIT    ((uint8)0x04U)
+#define {{ PREFIX }}_ABIST_PATH_BIT      ((uint8)0x02U)
+#define {{ PREFIX }}_ABIST_START_BIT     ((uint8)0x01U)
+#define {{ PREFIX }}_ABIST_STATUS_OK     ((uint8)0x50U)
+
+/*===========================================================================*/
+/* Device State Enumerations - LOCKED                                        */
+/*===========================================================================*/
+typedef enum
+{
+    {{ PREFIX }}_DEVSTATE_INIT      = 0x00U,
+    {{ PREFIX }}_DEVSTATE_NORMAL    = 0x01U,
+    {{ PREFIX }}_DEVSTATE_STANDBY   = 0x02U,
+    {{ PREFIX }}_DEVSTATE_SLEEP     = 0x03U,
+    {{ PREFIX }}_DEVSTATE_WAKE      = 0x04U,
+    {{ PREFIX }}_DEVSTATE_FAILSAFE  = 0x05U,
+    {{ PREFIX }}_DEVSTATE_POWERDOWN = 0x06U
+} {{ PREFIX }}_DeviceStateType;
+
+/*===========================================================================*/
+/* Init Phase Enumerations                                                   */
+/*===========================================================================*/
+typedef enum
+{
+    {{ PREFIX }}_PHASE_INIT_SPI      = 0U,
+    {{ PREFIX }}_PHASE_INIT_UNLOCK   = 1U,
+    {{ PREFIX }}_PHASE_INIT_SYSPCFG  = 2U,
+    {{ PREFIX }}_PHASE_INIT_WDGCFG   = 3U,
+    {{ PREFIX }}_PHASE_INIT_FWDCFG   = 4U,
+    {{ PREFIX }}_PHASE_INIT_WWDCFG   = 5U,
+    {{ PREFIX }}_PHASE_INIT_BIST     = 6U,
+    {{ PREFIX }}_PHASE_INIT_DONE     = 7U,
+    {{ PREFIX }}_PHASE_INIT_FAILED   = 8U
+} {{ PREFIX }}_InitPhaseType;
+
+/*===========================================================================*/
+/* Operational State Enumerations                                            */
+/*===========================================================================*/
+typedef enum
+{
+    {{ PREFIX }}_OPSTATE_IDLE     = 0U,
+    {{ PREFIX }}_OPSTATE_READY    = 1U,
+    {{ PREFIX }}_OPSTATE_ACTIVE   = 2U,
+    {{ PREFIX }}_OPSTATE_ERROR    = 3U,
+    {{ PREFIX }}_OPSTATE_BIST     = 4U
+} {{ PREFIX }}_OpStateType;
+
+/*===========================================================================*/
+/* Fault Group Enumerations                                                  */
+/*===========================================================================*/
+typedef enum
+{
+    {{ PREFIX }}_FAULT_CHIP       = 0U,
+    {{ PREFIX }}_FAULT_POWER      = 1U,
+    {{ PREFIX }}_FAULT_WATCHDOG   = 2U,
+    {{ PREFIX }}_FAULT_BIST       = 3U,
+    {{ PREFIX }}_FAULT_SPI        = 4U,
+    {{ PREFIX }}_FAULT_COUNT      = 5U
+} {{ PREFIX }}_FaultGroupType;
+
+/*===========================================================================*/
+/* Fault Status Structures                                                   */
+/*===========================================================================*/
+typedef struct
+{
+    uint8 sysFail;
+    uint8 initErr;
+    uint8 ifReg;
+    uint8 sysSf;
+    uint8 wkSf;
+    uint8 spiSf;
+    uint8 monSf0;
+    uint8 monSf1;
+    uint8 monSf2;
+    uint8 monSf3;
+    uint8 otFail;
+    uint8 otWrnSf;
+} {{ PREFIX }}_FaultInfoType;
+
+/*===========================================================================*/
+/* Global State Structure - MUST be in ASILD_PRIVATE_BSW_DATA section        */
+/*===========================================================================*/
+typedef struct
+{
+    {{ PREFIX }}_DeviceStateType currentState;
+    {{ PREFIX }}_DeviceStateType targetState;
+    {{ PREFIX }}_InitPhaseType   initPhase;
+    {{ PREFIX }}_OpStateType     opState;
+    uint8                       initRetryCnt;
+    uint8                       fwdErrCnt;
+    boolean                     isInitialized;
+    boolean                     bistPassed;
+    {{ PREFIX }}_FaultInfoType   faultInfo;
+    uint32                      faultGroups[{{ PREFIX }}_FAULT_COUNT];
+} {{ PREFIX }}_DataType;
+
+/*===========================================================================*/
+/* Fault Group Bit Masks                                                     */
+/*===========================================================================*/
+#define {{ PREFIX }}_SYSTEM_ERR      ((uint32)0x00000001U)
+#define {{ PREFIX }}_POWER_ERR       ((uint32)0x00000002U)
+#define {{ PREFIX }}_WDG_ERR         ((uint32)0x00000004U)
+#define {{ PREFIX }}_BIST_ERR        ((uint32)0x00000008U)
+#define {{ PREFIX }}_SPI_ERR         ((uint32)0x00000010U)
+
+/*===========================================================================*/
+/* External Declarations                                                     */
+/*===========================================================================*/
+extern const uint32 {{ PREFIX }}_FwdResTable[{{ PREFIX }}_FWD_RES_TABLE_SIZE];
+extern {{ PREFIX }}_DataType {{ PREFIX }}_State;
+
+#endif /* ZCU_TLF35584_TYPES_H */

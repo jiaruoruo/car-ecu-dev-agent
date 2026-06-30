@@ -1,0 +1,2056 @@
+
+====== PDF PAGE 168 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+168
+Rev. 2.0, 2017-03-16
+ 
+RWDCFG1
+Watchdog configuration 1 status *R3)
+0EH
+09H
+RFWDCFG
+Functional watchdog configuration status *R3)
+0FH
+0BH
+RWWDCFG0
+Window watchdog configuration 0 status *R3)
+10H
+06H
+RWWDCFG1
+Window watchdog configuration 1 status *R3)
+11H
+09H
+WKTIMCFG0
+Wake timer configuration 0 *R2)
+12H
+00H
+WKTIMCFG1
+Wake timer configuration 1 *R2)
+13H
+00H
+WKTIMCFG2
+Wake timer configuration 2 *R2)
+14H
+00H
+DEVCTRL
+Device control request *R2)
+15H
+00H
+DEVCTRLN
+Device control inverted request *R2)
+16H
+00H
+WWDSCMD
+Window watchdog service command *R2)
+17H
+00H
+FWDRSP
+Functional watchdog response command *R2)
+18H
+00H
+FWDRSPSYNC
+Functional watchdog response command with 
+synchronization *R2)
+19H
+00H
+SYSFAIL
+Failure status flags *R1)
+1AH
+00H
+INITERR
+Init error status flags *R2)
+1BH
+00H
+IF
+Interrupt flags *R2)
+1CH
+00H
+SYSSF
+System status flags *R2)
+1DH
+00H
+WKSF
+Wakeup status flags *R2)
+1EH
+00H
+SPISF
+SPI status flags *R2)
+1FH
+00H
+MONSF0
+Monitor status flags 0 *R1)
+20H
+00H
+MONSF1
+Monitor status flags 1 *R1)
+21H
+00H
+MONSF2
+Monitor status flags 2 *R2)
+22H
+00H
+MONSF3
+Monitor status flags 3 *R1)
+23H
+00H
+OTFAIL
+Over temperature failure status flags *R1)
+24H
+00H
+OTWRNSF
+Over temperature warning status flags *R2)
+25H
+00H
+VMONSTAT
+Voltage monitor status *R2)
+26H
+00H
+DEVSTAT
+Device status *R2)
+27H
+00H
+PROTSTAT
+Protection status *R1)
+28H
+01H
+WWDSTAT
+Window watchdog status *R3)
+29H
+00H
+FWDSTAT0
+Functional watchdog status 0 *R3)
+2AH
+30H
+FWDSTAT1
+Functional watchdog status 1 *R3)
+2BH
+00H
+ABIST_CTRL0
+ABIST control0 *R2) 1)
+2CH
+00H
+ABIST_CTRL1
+ABIST control1 *R2)
+2DH
+00H
+ABIST_SELECT0
+ABIST select 0 *R2)
+2EH
+00H
+ABIST_SELECT1
+ABIST select 1 *R2)
+2FH
+00H
+ABIST_SELECT2
+ABIST select 2 *R2)
+30H
+00H
+GTM
+Global testmode *R2) 
+3FH
+02H
+BCK_FREQ_CHANGE
+Buck switching frequency change *R2)
+31H
+00H
+Table 22
+Register Overview  (cont’d)
+Register Short Name
+Register Long Name
+Offset Address
+Reset Value
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 190 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+190
+Rev. 2.0, 2017-03-16
+ 
+Failure status flags *R1)
+SYSFAIL
+Offset
+Reset Value
+Failure status flags *R1)
+1AH
+00H
+Field
+Bits
+Type
+Description
+INITF
+7
+rw1c
+INIT failure flag
+INIT failure due to the third INIT failure in row. i.e. The device restarts INIT 
+phase from FAILSAFE.
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags
+Reset: 0H
+ABISTERR
+6
+rw1c
+ABIST operation interrupted flag
+ABIST interrupted by any fault/event which is not part of ABIST.
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags
+Reset: 0H
+nu
+5:3
+none
+Reset: 0H
+VMONF
+2
+rw1c
+Voltage monitor failure flag
+Voltage monitor failure occured which lead to FAILSAFE.
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags, read MONSF0, MONSF1 
+and MONSF3 for details
+Reset: 0H
+OTF
+1
+rw1c
+Over temperature failure flag
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags, read OTFAIL for details
+Reset: 0H
+VOLTSELER
+R
+0
+rw1c
+Double Bit error on voltage selection flag
+Device entered FAILSAFE state due to internal voltage selection failure.
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+INITF
+rw1c
+nu
+VMONF
+rw1c
+OTF
+rw1c
+ERR
+VOLTSEL
+rw1c
+ABISTERR
+rw1c
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 191 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+191
+Rev. 2.0, 2017-03-16
+ 
+Init error status flags *R2)
+INITERR
+Offset
+Reset Value
+Init error status flags *R2)
+1BH
+00H
+Field
+Bits
+Type
+Description
+HARDRES
+7
+rw1c
+Hard reset flag
+Hard reset has been generated due to the second INIT failure in row. i.e. 
+The device restarts INIT phase for the 3rd time.
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags
+Reset: 0H
+SOFTRES
+6
+rw1c
+Soft reset flag
+Soft reset has been generated due to the first INIT failure. i.e. The device 
+restarts INIT phase for the 2nd time.
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags
+Reset: 0H
+ERRF
+5
+rw1c
+MCU error monitor failure flag
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags
+Reset: 0H
+FWDF
+4
+rw1c
+Functional watchdog error counter overflow failure flag
+Functional watchdog error counter reached the error threshold.
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags
+Reset: 0H
+WWDF
+3
+rw1c
+Window watchdog error counter overflow failure flag
+Window watchdog error counter reached the error threshold.
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags
+Reset: 0H
+VMONF
+2
+rw1c
+Voltage monitor failure flag 
+Voltage monitor failure occured which lead to INIT.
+0D
+No fault, write 0 - no action
+1D
+Fault occurred, write 1 to clear the flags, read MONSF2 for details
+Reset: 0H
+nu
+1:0
+rw1c
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+HARDRES
+rw1c
+SOFTRES
+rw1c
+ERRF
+rw1c
+FWDF
+rw1c
+WWDF
+rw1c
+VMONF
+rw1c
+nu
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 192 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+192
+Rev. 2.0, 2017-03-16
+ 
+Interrupt flags  *R2)
+IF
+Offset
+Reset Value
+Interrupt flags  *R2)
+1CH
+00H
+Field
+Bits
+Type
+Description
+INTMISS
+7
+r
+Interrupt not serviced in time flag
+Interrupt has not been serviced within tINT,TO time
+0D
+No interrupt timeout happened
+1D
+Interrupt timeout happened, cleared by hardware when all other 
+flags in IF are cleared.
+Reset: 0H
+ABIST
+6
+rw1c
+Requested ABIST operation performed flag
+0D
+No interrupt, write 0 - no action
+1D
+Interrupt flag active, write 1 to clear the flag
+Reset: 0H
+OTF
+5
+rw1c
+Over temperature failure interrupt flag
+0D
+No interrupt, write 0 - no action
+1D
+Interrupt flag active, write 1 to clear the flag, read OTFAIL for details
+Reset: 0H
+OTW
+4
+rw1c
+Over temperature warning interrupt flag
+0D
+No interrupt, write 0 - no action
+1D
+Interrupt flag active, write 1 to clear the flag, read OTWRNSF for 
+details
+Reset: 0H
+MON
+3
+rw1c
+Monitor interrupt flag
+0D
+No interrupt, write 0 - no action
+1D
+Interrupt flag active, write 1 to clear the flag, read MONSF0, 
+MONSF1, MONSF2 and MONSF3 for details
+Reset: 0H
+SPI
+2
+rw1c
+SPI interrupt flag
+0D
+No interrupt, write 0 - no action
+1D
+Interrupt flag active, write 1 to clear the flag, read SPISF for details
+Reset: 0H
+WK
+1
+rw1c
+Wake interrupt flag
+Only set if device generates an interrupt when leaving SLEEP state.
+0D
+No interrupt, write 0 - no action
+1D
+Interrupt flag active, write 1 to clear the flag, read WKSF for details
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+INTMISS
+r
+ABIST
+rw1c
+OTF
+rw1c
+OTW
+rw1c
+MON
+rw1c
+SPI
+rw1c
+WK
+rw1c
+SYS
+rw1c
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 193 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+193
+Rev. 2.0, 2017-03-16
+ 
+System status flags *R2)
+SYS
+0
+rw1c
+System interrupt flag
+0D
+No interrupt, write 0 - no action
+1D
+Interrupt flag active, write 1 to clear the flag, read SYSSF for details
+Reset: 0H
+SYSSF
+Offset
+Reset Value
+System status flags *R2)
+1DH
+00H
+Field
+Bits
+Type
+Description
+nu
+7:6
+none
+Reset: 0H
+NO_OP
+5
+rw1c
+State transition request failure flag
+Requested state transition via DEVCTRL & DEVCTRLN could not be 
+performed because of wrong protocol.
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+TRFAIL
+4
+rw1c
+Transition to low power failed flag
+Transition to low power failed either due to the QUC current monitor, 
+WAK high level or a rising edge on ENA during TRDEL time.
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+ERRMISS
+3
+rw1c
+MCU error miss status flag
+Set only when SYSPCFG1.ERRRECEN='1'
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+FWDE
+2
+rw1c
+Functional watchdog error interrupt flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+Field
+Bits
+Type
+Description
+7
+6
+5
+4
+3
+2
+1
+0
+nu
+NO_OP
+rw1c
+TRFAIL
+rw1c
+ERRMISS
+rw1c
+FWDE
+rw1c
+WWDE
+rw1c
+CFGE
+rw1c
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 194 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+194
+Rev. 2.0, 2017-03-16
+ 
+Wakeup status flags *R2)
+WWDE
+1
+rw1c
+Window watchdog error interrupt flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+CFGE
+0
+rw1c
+Protected configuration double bit error flag
+Double bit error occurred on protected configuration register.
+Status registers shall be read in order to determine which configuration 
+has changed.
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+WKSF
+Offset
+Reset Value
+Wakeup status flags *R2)
+1EH
+00H
+Field
+Bits
+Type
+Description
+nu
+7:5
+none
+Reset: 0H
+WKSPI
+4
+rw1c
+Wakeup from SLEEP by SPI flag (GoToWAKE)
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+WKTIM
+3
+rw1c
+Wake timer wakeup flag
+Bit will also be set if STANDBY state left because of wake timer expired.
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+CMON
+2
+rw1c
+QUC current monitor threshold wakeup flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+Field
+Bits
+Type
+Description
+7
+6
+5
+4
+3
+2
+1
+0
+nu
+WKSPI
+rw1c
+WKTIM
+rw1c
+CMON
+rw1c
+ENA
+rw1c
+WAK
+rw1c
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 195 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+195
+Rev. 2.0, 2017-03-16
+ 
+SPI status flags *R2)
+ENA
+1
+rw1c
+ENA signal wakeup flag
+Bit will also be set if FAILSAFE or STANDBY state left because of ENA.
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+WAK
+0
+rw1c
+WAK signal wakeup flag
+Bit will also be set if FAILSAFE or STANDBY state left because of WAK.
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+SPISF
+Offset
+Reset Value
+SPI status flags *R2)
+1FH
+00H
+Field
+Bits
+Type
+Description
+nu
+7:5
+none
+Reset: 0H
+LOCK
+4
+rw1c
+LOCK or UNLOCK procedure error flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+DURE
+3
+rw1c
+SPI frame duration error flag
+SCS low for more than 2 ms.
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+ADDRE
+2
+rw1c
+SPI address invalid flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+LENE
+1
+rw1c
+SPI frame length invalid flag
+Number of detected SPI clock cycles different than 16.
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+Field
+Bits
+Type
+Description
+7
+6
+5
+4
+3
+2
+1
+0
+nu
+LOCK
+rw1c
+DURE
+rw1c
+ADDRE
+rw1c
+LENE
+rw1c
+PARE
+rw1c
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 196 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+196
+Rev. 2.0, 2017-03-16
+ 
+PARE
+0
+rw1c
+SPI frame parity error flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+Field
+Bits
+Type
+Description
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 197 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+197
+Rev. 2.0, 2017-03-16
+ 
+Monitor status flags 0 *R1)
+MONSF0
+Offset
+Reset Value
+Monitor status flags 0 *R1)
+20H
+00H
+Field
+Bits
+Type
+Description
+TRK2SG
+7
+rw1c
+Tracker2 short to ground status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+TRK1SG
+6
+rw1c
+Tracker1 short to ground status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+VREFSG
+5
+rw1c
+Voltage reference short to ground status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+COMSG
+4
+rw1c
+Communication LDO short to ground status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+VCORESG
+3
+rw1c
+Core voltage short to ground status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+STBYSG
+2
+rw1c
+Standby LDO short to ground status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+UCSG
+1
+rw1c
+uC LDO short to ground status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+PREGSG
+0
+rw1c
+Pre-regulator voltage short to ground status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+TRK2SG
+rw1c
+TRK1SG
+rw1c
+VREFSG
+rw1c
+COMSG
+rw1c
+VCORESG
+rw1c
+STBYSG
+rw1c
+UCSG
+rw1c
+PREGSG
+rw1c
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 198 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+198
+Rev. 2.0, 2017-03-16
+ 
+Monitor status flags 1 *R1)
+MONSF1
+Offset
+Reset Value
+Monitor status flags 1 *R1)
+21H
+00H
+Field
+Bits
+Type
+Description
+TRK2OV
+7
+rw1c
+Tracker2 over voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+TRK1OV
+6
+rw1c
+Tracker1 over voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+VREFOV
+5
+rw1c
+Voltage reference over voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+COMOV
+4
+rw1c
+Communication LDO over voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+VCOREOV
+3
+rw1c
+Core voltage over voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+STBYOV
+2
+rw1c
+Standby LDO over voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+UCOV
+1
+rw1c
+uC LDO over voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+PREGOV
+0
+rw1c
+Pre-regulator voltage over voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+TRK2OV
+rw1c
+TRK1OV
+rw1c
+VREFOV
+rw1c
+COMOV
+rw1c
+VCOREOV
+rw1c
+STBYOV
+rw1c
+UCOV
+rw1c
+PREGOV
+rw1c
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 199 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+199
+Rev. 2.0, 2017-03-16
+ 
+Monitor status flags 2 *R2)
+MONSF2
+Offset
+Reset Value
+Monitor status flags 2 *R2)
+22H
+00H
+Field
+Bits
+Type
+Description
+TRK2UV
+7
+rw1c
+Tracker2 under voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+TRK1UV
+6
+rw1c
+Tracker1 under voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+VREFUV
+5
+rw1c
+Voltage reference under voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+COMUV
+4
+rw1c
+Communication LDO under voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+VCOREUV
+3
+rw1c
+Core voltage under voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+STBYUV
+2
+rw1c
+Standby LDO under voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+UCUV
+1
+rw1c
+uC LDO under voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+PREGUV
+0
+rw1c
+Pre-regulator voltage under voltage status flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+TRK2UV
+rw1c
+TRK1UV
+rw1c
+VREFUV
+rw1c
+COMUV
+rw1c
+VCOREUV
+rw1c
+STBYUV
+rw1c
+UCUV
+rw1c
+PREGUV
+rw1c
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 200 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+200
+Rev. 2.0, 2017-03-16
+ 
+Monitor status flags 3 *R1)
+MONSF3
+Offset
+Reset Value
+Monitor status flags 3 *R1)
+23H
+00H
+Field
+Bits
+Type
+Description
+BIASHI
+7
+rw1c
+Bias current too high flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+BIASLOW
+6
+rw1c
+Bias current too low flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+BG12OV
+5
+rw1c
+Bandgap comparator over voltage condition flag
+(VBG1 ≥ VBG2 + 4%)
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+BG12UV
+4
+rw1c
+Bandgap comparator under voltage condition flag
+(VBG1 ≤ VBG2 - 4%)
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+nu
+3:1
+none
+Reset: 0H
+VBATOV
+0
+rw1c
+Supply voltage VSx over voltage flag
+0D
+Write 0 - no action
+1D
+Event detected, write 1 to clear the flag
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+BIASHI
+rw1c
+BIASLOW
+rw1c
+BG12OV
+rw1c
+BG12UV
+rw1c
+nu
+VBATOV
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 205 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+205
+Rev. 2.0, 2017-03-16
+ 
+Protection status  *R1)
+PROTSTAT
+Offset
+Reset Value
+Protection status  *R1)
+28H
+01H
+Field
+Bits
+Type
+Description
+KEY4OK
+7
+r
+Key4 ok status
+Information about validity of the 4th received protection key byte
+0D
+Key not valid
+1D
+Key valid
+Reset: 0H
+KEY3OK
+6
+r
+Key3 ok status
+Information about validity of the 3rd received protection key byte
+0D
+Key not valid
+1D
+Key valid
+Reset: 0H
+KEY2OK
+5
+r
+Key2 ok status
+Information about validity of the 2nd received protection key byte
+0D
+Key not valid
+1D
+Key valid
+Reset: 0H
+KEY1OK
+4
+r
+Key1 ok status
+Information about validity of the 1st received protection key byte
+0D
+Key not valid
+1D
+Key valid
+Reset: 0H
+nu
+3:1
+none
+Reset: 0H
+LOCK
+0
+r
+Protected register lock status 
+0D
+Access is unlocked
+1D
+Access is locked
+Reset: 1H
+7
+6
+5
+4
+3
+2
+1
+0
+KEY4OK
+r
+KEY3OK
+r
+KEY2OK
+r
+KEY1OK
+r
+nu
+LOCK
+r
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 206 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+206
+Rev. 2.0, 2017-03-16
+ 
+Window watchdog status  *R3)
+Functional watchdog status 0 *R3)
+WWDSTAT
+Offset
+Reset Value
+Window watchdog status  *R3)
+29H
+00H
+Field
+Bits
+Type
+Description
+nu
+7:4
+none
+Reset: 0H
+WWDECNT
+3:0
+r
+Window watchdog error counter status
+Reset: 0H
+FWDSTAT0
+Offset
+Reset Value
+Functional watchdog status 0 *R3)
+2AH
+30H
+Field
+Bits
+Type
+Description
+nu
+7
+none
+Reset: 0H
+FWDRSPOK
+6
+r
+Functional watchdog response check error status
+0D
+Response message is wrong
+1D
+All received bytes in response message are correct
+Reset: 0H
+FWDRSPC
+5:4
+r
+Functional watchdog response counter value
+Reset: 3H
+FWDQUEST
+3:0
+r
+Functional watchdog question
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+nu
+WWDECNT
+r
+7
+6
+5
+4
+3
+2
+1
+0
+nu
+K
+FWDRSPO
+r
+FWDRSPC
+r
+FWDQUEST
+r
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 207 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+207
+Rev. 2.0, 2017-03-16
+ 
+Functional watchdog status 1 *R3)
+FWDSTAT1
+Offset
+Reset Value
+Functional watchdog status 1 *R3)
+2BH
+00H
+Field
+Bits
+Type
+Description
+nu
+7:4
+none
+Reset: 0H
+FWDECNT
+3:0
+r
+Functional watchdog error counter value
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+nu
+FWDECNT
+r
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 208 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+208
+Rev. 2.0, 2017-03-16
+ 
+ABIST control 0 *R2)
+ABIST_CTRL0
+Offset
+Reset Value
+ABIST control0 *R2)
+2CH
+00H
+Field
+Bits
+Type
+Description
+STATUS
+7:4
+r
+ABIST global error status
+ABIST status information after requested operation has been performed, 
+information shall only be considered valid, once START bit is cleared. 
+Bits have different reset class than whole register. The Bits are reset 
+according to *R1).
+5D
+Selected ABIST operation performed with no errors
+10D
+Selected ABIST operation performed with errors, check respective 
+SELECT registers
+Reset: 0H
+INT
+3
+rw
+Safety path selection
+Select whether safe state or interrupt related comparator shall be tested.
+0D
+safe state related comparators shall be tested
+1D
+interrupt related comparators shall be tested
+Reset: 0H
+SINGLE
+2
+rw
+ABIST Sequence selection
+Select whether a single comparator shall be tested or all comparators in 
+predefined sequence
+0D
+Predefined sequence
+1D
+Single comparator test
+Reset: 0H
+PATH
+1
+rw
+Full path test selection
+Select the path which should be covered by ABIST operation
+0D
+Comparator only
+1D
+Comparator and corresponding deglitching logic, shall be selected 
+in case contribution to respective safety measure needs to be 
+tested
+Reset: 0H
+START
+0
+rwhc
+Start ABIST operation
+The ABIST operation itself will be started. This bit is cleared after ABIST 
+operation has been performed
+0D
+Operation done
+1D
+Start operation
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+STATUS
+r
+INT
+rw
+SINGLE
+rw
+PATH
+rw
+START
+rwhc
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 209 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+209
+Rev. 2.0, 2017-03-16
+ 
+ABIST control 1 *R2)
+ABIST_CTRL1
+Offset
+Reset Value
+ABIST control1 *R2)
+2DH
+00H
+Field
+Bits
+Type
+Description
+nu
+7:2
+none
+Reset: 00H
+ABIST_CLK_
+EN
+1
+rw
+ABIST clock check enable
+Select ABIST clock to check its functionality
+0D
+Disable
+1D
+Enable
+Reset: 0H
+OV_TRIG
+0
+rw
+Overvoltage trigger for secondary internal monitor enable
+0D
+Disable
+1D
+Enable
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+nu
+LK_EN
+ABIST_C
+rw
+OV_TRIG
+rw
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 210 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+210
+Rev. 2.0, 2017-03-16
+ 
+ABIST select 0 *R2)
+ABIST_SELECT0
+Offset
+Reset Value
+ABIST select 0 *R2)
+2EH
+00H
+Field
+Bits
+Type
+Description
+TRK2OV
+7
+rwhu
+Select TRK2 OV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+TRK1OV
+6
+rwhu
+Select TRK1 OV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+VREFOV
+5
+rwhu
+Select VREF OV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+COMOV
+4
+rwhu
+Select COM OV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+VCOREOV
+3
+rwhu
+Select Core voltage OV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+STBYOV
+2
+rwhu
+Select Standby LDO OV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+UCOV
+1
+rwhu
+Select uC LDO OV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+7
+6
+5
+4
+3
+2
+1
+0
+TRK2OV
+rwhu
+TRK1OV
+rwhu
+VREFOV
+rwhu
+COMOV
+rwhu
+VCOREOV
+rwhu
+STBYOV
+rwhu
+UCOV
+rwhu
+PREGOV
+rwhu
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 211 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+211
+Rev. 2.0, 2017-03-16
+ 
+ABIST select 1 *R2)
+PREGOV
+0
+rwhu
+Select Pre-regulator OV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+ABIST_SELECT1
+Offset
+Reset Value
+ABIST select 1 *R2)
+2FH
+00H
+Field
+Bits
+Type
+Description
+TRK2UV
+7
+rwhu
+Select TRK2 UV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+TRK1UV
+6
+rwhu
+Select TRK1 UV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this voltage
+Reset: 0H
+VREFUV
+5
+rwhu
+Select VREF UV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+COMUV
+4
+rwhu
+Select COM UV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+VCOREUV
+3
+rwhu
+Select VCORE UV comparator for ABIST operation
+0D
+Not selected
+1D
+selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+Field
+Bits
+Type
+Description
+7
+6
+5
+4
+3
+2
+1
+0
+TRK2UV
+rwhu
+TRK1UV
+rwhu
+VREFUV
+rwhu
+COMUV
+rwhu
+VCOREUV
+rwhu
+STBYUV
+rwhu
+UCUV
+rwhu
+PREGUV
+rwhu
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 212 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+212
+Rev. 2.0, 2017-03-16
+ 
+ABIST select 2 *R2)
+STBYUV
+2
+rwhu
+Select STBY UV comparator for ABIST operation
+0D
+Not selected
+1D
+selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+UCUV
+1
+rwhu
+Select uC UV comparator for ABIST operation
+0D
+Not selected
+1D
+selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+PREGUV
+0
+rwhu
+Select pre regulator UV comparator for ABIST operation
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+ABIST_SELECT2
+Offset
+Reset Value
+ABIST select 2 *R2)
+30H
+00H
+Field
+Bits
+Type
+Description
+BIASHI
+7
+rwhu
+Select bias current too high
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+BIASLOW
+6
+rwhu
+Select bias current too low
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+BG12OV
+5
+rwhu
+Select bandgap comparator OV condition
+(VBG1 ≥ VBG2 + 4%)
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+Field
+Bits
+Type
+Description
+7
+6
+5
+4
+3
+2
+1
+0
+BIASHI
+rwhu
+BIASLOW
+rwhu
+BG12OV
+rwhu
+BG12UV
+rwhu
+INTOV
+rwhu
+nu
+VBATOV
+rwhu
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46
+
+====== PDF PAGE 213 ======
+TLF35584
+SPI - Serial Peripheral Interface
+  
+Data Sheet
+213
+Rev. 2.0, 2017-03-16
+ 
+Global testmode *R2)
+BG12UV
+4
+rwhu
+Select bandgap comparator UV condition 
+(VBG1 ≤ VBG2 - 4%)
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+INTOV
+3
+rwhu
+Select internal supply OV condition
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+nu
+2:1
+none
+Reset: 0H
+VBATOV
+0
+rwhu
+Select supply VSx overvoltage
+0D
+Not selected
+1D
+Selected, bit will be cleared upon successful ABIST operation on 
+comparator, bit will be set in case of ABIST fail for this comparator
+Reset: 0H
+GTM
+Offset
+Reset Value
+Global testmode *R2)
+3FH
+02H
+Field
+Bits
+Type
+Description
+nu
+7:2
+none
+Reset: 00H
+NTM
+1
+r
+Test mode inverted status 
+0D
+Device is in test mode
+1D
+Device is in normal mode
+Reset: 1H
+TM
+0
+r
+Test mode status
+0D
+Device is in normal mode
+1D
+Device is in test mode
+Reset: 0H
+Field
+Bits
+Type
+Description
+7
+6
+5
+4
+3
+2
+1
+0
+nu
+NTM
+r
+TM
+r
+Downloaded by IFXDMZ\par-zengzhe 10/04/2019 05:33:46

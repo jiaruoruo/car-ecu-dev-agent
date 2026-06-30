@@ -1,0 +1,5 @@
+f = open(r'd:\AI\myproject\driver-hal-develop\gui\index.html', encoding='utf-8').read()
+print('YAML text remaining:', f.count('>YAML</span>'))
+print('Empty yaml spans (replaced):', f.count('csec-tag-yaml"></span>'))
+print('Config List count:', f.count('Config List'))
+print('nav badge line check:', 'YAML badge removed' if "const badge = '';" in f else 'nav badge still has YAML')

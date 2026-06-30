@@ -1,0 +1,1669 @@
+=== f.options occurrences ===
+  5317: '        } else if (f.options) {'
+  5319: '          const allOpts = f.options.includes(curVal) ? f.options : [curVal].concat(f.options);'
+  5450: "  (_ssCfg.fields || []).forEach(f => { newItem[f.key] = f.options ? f.options[0] : ''; });"
+
+=== Field rendering section in _rebuildSSEditor ===
+  5300: "        const sty = f.full ? 'width:100%' : ('flex:' + (f.flex || 1));"
+  5301: '        let inputEl;'
+  5302: '        if (f.subfields) {'
+  5303: '          // Response 拆分子字段渲染'
+  5304: "          const sfVals = _parseRespSubfields(item[f.key] || '', f.subfields);"
+  5305: '          const sfHtml = f.subfields.map(sf => `'
+  5306: '            <div style="margin-bottom:10px">'
+  5307: '              <label class="form-label" style="margin-bottom:3px;font-size:11px;color:var(--tx-m)">${escHtml(sf.label)}</label>'
+  5308: '              <textarea class="form-textarea" rows="${sf.rows || 4}"'
+  5309: '                style="width:100%;min-height:${(sf.rows || 4) * 22}px${sf.mono ? \';font-family:monospace;font-size:11px\' : \'\'}"'
+  5310: '                oninput="_ssSetSubfield(${idx},\'${f.key}\',\'${sf.key}\',this.value)"'
+  5311: '                placeholder="${escHtml(sf.placeholder || \'\')}">${escHtml(sfVals[sf.key] || \'\')}</textarea>'
+  5312: "            </div>`).join('');"
+  5313: '          return `<div class="form-row" style="margin-bottom:5px">'
+  5314: '            <label class="form-label" style="margin-bottom:6px">${escHtml(f.label)}</label>'
+  5315: '            <div style="border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px 12px;background:rgba(255,255,255,.02)">${sfHtml}</div>'
+  5316: '          </div>`;'
+  5317: '        } else if (f.options) {'
+  5318: "          const curVal = item[f.key] || '';"
+  5319: '          const allOpts = f.options.includes(curVal) ? f.options : [curVal].concat(f.options);'
+  5320: '          inputEl = `<select class="form-input" style="${sty}" onchange="_ssSetField(${idx},\'${f.key}\',this.value)">${'
+  5321: '            allOpts.map(o => `<option value="${escHtml(o)}" ${o === curVal ? \'selected\' : \'\'}>${escHtml(o)}</option>`).join(\'\')'
+  5322: '          }</select>`;'
+  5323: '        } else if (f.multiline) {'
+  5324: '          inputEl = `<textarea class="form-textarea" rows="${f.rows || 3}" style="${sty};min-height:${(f.rows || 3) * 22}px"'
+  5325: '            oninput="_ssSetField(${idx},\'${f.key}\',this.value)">${val}</textarea>`;'
+  5326: '        } else {'
+  5327: '          inputEl = `<input class="form-input" style="${sty}" value="${val}"'
+  5328: '            placeholder="${escHtml(f.placeholder || \'\')}" oninput="_ssSetField(${idx},\'${f.key}\',this.value)">`;'
+  5329: '        }'
+  5330: '        return `<div class="form-row" style="margin-bottom:5px">'
+  5331: '          <label class="form-label" style="margin-bottom:2px">${escHtml(f.label)}</label>'
+  5332: '          ${f.full ? inputEl : `<div style="display:flex;gap:6px">${inputEl}</div>`}'
+  5333: '        </div>`;'
+  5334: "      }).join('');"
+  5335: '      const firstF = (cfg.fields || [])[0];'
+  5336: "      const preview = firstF ? (item[firstF.key] || '') : '';"
+  5337: "      const previewTxt = (preview.replace(/\\n/g,' ').slice(0,55) + (preview.length > 55 ? '…' : '')) || '（空）';"
+  5338: "      const bodyId = 'ssc-' + _ssTitle.replace(/\\W/g,'') + '-' + idx;"
+  5339: '      return `<div class="wf-card" style="margin-bottom:6px;padding:0;overflow:hidden">'
+  5340: '        <div onclick="toggleSSCard(\'${bodyId}\',this)" style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;user-select:none">'
+  5341: '          <span class="ss-card-arr" style="color:var(--tx-m);font-size:15px;font-weight:700;transition:transform .15s;flex-shrink:0">›</span>'
+  5342: '          <span style="font-size:11px;color:var(--tx-d);font-weight:600;min-width:16px;text-align:right">${idx + 1}</span>'
+
+=== server.py content ===
+  1: #!/usr/bin/env python3
+  2: # -*- coding: utf-8 -*-
+  3: """
+  4: Driver HAL Develop — Web GUI Backend Server
+  5: ============================================
+  6: 提供路由可视化与实时组件状态监控的本地 Web 服务。
+  7: 
+  8: 功能:
+  9:   1. 解析 agents/skills/rules/knowledge/tools 组件并构建关系图数据
+  10:   2. 根据 agent-router.md 实现指令关键词路由匹配
+  11:   3. 使用 watchdog 监听文件变化，通过 WebSocket 推送实时更新
+  12:   4. 提供 REST API 与 Socket.IO 接口供前端使用
+  13: """
+  14: 
+  15: import os
+  16: import re
+  17: import json
+  18: import time
+  19: import threading
+  20: from pathlib import Path
+  21: 
+  22: import yaml
+  23: from flask import Flask, jsonify, request, send_file
+  24: from flask_socketio import SocketIO, emit
+  25: from watchdog.observers import Observer
+  26: from watchdog.events import FileSystemEventHandler
+  27: 
+  28: # ──────────────────────────────────────────────────────────────────────────────
+  29: # 基础配置
+  30: # ──────────────────────────────────────────────────────────────────────────────
+  31: 
+  32: app = Flask(__name__)
+  33: app.config["SECRET_KEY"] = "driver-hal-gui-2026"
+  34: 
+  35: # 允许跨域（前端与后端同源，保留以备开发调试）
+  36: socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+  37: 
+  38: # driver-hal-develop 根目录（gui/ 的父目录）
+  39: PROJECT_ROOT = Path(__file__).parent.parent
+  40: 
+  41: # ──────────────────────────────────────────────────────────────────────────────
+  42: # 项目解析器
+  43: # ──────────────────────────────────────────────────────────────────────────────
+  44: 
+  45: class ProjectParser:
+  46:     """解析 driver-hal-develop 工程的所有组件，构建可视化数据模型。"""
+  47: 
+  48:     def __init__(self, root: Path):
+  49:         self.root = root
+  50: 
+  51:     def parse_all(self) -> dict:
+  52:         """全量解析，返回完整组件数据和路由规则。"""
+  53:         data = {
+  54:             "agents": self._parse_agents(),
+  55:             "skills": self._parse_skills(),
+  56:             "rules": self._parse_rules(),
+  57:             "knowledge": self._parse_knowledge(),
+  58:             "tools": self._parse_tools(),
+  59:             "routing_rules": self._parse_agent_routing_rules(),
+  60:             "skill_index": self._parse_skill_routing_index(),
+  61:             "timestamp": time.time(),
+  62:         }
+  63:         return data
+  64: 
+  65:     # ── 路由规则解析 ──────────────────────────────────────────────────────────
+  66: 
+  67:     def _parse_agent_routing_rules(self) -> list:
+  68:         """从 agent-router.md 提取关键词 → Agent 路由规则。"""
+  69:         router_file = self.root / "agent-router.md"
+  70:         if not router_file.exists():
+  71:             return []
+  72: 
+  73:         content = router_file.read_text(encoding="utf-8")
+  74:         rules = []
+  75:         # 匹配路由表格行：| keywords | path | description |
+  76:         for match in re.finditer(r"\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|", content):
+  77:             kw_str, path_str, desc = match.group(1), match.group(2), match.group(3)
+  78:             # 跳过表头和分隔行
+  79:             if "触发关键词" in kw_str or "---" in kw_str or "路由目标" in kw_str:
+  80:                 continue
+  81:             # 提取 agent id（去除反引号）
+  82:             path_clean = path_str.strip().strip("`")
+  83:             agent_match = re.search(r"agents/([^./]+)", path_clean)
+  84:             if not agent_match:
+  85:                 continue
+  86:             agent_id = agent_match.group(1)
+  87:             keywords = [k.strip() for k in re.split(r"[、,，]", kw_str) if k.strip()]
+  88:             rules.append({
+  89:                 "keywords": keywords,
+  90:                 "agent_id": agent_id,
+  91:                 "agent_path": path_clean,
+  92:                 "description": desc.strip(),
+  93:             })
+  94:         return rules
+  95: 
+  96:     def _parse_skill_routing_index(self) -> list:
+  97:         """从 skill-router.md 提取技能索引表。"""
+  98:         router_file = self.root / "skill-router.md"
+  99:         if not router_file.exists():
+  100:             return []
+  101: 
+  102:         content = router_file.read_text(encoding="utf-8")
+  103:         index = []
+  104:         for match in re.finditer(r"\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|", content):
+  105:             name, path_str, scenario = match.group(1), match.group(2), match.group(3)
+  106:             if "Skill" in name or "---" in name or "路径" in path_str:
+  107:                 continue
+  108:             path_clean = path_str.strip().strip("`")
+  109:             skill_dir = path_clean.split("/")[-1].strip()
+  110:             index.append({
+  111:                 "name": name.strip(),
+  112:                 "path": path_clean,
+  113:                 "skill_id": skill_dir,
+  114:                 "scenario": scenario.strip(),
+  115:             })
+  116:         return index
+  117: 
+  118:     # ── Agent 解析 ────────────────────────────────────────────────────────────
+  119: 
+  120:     def _parse_agents(self) -> list:
+  121:         agents_dir = self.root / "agents"
+  122:         agents = []
+  123:         if not agents_dir.exists():
+  124:             return agents
+  125:         for f in sorted(agents_dir.glob("*.md")):
+  126:             agent = self._parse_agent_file(f)
+  127:             if agent:
+  128:                 agents.append(agent)
+  129:         return agents
+  130: 
+  131:     def _parse_agent_file(self, file_path: Path) -> dict:
+  132:         try:
+  133:             content = file_path.read_text(encoding="utf-8")
+  134:         except Exception:
+  135:             return None
+  136: 
+  137:         agent = {
+  138:             "id": file_path.stem,
+  139:             "name": self._humanize(file_path.stem),
+  140:             "path": str(file_path.relative_to(self.root)).replace("\\", "/"),
+  141:             "role": "",
+  142:             "description": "",
+  143:             "expertise": [],
+  144:             "responsibilities": [],
+  145:             "skills": [],
+  146:             "skills_detail": [],
+  147:             "tools": [],
+  148:             "tools_optional": [],
+  149:             "standards": [],
+  150:             "automotive_context": {},
+  151:             "collaborates_with": [],
+  152:             "status": "active",
+  153:             "last_modified": file_path.stat().st_mtime,
+  154:             "sections": [],
+  155:         }
+  156: 
+  157:         # YAML Frontmatter
+  158:         fm_match = re.match(r"^---\n(.*?)\n---", content, re.DOTALL)
+  159:         if fm_match:
+  160:             try:
+  161:                 fm = yaml.safe_load(fm_match.group(1))
+  162:                 if isinstance(fm, dict):
+  163:                     agent["role"] = fm.get("role", "")
+  164:                     agent["description"] = str(fm.get("description", "")).strip()
+  165:                     expertise = fm.get("expertise", [])
+  166:                     agent["expertise"] = expertise if isinstance(expertise, list) else []
+  167:                     responsibilities = fm.get("responsibilities", [])
+  168:                     agent["responsibilities"] = responsibilities if isinstance(responsibilities, list) else []
+  169:                     auto_ctx = fm.get("automotive_context", {})
+  170:                     if isinstance(auto_ctx, dict):
+  171:                         standards = auto_ctx.get("standards_compliance", [])
+  172:                         agent["standards"] = standards if isinstance(standards, list) else []
+  173:                         agent["automotive_context"] = auto_ctx
+  174:             except Exception:
+  175:                 pass
+  176: 
+  177:         # ## skills 块
+  178:         skills_match = re.search(r"## skills\s*```yaml\s*(.*?)```", content, re.DOTALL)
+  179:         if skills_match:
+  180:             try:
+  181:                 skills_data = yaml.safe_load(skills_match.group(1))
+  182:                 if isinstance(skills_data, dict) and "skills" in skills_data:
+  183:                     agent["skills_detail"] = [
+  184:                         s for s in skills_data["skills"] if isinstance(s, dict)
+  185:                     ]
+  186:                     agent["skills"] = [
+  187:                         s["skill"] for s in skills_data["skills"]
+  188:                         if isinstance(s, dict) and "skill" in s
+  189:                     ]
+  190:             except Exception:
+  191:                 pass
+  192: 
+  193:         # ## tools 块
+  194:         tools_match = re.search(r"## tools\s*```yaml\s*(.*?)```", content, re.DOTALL)
+  195:         if tools_match:
+  196:             try:
+  197:                 tools_data = yaml.safe_load(tools_match.group(1))
+  198:                 if isinstance(tools_data, dict) and "tools" in tools_data:
+  199:                     required = tools_data["tools"].get("required", [])
+  200:                     optional = tools_data["tools"].get("optional", [])
+  201:                     agent["tools"] = [
+  202:                         self._extract_tool_id(t) for t in required if t
+  203:                     ]
+  204:                     agent["tools_optional"] = [
+  205:                         self._extract_tool_id(t) for t in optional if t
+  206:                     ]
+  207:             except Exception:
+  208:                 pass
+  209: 
+  210:         # ## collaboration_patterns 块 — 提取协作的 agent
+  211:         collab_match = re.search(r"## collaboration_patterns\s*```yaml\s*(.*?)```", content, re.DOTALL)
+  212:         if collab_match:
+  213:             try:
+  214:                 collab_data = yaml.safe_load(collab_match.group(1))
+  215:                 if isinstance(collab_data, dict) and "collaboration_patterns" in collab_data:
+  216:                     for pattern in collab_data["collaboration_patterns"]:
+  217:                         desc = pattern.get("description", "")
+  218:                         # 从描述中提取 *-agent 名称
+  219:                         for m in re.finditer(r"(\w+-agent)", desc):
+  220:                             aid = m.group(1)
+  221:                             if aid != agent["id"] and aid not in agent["collaborates_with"]:
+  222:                                 agent["collaborates_with"].append(aid)
+  223:             except Exception:
+  224:                 pass
+  225: 
+  226:         # 解析 ## / ### 章节树（供 Modal 动态渲染使用）
+  227:         agent["sections"] = self._parse_md_sections(content)
+  228: 
+  229:         return agent
+  230: 
+  231:     def _extract_tool_id(self, tool_str: str) -> str:
+  232:         """从 'tools/static_analyzer  # comment' 中提取 static_analyzer。"""
+  233:         clean = str(tool_str).split("#")[0].strip().strip('"\'')
+  234:         return clean.split("/")[-1].strip()
+  235: 
+  236:     @staticmethod
+  237:     def _parse_md_sections(content: str) -> list:
+  238:         """将 .md 正文（frontmatter 之后）按 ## / ### 标题解析为 section 树。"""
+  239:         fm_match = re.match(r"^---\n.*?\n---\n?", content, re.DOTALL)
+  240:         body = content[fm_match.end():] if fm_match else content
+  241: 
+  242:         def strip_hr(text: str) -> str:
+  243:             return re.sub(r"(\n---\s*)+$", "", text).strip()
+  244: 
+  245:         def detect_type(text: str):
+  246:             m = re.match(r"^\s*```yaml\s*(.*?)```\s*$", text.strip(), re.DOTALL)
+  247:             if m:
+  248:                 return "yaml", m.group(1).strip()
+  249:             return "markdown", text.strip()
+  250: 
+  251:         sections: list = []
+  252:         h2: dict | None = None
+  253:         h3: dict | None = None
+  254:         buf: list = []
+  255: 
+  256:         for line in body.split("\n"):
+  257:             m2 = re.match(r"^## ([^#].+?)$", line)
+  258:             m3 = re.match(r"^### ([^#].+?)$", line)
+  259:             if m2:
+  260:                 if h3:
+  261:                     h3["content"] = strip_hr("\n".join(buf))
+  262:                     h3 = None
+  263:                 elif h2:
+  264:                     raw = strip_hr("\n".join(buf))
+  265:                     ct, val = detect_type(raw)
+  266:                     h2["content_type"] = ct
+  267:                     h2["content"] = val
+  268:                 if h2:
+  269:                     sections.append(h2)
+  270:                 buf = []
+  271:                 t = m2.group(1).strip()
+  272:                 h2 = {"id": t, "title": t, "level": 2,
+  273:                       "content_type": "markdown", "content": "", "children": []}
+  274:             elif m3 and h2:
+  275:                 if h3:
+  276:                     h3["content"] = strip_hr("\n".join(buf))
+  277:                 elif buf:
+  278:                     raw = strip_hr("\n".join(buf))
+  279:                     ct, val = detect_type(raw)
+  280:                     h2["content_type"] = ct
+  281:                     h2["content"] = val
+  282:                 buf = []
+  283:                 t = m3.group(1).strip()
+  284:                 h3 = {"id": t, "title": t, "level": 3,
+  285:                       "content_type": "markdown", "content": ""}
+  286:                 h2["children"].append(h3)
+  287:             else:
+  288:                 buf.append(line)
+  289: 
+  290:         if h3:
+  291:             h3["content"] = strip_hr("\n".join(buf))
+  292:         elif h2:
+  293:             raw = strip_hr("\n".join(buf))
+  294:             ct, val = detect_type(raw)
+  295:             h2["content_type"] = ct
+  296:             h2["content"] = val
+  297:         if h2:
+  298:             sections.append(h2)
+  299: 
+  300:         return sections
+  301: 
+  302:     # ── Skill 解析 ────────────────────────────────────────────────────────────
+  303: 
+  304:     def _parse_skills(self) -> list:
+  305:         skills_dir = self.root / "skills"
+  306:         skills = []
+  307:         if not skills_dir.exists():
+  308:             return skills
+  309:         for d in sorted(skills_dir.iterdir()):
+  310:             if not d.is_dir():
+  311:                 continue
+  312:             skill_file = d / "SKILL.md"
+  313:             skill = {
+  314:                 "id": d.name,
+  315:                 "name": d.name.upper() if len(d.name) <= 5 else self._humanize(d.name),
+  316:                 "path": str(d.relative_to(self.root)).replace("\\", "/"),
+  317:                 "description": "",
+  318:                 "status": "active",
+  319:                 "last_modified": d.stat().st_mtime,
+  320:             }
+  321:             if skill_file.exists():
+  322:                 skill["last_modified"] = skill_file.stat().st_mtime
+  323:                 try:
+  324:                     content = skill_file.read_text(encoding="utf-8")
+  325:                     fm_match = re.match(r"^---\n(.*?)\n---", content, re.DOTALL)
+  326:                     if fm_match:
+  327:                         fm = yaml.safe_load(fm_match.group(1))
+  328:                         if isinstance(fm, dict):
+  329:                             skill["description"] = str(fm.get("description", "")).strip()
+  330:                             skill["category"] = fm.get("category", "")
+  331:                 except Exception:
+  332:                     pass
+  333:             skills.append(skill)
+  334:         return skills
+  335: 
+  336:     # ── Rules 解析 ───────────────────────────────────────────────────────────
+  337: 
+  338:     def _parse_rules(self) -> list:
+  339:         rules_dir = self.root / "rules"
+  340:         rules = []
+  341:         if not rules_dir.exists():
+  342:             return rules
+  343:         for f in sorted(rules_dir.glob("*.md")):
+  344:             rules.append({
+  345:                 "id": f.stem,
+  346:                 "name": self._humanize(f.stem),
+  347:                 "path": str(f.relative_to(self.root)).replace("\\", "/"),
+  348:                 "status": "active",
+  349:                 "last_modified": f.stat().st_mtime,
+  350:             })
+  351:         return rules
+  352: 
+  353:     # ── Knowledge 解析 ───────────────────────────────────────────────────────
+  354: 
+  355:     def _parse_knowledge(self) -> list:
+  356:         knowledge_dir = self.root / "knowledge"
+  357:         knowledge = []
+  358:         if not knowledge_dir.exists():
+  359:             return knowledge
+  360: 
+  361:         # 扫描 knowledge/ 根目录下的 .md 文件（跳过 README）
+  362:         for f in sorted(knowledge_dir.glob("*.md")):
+  363:             if f.name.lower() == "readme.md":
+  364:                 continue
+  365:             knowledge.append({
+  366:                 "id": f.stem,
+  367:                 "name": self._humanize(f.stem),
+  368:                 "path": str(f.relative_to(self.root)).replace("\\", "/"),
+  369:                 "status": "active",
+  370:                 "last_modified": f.stat().st_mtime,
+  371:             })
+  372: 
+  373:         # 扫描一级子目录中的 .md 文件
+  374:         for subdir in sorted(knowledge_dir.iterdir()):
+  375:             if not subdir.is_dir():
+  376:                 continue
+  377:             for f in sorted(subdir.glob("*.md")):
+  378:                 if f.name.lower() == "readme.md":
+  379:                     continue
+  380:                 knowledge.append({
+  381:                     "id": f.stem,
+  382:                     "name": self._humanize(f.stem),
+  383:                     "path": str(f.relative_to(self.root)).replace("\\", "/"),
+  384:                     "status": "active",
+  385:                     "last_modified": f.stat().st_mtime,
+  386:                 })
+  387: 
+  388:         # 虚拟知识库条目（常用但尚未创建的文件，供 Add 下拉选择）
+  389:         virtual_knowledge = [
+  390:             ("bridge-driver-chips", "Bridge Driver Chips",
+  391:              "knowledge/bridge-driver-chips.md", "H桥/半桥驱动芯片寄存器定义与命令集"),
+  392:             ("autosar-sws-pwm", "AUTOSAR SWS PWM",
+  393:              "knowledge/autosar-sws-pwm.md", "AUTOSAR PWM 驱动规范接口定义"),
+  394:             ("autosar-sws-spi", "AUTOSAR SWS SPI",
+  395:              "knowledge/autosar-sws-spi.md", "AUTOSAR SPI 处理器/驱动规范"),
+  396:             ("iso26262-part6", "ISO 26262 Part 6",
+  397:              "knowledge/iso26262-part6.md", "软件单元设计与实现安全规范"),
+  398:             ("misra-c-2012", "MISRA-C 2012",
+  399:              "knowledge/misra-c-2012.md", "MISRA-C:2012 编码规则集"),
+  400:             ("sensor-datasheets", "Sensor Datasheets",
+  401:              "knowledge/sensor-datasheets.md", "传感器芯片数据手册汇总"),
+  402:             ("can-fd-spec", "CAN-FD Spec",
+  403:              "knowledge/can-fd-spec.md", "CAN-FD 协议规范参考"),
+  404:             ("eth-avb-spec", "ETH AVB Spec",
+  405:              "knowledge/eth-avb-spec.md", "以太网 AVB/TSN 协议规范"),
+  406:         ]
+  407:         existing_paths = {k["path"] for k in knowledge}
+  408:         for kid, kname, kpath, kdesc in virtual_knowledge:
+  409:             if kpath not in existing_paths:
+  410:                 knowledge.append({
+  411:                     "id": kid,
+  412:                     "name": kname,
+  413:                     "path": kpath,
+  414:                     "description": kdesc,
+  415:                     "status": "virtual",
+  416:                     "last_modified": 0,
+  417:                 })
+  418:         return knowledge
+  419: 
+  420:     # ── Tools 解析 ───────────────────────────────────────────────────────────
+  421: 
+  422:     def _parse_tools(self) -> list:
+  423:         tools_dir = self.root / "tools"
+  424:         tools = []
+  425:         if tools_dir.exists():
+  426:             for f in sorted(tools_dir.glob("*.py")):
+  427:                 tools.append({
+  428:                     "id": f.stem,
+  429:                     "name": self._humanize(f.stem),
+  430:                     "path": str(f.relative_to(self.root)).replace("\\", "/"),
+  431:                     "status": "active",
+  432:                     "last_modified": f.stat().st_mtime,
+  433:                 })
+  434:         # 虚拟工具（在 agent 文件中引用但尚未创建）
+  435:         virtual_tools = [
+  436:             ("static_analyzer", "Static Analyzer"),
+  437:             ("unit_test_runner", "Unit Test Runner"),
+  438:             ("autosar_configurator", "AUTOSAR Configurator"),
+  439:             ("hil_simulator", "HIL Simulator"),
+  440:             ("oscilloscope_tool", "Oscilloscope Tool"),
+  441:             ("can_analyzer", "CAN Analyzer"),
+  442:             ("eth_sniffer", "ETH Sniffer"),
+  443:         ]
+  444:         existing_ids = {t["id"] for t in tools}
+  445:         for tid, tname in virtual_tools:
+  446:             if tid not in existing_ids:
+  447:                 tools.append({
+  448:                     "id": tid,
+  449:                     "name": tname,
+  450:                     "path": f"tools/{tid}",
+  451:                     "status": "virtual",
+  452:                     "last_modified": 0,
+  453:                 })
+  454:         return tools
+  455: 
+  456:     # ── 辅助 ─────────────────────────────────────────────────────────────────
+  457: 
+  458:     def _humanize(self, s: str) -> str:
+  459:         """将 kebab-case 或 snake_case 转为可读标题。"""
+  460:         return s.replace("-", " ").replace("_", " ").title()
+  461: 
+  462: 
+  463: # ──────────────────────────────────────────────────────────────────────────────
+  464: # 文件监听器
+  465: # ──────────────────────────────────────────────────────────────────────────────
+  466: 
+  467: class ProjectFileWatcher(FileSystemEventHandler):
+  468:     """监听项目文件变化，防抖后通过 WebSocket 推送全量更新。"""
+  469: 
+  470:     def __init__(self, sio, parser: ProjectParser):
+  471:         self.sio = sio
+  472:         self.parser = parser
+  473:         self._timers: dict = {}
+  474:         self._lock = threading.Lock()
+  475: 
+  476:     def _schedule_update(self, path: str, event_type: str):
+  477:         with self._lock:
+  478:             if path in self._timers:
+  479:                 self._timers[path].cancel()
+  480:             timer = threading.Timer(
+  481:                 0.6, self._push_update, args=[path, event_type]
+  482:             )
+  483:             self._timers[path] = timer
+  484:             timer.start()
+  485: 
+  486:     def _push_update(self, path: str, event_type: str):
+  487:         try:
+  488:             updated = parser.parse_all()
+  489:             rel_path = str(Path(path).relative_to(PROJECT_ROOT)).replace("\\", "/")
+  490:             self.sio.emit("project_update", {
+  491:                 "type": event_type,
+  492:                 "changed_file": rel_path,
+  493:                 "data": updated,
+  494:                 "timestamp": time.time(),
+  495:             })
+  496:             print(f"[WS] 推送更新: {event_type} → {rel_path}")
+  497:         except Exception as e:
+  498:             print(f"[WS] 推送失败: {e}")
+  499: 
+  500:     def on_modified(self, event):
+  501:         if not event.is_directory:
+  502:             self._schedule_update(event.src_path, "modified")
+  503: 
+  504:     def on_created(self, event):
+  505:         if not event.is_directory:
+  506:             self._schedule_update(event.src_path, "created")
+  507: 
+  508:     def on_deleted(self, event):
+  509:         if not event.is_directory:
+  510:             self._schedule_update(event.src_path, "deleted")
+  511: 
+  512: 
+  513: # ──────────────────────────────────────────────────────────────────────────────
+  514: # 路由逻辑
+  515: # ──────────────────────────────────────────────────────────────────────────────
+  516: 
+  517: def route_instruction(instruction: str, data: dict) -> dict:
+  518:     """
+  519:     对用户指令进行关键词匹配，返回完整路由结果。
+  520:     包含: 匹配的 Agent、激活的 Skills、所需 Tools、路由路径节点列表。
+  521:     """
+  522:     instruction_lower = instruction.lower()
+  523:     routing_rules = data.get("routing_rules", [])
+  524:     agents = {a["id"]: a for a in data.get("agents", [])}
+  525:     skills_map = {s["id"]: s for s in data.get("skills", [])}
+  526:     tools_map = {t["id"]: t for t in data.get("tools", [])}
+  527: 
+  528:     matched_agents = []
+  529:     matched_keywords = []
+  530: 
+  531:     # 关键词匹配（大小写不敏感）
+  532:     for rule in routing_rules:
+  533:         for kw in rule["keywords"]:
+  534:             if kw.lower() in instruction_lower:
+  535:                 aid = rule["agent_id"]
+  536:                 if aid not in [a["id"] for a in matched_agents]:
+  537:                     agent = agents.get(aid)
+  538:                     if agent:
+  539:                         matched_agents.append(agent)
+  540:                         matched_keywords.append(kw)
+  541:                 break  # 同一 rule 命中一个关键词即可
+  542: 
+  543:     if not matched_agents:
+  544:         return {
+  545:             "status": "no_match",
+  546:             "message": "未找到匹配的 Agent，建议向人类开发者征询建议。",
+  547:             "instruction": instruction,
+  548:             "matched_agents": [],
+  549:             "activated_skills": [],
+  550:             "required_tools": [],
+  551:             "route_path": [],
+  552:             "matched_keywords": [],
+  553:         }
+  554: 
+  555:     # 收集激活的 Skills 和 Tools
+  556:     activated_skill_ids: list = []
+  557:     required_tool_ids: list = []
+  558:     route_path: list = []
+  559: 
+  560:     for agent in matched_agents:
+  561:         route_path.append({"type": "agent", "id": agent["id"], "name": agent["name"]})
+  562:         for sid in agent.get("skills", []):
+  563:             if sid not in activated_skill_ids:
+  564:                 activated_skill_ids.append(sid)
+  565:                 route_path.append({"type": "skill", "id": sid,
+  566:                                     "name": skills_map.get(sid, {}).get("name", sid)})
+  567:         for tid in agent.get("tools", []):
+  568:             if tid not in required_tool_ids:
+  569:                 required_tool_ids.append(tid)
+  570:                 route_path.append({"type": "tool", "id": tid,
+  571:                                     "name": tools_map.get(tid, {}).get("name", tid)})
+  572: 
+  573:     # 追加规则与知识库节点（始终适用）
+  574:     for rule in data.get("rules", []):
+  575:         route_path.append({"type": "rules", "id": rule["id"], "name": rule["name"]})
+  576: 
+  577:     activated_skills = [skills_map[sid] for sid in activated_skill_ids if sid in skills_map]
+  578:     required_tools = [tools_map[tid] for tid in required_tool_ids if tid in tools_map]
+  579: 
+  580:     return {
+  581:         "status": "matched",
+  582:         "instruction": instruction,
+  583:         "matched_keywords": matched_keywords,
+  584:         "matched_agents": matched_agents,
+  585:         "activated_skills": activated_skills,
+  586:         "required_tools": required_tools,
+  587:         "route_path": route_path,
+  588:     }
+  589: 
+  590: 
+  591: # ──────────────────────────────────────────────────────────────────────────────
+  592: # 全局 Parser 实例 & 路由缓存
+  593: # ──────────────────────────────────────────────────────────────────────────────
+  594: 
+  595: parser = ProjectParser(PROJECT_ROOT)
+  596: 
+  597: # 缓存最近一次路由结果，供新连接客户端立即显示
+  598: _last_routing_result: dict | None = None
+  599: 
+  600: 
+  601: # ──────────────────────────────────────────────────────────────────────────────
+  602: # HTTP 路由
+  603: # ──────────────────────────────────────────────────────────────────────────────
+  604: 
+  605: @app.route("/")
+  606: def index():
+  607:     return send_file(Path(__file__).parent / "index.html")
+  608: 
+  609: 
+  610: @app.route("/api/components")
+  611: def api_components():
+  612:     """返回全量组件数据（供初始加载）。"""
+  613:     return jsonify(parser.parse_all())
+  614: 
+  615: 
+  616: @app.route("/api/route", methods=["POST"])
+  617: def api_route():
+  618:     """HTTP 方式的路由匹配接口。"""
+  619:     body = request.get_json(silent=True) or {}
+  620:     instruction = body.get("instruction", "")
+  621:     data = parser.parse_all()
+  622:     result = route_instruction(instruction, data)
+  623:     return jsonify(result)
+  624: 
+  625: 
+  626: @app.route("/api/health")
+  627: def api_health():
+  628:     return jsonify({"status": "ok", "project_root": str(PROJECT_ROOT)})
+  629: 
+  630: 
+  631: @app.route("/api/push_route", methods=["POST"])
+  632: def api_push_route():
+  633:     """
+  634:     外部工具（如 Siada AI）调用此接口触发路由分析，并实时广播给所有页面客户端。
+  635: 
+  636:     调用示例:
+  637:       curl -X POST http://localhost:5000/api/push_route \\
+  638:            -H "Content-Type: application/json" \\
+  639:            -d '{"instruction": "开发 SPI DMA 驱动"}'
+  640:     """
+  641:     global _last_routing_result
+  642:     body = request.get_json(silent=True) or {}
+  643:     instruction = body.get("instruction", "").strip()
+  644:     if not instruction:
+  645:         return jsonify({"error": "instruction is required"}), 400
+  646: 
+  647:     data = parser.parse_all()
+  648:     result = route_instruction(instruction, data)
+  649: 
+  650:     # 缓存并广播路由结果到所有已连接的 WebSocket 客户端
+  651:     _last_routing_result = result
+  652:     socketio.emit("routing_result", result)
+  653:     print(f"[PUSH] instruction='{instruction}' → status={result['status']}")
+  654:     return jsonify(result)
+  655: 
+  656: 
+  657: @app.route("/api/save_agent", methods=["POST"])
+  658: def api_save_agent():
+  659:     """
+  660:     保存 Agent 配置到对应的 .md 文件，并广播更新到所有客户端。
+  661: 
+  662:     接收 JSON（新格式）:
+  663:       {
+  664:         "agent_id": "communication-agent",
+  665:         "fm_fields": {
+  666:           "role": "...",
+  667:           "description": "...",
+  668:           "expertise": ["..."],
+  669:           "responsibilities": ["..."],
+  670:           "oem_tier": "Tier1",
+  671:           "lifecycle_phase": "Development",
+  672:           "standards": ["ISO 26262", ...]
+  673:         },
+  674:         "sections_content": {
+  675:           "system_prompt": "...",
+  676:           "模块 B：上下文收集": "...",
+  677:           "skills": "skills:\n- skill: spi\n  proficiency: expert\n",
+  678:           ...
+  679:         }
+  680:       }
+  681:     """
+  682:     body = request.get_json(silent=True) or {}
+  683:     agent_id = body.get("agent_id", "").strip()
+  684:     if not agent_id:
+  685:         return jsonify({"error": "agent_id is required"}), 400
+  686: 
+  687:     agent_file = PROJECT_ROOT / "agents" / f"{agent_id}.md"
+  688:     if not agent_file.exists():
+  689:         return jsonify({"error": f"Agent file not found: agents/{agent_id}.md"}), 404
+  690: 
+  691:     try:
+  692:         content = agent_file.read_text(encoding="utf-8")
+  693:     except Exception as e:
+  694:         return jsonify({"error": f"读取文件失败: {e}"}), 500
+  695: 
+  696:     fm_fields = body.get("fm_fields", {})
+  697:     sections_content = body.get("sections_content", {})
+  698:     sections_order = body.get("sections_order", None)  # 前端传来的 section 标题有序列表（用于处理删除/重排）
+  699: 
+  700:     # ── 更新 YAML Frontmatter ─────────────────────────────────────────────────
+  701:     fm_match = re.match(r"^---\n(.*?)\n---", content, re.DOTALL)
+  702:     fm: dict = {}
+  703:     if fm_match:
+  704:         try:
+  705:             fm = yaml.safe_load(fm_match.group(1)) or {}
+  706:         except Exception:
+  707:             fm = {}
+  708: 
+  709:     if "role" in fm_fields:
+  710:         fm["role"] = fm_fields["role"]
+  711:     if "description" in fm_fields:
+  712:         fm["description"] = fm_fields["description"]
+  713:     if "expertise" in fm_fields:
+  714:         fm["expertise"] = [e for e in fm_fields["expertise"] if e]
+  715:     if "responsibilities" in fm_fields:
+  716:         fm["responsibilities"] = [r for r in fm_fields["responsibilities"] if r]
+  717: 
+  718:     # automotive_context 子字段
+  719:     need_ctx = any(k in fm_fields for k in ("oem_tier", "lifecycle_phase", "standards"))
+  720:     if need_ctx:
+  721:         if not isinstance(fm.get("automotive_context"), dict):
+  722:             fm["automotive_context"] = {}
+  723:         if "oem_tier" in fm_fields and fm_fields["oem_tier"]:
+  724:             fm["automotive_context"]["oem_tier"] = fm_fields["oem_tier"]
+  725:         if "lifecycle_phase" in fm_fields and fm_fields["lifecycle_phase"]:
+  726:             fm["automotive_context"]["lifecycle_phase"] = fm_fields["lifecycle_phase"]
+  727:         if "standards" in fm_fields:
+  728:             fm["automotive_context"]["standards_compliance"] = [
+  729:                 s for s in fm_fields["standards"] if s
+  730:             ]
+  731: 
+  732:     # ── 重建正文（根据原始 section 树 + sections_content 更新） ───────────────
+  733:     orig_sections = ProjectParser._parse_md_sections(content)
+  734: 
+  735:     def apply_updates(sections: list, updates: dict) -> list:
+  736:         for sec in sections:
+  737:             if sec["title"] in updates:
+  738:                 sec["content"] = updates[sec["title"]]
+  739:             for child in sec.get("children", []):
+  740:                 if child["title"] in updates:
+  741:                     child["content"] = updates[child["title"]]
+  742:         return sections
+  743: 
+  744:     updated_sections = apply_updates(orig_sections, sections_content)
+  745: 
+  746:     if sections_order is not None:
+  747:         # ── 使用 sections_order 作为权威 section 列表（支持删除和重排序）────────────
+  748:         orig_map = {sec["title"]: sec for sec in updated_sections}
+  749:         new_sections = []
+  750:         for title in sections_order:
+  751:             if title in orig_map:
+  752:                 # 已有 section（内容已由 apply_updates 更新）
+  753:                 new_sections.append(orig_map[title])
+  754:             elif title in sections_content:
+  755:                 # 新增的 section（不在原文件中）
+  756:                 new_sections.append({
+  757:                     "title": title,
+  758:                     "content": sections_content[title],
+  759:                     "content_type": "yaml",
+  760:                     "children": [],
+  761:                 })
+  762:         updated_sections = new_sections
+  763:     else:
+  764:         # ── 兼容旧逻辑：追加 sections_content 中不在原文件的新节 ──────────────────
+  765:         existing_titles: set = set()
+  766:         for sec in orig_sections:
+  767:             existing_titles.add(sec["title"])
+  768:             for child in sec.get("children", []):
+  769:                 existing_titles.add(child["title"])
+  770:         for title, sec_content in sections_content.items():
+  771:             if title not in existing_titles:
+  772:                 updated_sections.append({
+  773:                     "title": title,
+  774:                     "content": sec_content,
+  775:                     "content_type": "yaml",
+  776:                     "children": [],
+  777:                 })
+  778: 
+  779:     # 重建 frontmatter
+  780:     new_fm_str = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
+  781:     new_content = f"---\n{new_fm_str}---\n"
+  782: 
+  783:     # 重建各 ## section
+  784:     for sec in updated_sections:
+  785:         new_content += f"\n## {sec['title']}\n\n"
+  786:         if sec.get("children"):
+  787:             # 有 ### 子标题的 section（如 system_prompt）
+  788:             if sec["content"]:
+  789:                 new_content += f"{sec['content']}\n\n"
+  790:             for child in sec["children"]:
+  791:                 new_content += f"### {child['title']}\n\n"
+  792:                 if child.get("content"):
+  793:                     new_content += f"{child['content']}\n\n"
+  794:                 new_content += "---\n"
+  795:         else:
+  796:             # 无子标题：YAML 块或纯 Markdown
+  797:             c = sec.get("content", "")
+  798:             if sec.get("content_type") == "yaml":
+  799:                 new_content += f"```yaml\n{c}\n```\n\n"
+  800:             else:
+  801:                 if c:
+  802:                     new_content += f"{c}\n\n"
+  803:             new_content += "---\n"
+  804: 
+  805:     # ── 写回文件 ──────────────────────────────────────────────────────────────
+  806:     try:
+  807:         agent_file.write_text(new_content, encoding="utf-8")
+  808:     except Exception as e:
+  809:         return jsonify({"error": f"写入文件失败: {e}"}), 500
+  810: 
+  811:     # ── 广播更新到所有客户端 ───────────────────────────────────────────────────
+  812:     updated = parser.parse_all()
+  813:     socketio.emit("project_update", {
+  814:         "type": "modified",
+  815:         "changed_file": f"agents/{agent_id}.md",
+  816:         "data": updated,
+  817:         "timestamp": time.time(),
+  818:     })
+  819:     print(f"[SAVE] Agent config saved: agents/{agent_id}.md")
+  820:     return jsonify({"status": "ok", "agent_id": agent_id})
+  821: 
+  822: 
+  823: @app.route("/api/create_agent", methods=["POST"])
+  824: def api_create_agent():
+  825:     """
+  826:     创建新的 Agent .md 文件，所有配置项填充默认占位值。
+  827: 
+  828:     接收 JSON:
+  829:       { "agent_name": "my-custom-agent" }
+  830: 
+  831:     返回:
+  832:       { "status": "ok", "agent_id": "my-custom-agent", "path": "agents/my-custom-agent.md" }
+  833:     """
+  834:     import datetime
+  835:     body = request.get_json(silent=True) or {}
+  836:     raw_name = body.get("agent_name", "").strip()
+  837:     if not raw_name:
+  838:         return jsonify({"error": "agent_name is required"}), 400
+  839: 
+  840:     # 规范化：小写，只保留字母数字短横线
+  841:     import re as _re
+  842:     agent_id = _re.sub(r"[^a-z0-9-]", "-", raw_name.lower())
+  843:     agent_id = _re.sub(r"-+", "-", agent_id).strip("-")
+  844:     if not agent_id:
+  845:         return jsonify({"error": "agent_name is invalid (use lowercase letters, digits and hyphens)"}), 400
+  846: 
+  847:     agent_file = PROJECT_ROOT / "agents" / f"{agent_id}.md"
+  848:     if agent_file.exists():
+  849:         return jsonify({"error": f"Agent already exists: agents/{agent_id}.md"}), 409
+  850: 
+  851:     today = datetime.date.today().isoformat()
+  852:     display_name = agent_id.replace("-", " ").title()
+  853: 
+  854:     # ── 默认 Agent 模板（所有 11 个 section，填充占位默认值）─────────────────
+  855:     default_content = (
+  856:         "---\n"
+  857:         "name: " + agent_id + "\n"
+  858:         "version: 1.0.0\n"
+  859:         "type: specialist\n"
+  860:         "domain: automotive\n"
+  861:         "role: 待填写 — " + display_name + " 的核心职责描述\n"
+  862:         "description: 请填写此 Agent 的功能描述，说明其专注领域、覆盖范围与核心价值。\n"
+  863:         "expertise:\n"
+  864:         "  - 待填写专业领域 1\n"
+  865:         "  - 待填写专业领域 2\n"
+  866:         "responsibilities:\n"
+  867:         "  - 待填写职责 1\n"
+  868:         "  - 待填写职责 2\n"
+  869:         "automotive_context:\n"
+  870:         "  oem_level: Tier1\n"
+  871:         "  lifecycle_phase: Development\n"
+  872:         "  asil_range: QM ~ ASIL-B\n"
+  873:         "  standards_compliance:\n"
+  874:         "    - ISO 26262 Part 6\n"
+  875:         "    - AUTOSAR Classic 4.x\n"
+  876:         "    - MISRA-C:2012\n"
+  877:         "---\n"
+  878:         "\n"
+  879:         "## workflows\n"
+  880:         "\n"
+  881:         "```yaml\n"
+  882:         "workflows:\n"
+  883:         "  - name: Primary Workflow - 主要开发流程\n"
+  884:         "    trigger: 用户请求实现主要功能（初始化/配置/诊断）\n"
+  885:         "    steps:\n"
+  886:         "      - step: 收集上下文\n"
+  887:         "        actions:\n"
+  888:         "          - 确认目标车型与 ECU 型号\n"
+  889:         "          - 确认 ASIL 等级（QM/A/B/C/D）\n"
+  890:         "          - 确认验收标准（单元测试覆盖率 / MISRA 合规 / 评审通过）\n"
+  891:         "      - step: 分析需求\n"
+  892:         "        actions:\n"
+  893:         "          - 查询知识库获取相关规范文档\n"
+  894:         "          - 评审需求文档与硬件原理图\n"
+  895:         "          - 提取安全需求与接口参数约束\n"
+  896:         "      - step: 执行任务\n"
+  897:         "        actions:\n"
+  898:         "          - 按规范实现驱动初始化与核心功能\n"
+  899:         "          - 🤖 AGENT CHECK：验证实现满足需求与接口约束\n"
+  900:         "          - 按 MISRA-C:2012 编写代码，记录偏差并申请豁免\n"
+  901:         "          - 使用 Doxygen 注释维护 REQ → CODE 追溯链\n"
+  902:         "      - step: 验证输出\n"
+  903:         "        actions:\n"
+  904:         "          - 调用 tools/static_analyzer 执行 MISRA-C:2012 全规则集检查\n"
+  905:         "          - 调用 tools/unit_test_runner 执行单元测试，目标覆盖率 ≥ MC/DC 90%\n"
+  906:         "      - step: 交付结果\n"
+  907:         "        actions:\n"
+  908:         "          - 打包驱动源码、配置文件与测试文件\n"
+  909:         "          - 生成测试报告与 MISRA 合规报告\n"
+  910:         "          - 更新 REQ-CODE-TEST 追溯矩阵\n"
+  911:         "\n"
+  912:         "  - name: Review Workflow - 代码评审\n"
+  913:         "    trigger: 代码评审请求\n"
+  914:         "    steps:\n"
+  915:         "      - step: 标准检查\n"
+  916:         "        actions:\n"
+  917:         "          - MISRA-C:2012 合规检查（零未批准违规）\n"
+  918:         "          - AUTOSAR 编码规范检查\n"
+  919:         "          - 驱动文档完整性检查（Doxygen 注释、REQ 追溯）\n"
+  920:         "      - step: 安全分析\n"
+  921:         "        actions:\n"
+  922:         "          - 识别故障模式与未处理路径\n"
+  923:         "          - 验证安全机制完整性\n"
+  924:         "      - step: 输出评审意见\n"
+  925:         "        actions:\n"
+  926:         "          - 按 [Safety/Bug/Arch/Minor/Nit] 分级列出问题\n"
+  927:         "          - 给出具体改进建议与代码示例\n"
+  928:         "          - 明确通过或要求修改的结论\n"
+  929:         "```\n"
+  930:         "\n"
+  931:         "---\n"
+  932:         "\n"
+  933:         "## skills\n"
+  934:         "\n"
+  935:         "```yaml\n"
+  936:         "skills:\n"
+  937:         "  - skill: mcu\n"
+  938:         "    proficiency: intermediate\n"
+  939:         "```\n"
+  940:         "\n"
+  941:         "---\n"
+  942:         "\n"
+  943:         "## tools\n"
+  944:         "\n"
+  945:         "```yaml\n"
+  946:         "tools:\n"
+  947:         "  required:\n"
+  948:         "    - tools/static_analyzer       # MISRA-C:2012 静态分析\n"
+  949:         "    - tools/unit_test_runner      # 单元测试执行与覆盖率报告\n"
+  950:         "    - tools/code_generator        # AUTOSAR 驱动框架代码生成\n"
+  951:         "  optional:\n"
+  952:         "    - tools/hil_simulator         # HIL 硬件在环仿真\n"
+  953:         "```\n"
+  954:         "\n"
+  955:         "---\n"
+  956:         "\n"
+  957:         "## rules\n"
+  958:         "\n"
+  959:         "```yaml\n"
+  960:         "rules:\n"
+  961:         "  - rule: \"rules/coding-rules.md\"\n"
+  962:         "    scope: \"所有驱动源码\"\n"
+  963:         "    description: \"C99 编码规范、MISRA-C:2012 约束、命名规范（模块前缀/匈牙利记法）、内存使用约束（禁止动态分配）\"\n"
+  964:         "\n"
+  965:         "  - rule: \"MISRA-C:2012 全规则集\"\n"
+  966:         "    scope: \"全部驱动代码\"\n"
+  967:         "    description: \"零未批准违规；所有偏差须填写豁免申请表，由安全官员审批后方可提交\"\n"
+  968:         "\n"
+  969:         "  - rule: \"ISO 26262 Part 6（软件单元设计与实现）\"\n"
+  970:         "    scope: \"安全关键代码\"\n"
+  971:         "    description: \"安全机制必须在单元测试中得到验证覆盖，MC/DC ≥ 90%\"\n"
+  972:         "```\n"
+  973:         "\n"
+  974:         "---\n"
+  975:         "\n"
+  976:         "## knowledges\n"
+  977:         "\n"
+  978:         "```yaml\n"
+  979:         "knowledges:\n"
+  980:         "  - source: \"芯片数据手册（Chip Datasheet）\"\n"
+  981:         "    type: \"外部参考文档\"\n"
+  982:         "    description: \"目标芯片寄存器映射、时序参数、故障诊断阈值与引脚行为描述\"\n"
+  983:         "\n"
+  984:         "  - source: \"硬件原理图（ECU Schematic）\"\n"
+  985:         "    type: \"硬件参考文档\"\n"
+  986:         "    description: \"接口参数（CS 极性/时钟模式/最大频率）、GPIO 分配与电气特性\"\n"
+  987:         "\n"
+  988:         "  - source: \"需求规格文档（SRS / SSS）\"\n"
+  989:         "    type: \"需求文档\"\n"
+  990:         "    description: \"功能需求、ASIL 等级定义、安全目标与故障保护要求\"\n"
+  991:         "```\n"
+  992:         "\n"
+  993:         "---\n"
+  994:         "\n"
+  995:         "## multi-agent-collaboration\n"
+  996:         "\n"
+  997:         "```yaml\n"
+  998:         "multi-agent-collaboration:\n"
+  999:         "  - pattern: \"Sequential handoff\"\n"
+  1000:         "    description: \"完成开发后移交 safety-agent 进行安全合规评审\"\n"
+  1001:         "    use_when: \"驱动涉及 ASIL-B 及以上安全等级，需要独立安全评审\"\n"
+  1002:         "\n"
+  1003:         "  - pattern: \"Parallel consultation\"\n"
+  1004:         "    description: \"并行咨询 communication-agent（通信接口规范）和 mcal-agent（MCAL 配置）\"\n"
+  1005:         "    use_when: \"驱动接口涉及多个 MCAL 模块联动，需要跨模块协调\"\n"
+  1006:         "```\n"
+  1007:         "\n"
+  1008:         "---\n"
+  1009:         "\n"
+  1010:         "## human_checks\n"
+  1011:         "\n"
+  1012:         "```yaml\n"
+  1013:         "human_checks:\n"
+  1014:         "  - condition: \"检测到 ASIL-D 安全违规（安全机制缺失、失效或被绕过）\"\n"
+  1015:         "    action: \"立即停止当前工作，上报功能安全官员，等待 safety-agent 仲裁\"\n"
+  1016:         "\n"
+  1017:         "  - condition: \"遇到不熟悉的芯片型号或新硬件平台（寄存器定义未知）\"\n"
+  1018:         "    action: \"请求领域专家会商，不得基于推断自行实现驱动逻辑\"\n"
+  1019:         "\n"
+  1020:         "  - condition: \"需求之间存在冲突或歧义（如安全需求与性能需求矛盾、ASIL 等级定义不明确）\"\n"
+  1021:         "    action: \"上报系统架构师仲裁，不得自行取舍\"\n"
+  1022:         "\n"
+  1023:         "  - condition: \"安全关键代码修改涉及 ASIL-C/D 安全关键组件\"\n"
+  1024:         "    action: \"必须触发 HUMAN CHECK，等待人工工程师确认安全影响分析后方可继续\"\n"
+  1025:         "\n"
+  1026:         "  - condition: \"Agent 被定义为 ASIL-D 安全关键组件的唯一负责人，无独立评审\"\n"
+  1027:         "    action: \"拒绝执行，必须触发 HUMAN CHECK，要求增加独立安全评审流程\"\n"
+  1028:         "\n"
+  1029:         "  - condition: \"tools.required 中包含直接修改生产代码或生产 ECU 配置的权限\"\n"
+  1030:         "    action: \"必须触发 HUMAN CHECK，防止未经评审的代码进入生产环境\"\n"
+  1031:         "\n"
+  1032:         "  - condition: 'Agent 定义或指令中出现\"自动审批\"、\"无需评审\"、\"跳过 MISRA 检查\"等描述'\n"
+  1033:         "    action: \"必须触发 HUMAN CHECK，防止绕过合规检查流程\"\n"
+  1034:         "\n"
+  1035:         "  - condition: \"工具链（static_analyzer / unit_test_runner）执行失败或结果不可信\"\n"
+  1036:         "    action: \"暂停交付，上报工具链负责人，不得在工具失效情况下声明代码合规\"\n"
+  1037:         "\n"
+  1038:         "  - condition: \"任何涉及 ASIL-B/C/D 安全关键决策（故障处理策略、安全状态定义）\"\n"
+  1039:         "    action: \"均应触发 HUMAN CHECK，确保有合格的功能安全工程师进行最终审核和背书\"\n"
+  1040:         "\n"
+  1041:         "  - condition: \"其他任何可能导致驱动代码安全风险或重大质量问题的情况\"\n"
+  1042:         "    action: \"均应触发 HUMAN CHECK，确保有合格的人工工程师进行最终审核和背书\"\n"
+  1043:         "\n"
+  1044:         "  - condition: \"其他任何超出 Agent 技术能力范围的情况（新架构、未知标准、跨域需求）\"\n"
+  1045:         "    action: \"均应触发 HUMAN CHECK，确保有合格的人工工程师进行最终审核和背书\"\n"
+  1046:         "```\n"
+  1047:         "\n"
+  1048:         "---\n"
+  1049:         "\n"
+  1050:         "## output_formats\n"
+  1051:         "\n"
+  1052:         "```yaml\n"
+  1053:         "output_formats:\n"
+  1054:         "  - format: \"C 驱动源码\"\n"
+  1055:         "    template: \"<ModuleName>.c / .h，含完整 Doxygen 注释（@brief/@param/@return/@asil）与 MISRA 豁免说明\"\n"
+  1056:         "\n"
+  1057:         "  - format: \"配置头文件\"\n"
+  1058:         "    template: \"<ModuleName>_Cfg.h，含编译开关与阈值参数宏定义\"\n"
+  1059:         "\n"
+  1060:         "  - format: \"单元测试文件\"\n"
+  1061:         "    template: \"Test_<ModuleName>_<Feature>.c，基于 Unity/ceedling 框架，含边界条件与故障注入测试用例\"\n"
+  1062:         "\n"
+  1063:         "  - format: \"评审报告\"\n"
+  1064:         "    template: \"Markdown 格式，含问题分级（Safety/Bug/Arch/Minor/Nit）、改进建议与通过/修改结论\"\n"
+  1065:         "\n"
+  1066:         "  - format: \"交付摘要\"\n"
+  1067:         "    template: |\n"
+  1068:         "      ## 工作摘要\n"
+  1069:         "      [简述本次任务完成情况]\n"
+  1070:         "\n"
+  1071:         "      ## 技术产物清单\n"
+  1072:         "      - 驱动源文件：<ModuleName>.c / .h\n"
+  1073:         "      - 配置文件：<ModuleName>_Cfg.h\n"
+  1074:         "      - 单元测试：Test_<ModuleName>_<Feature>.c\n"
+  1075:         "\n"
+  1076:         "      ## 测试结果与覆盖率\n"
+  1077:         "      - 语句覆盖率：XX%\n"
+  1078:         "      - 分支覆盖率：XX%\n"
+  1079:         "      - MISRA 违规数：0（或已申请豁免清单）\n"
+  1080:         "\n"
+  1081:         "      ## 安全分析（ASIL 考量）\n"
+  1082:         "      [列出涉及 ASIL 的安全机制及验证手段]\n"
+  1083:         "\n"
+  1084:         "      ## 可追溯矩阵\n"
+  1085:         "      | REQ-ID | 代码位置 | 测试用例 |\n"
+  1086:         "      |--------|----------|----------|\n"
+  1087:         "\n"
+  1088:         "      ## 遗留问题与建议\n"
+  1089:         "      [列出未解决的问题及后续行动项]\n"
+  1090:         "```\n"
+  1091:         "\n"
+  1092:         "---\n"
+  1093:         "\n"
+  1094:         "## performance_metrics\n"
+  1095:         "\n"
+  1096:         "```yaml\n"
+  1097:         "performance_metrics:\n"
+  1098:         "  - metric: 代码质量\n"
+  1099:         "    target: MISRA-C:2012 零未批准违规；首次提交通过率 > 95%\n"
+  1100:         "  - metric: 测试覆盖率\n"
+  1101:         "    target: 语句覆盖 ≥ 95%，MC/DC ≥ 90%（ASIL-B 要求）\n"
+  1102:         "  - metric: 交付效率\n"
+  1103:         "    target: 标准驱动模块开发周期 ≤ 3 个工作日\n"
+  1104:         "\n"
+  1105:         "```\n"
+  1106:         "\n"
+  1107:         "---\n"
+  1108:         "\n"
+  1109:         "## metadata\n"
+  1110:         "\n"
+  1111:         "```yaml\n"
+  1112:         "metadata:\n"
+  1113:         "  author: \"Driver HAL Team\"\n"
+  1114:         "  created: \"" + today + "\"\n"
+  1115:         "  status: \"active\"\n"
+  1116:         "  priority: \"high\"\n"
+  1117:         "\n"
+  1118:         "tags:\n"
+  1119:         "  - automotive\n"
+  1120:         "  - specialist\n"
+  1121:         "  - iso26262\n"
+  1122:         "  - autosar\n"
+  1123:         "  - misra\n"
+  1124:         "  - tier1\n"
+  1125:         "```\n"
+  1126:         "\n"
+  1127:         "---\n"
+  1128:     )
+  1129: 
+  1130:     try:
+  1131:         agent_file.write_text(default_content, encoding="utf-8")
+  1132:     except Exception as e:
+  1133:         return jsonify({"error": f"写入文件失败: {e}"}), 500
+  1134: 
+  1135:     # 广播新文件创建事件
+  1136:     updated = parser.parse_all()
+  1137:     socketio.emit("project_update", {
+  1138:         "type": "created",
+  1139:         "changed_file": f"agents/{agent_id}.md",
+  1140:         "data": updated,
+  1141:         "timestamp": time.time(),
+  1142:     })
+  1143:     print(f"[CREATE] New agent created: agents/{agent_id}.md")
+  1144:     return jsonify({"status": "ok", "agent_id": agent_id, "path": f"agents/{agent_id}.md"})
+  1145: 
+  1146: 
+  1147: @app.route("/api/delete_agent", methods=["POST"])
+  1148: def api_delete_agent():
+  1149:     """
+  1150:     删除指定 Agent 的 .md 文件，并广播更新到所有客户端。
+  1151: 
+  1152:     接收 JSON:
+  1153:       { "agent_id": "test" }
+  1154: 
+  1155:     返回:
+  1156:       { "status": "ok", "agent_id": "test" }
+  1157:     """
+  1158:     body = request.get_json(silent=True) or {}
+  1159:     agent_id = body.get("agent_id", "").strip()
+  1160:     if not agent_id:
+  1161:         return jsonify({"error": "agent_id is required"}), 400
+  1162: 
+  1163:     agent_file = PROJECT_ROOT / "agents" / f"{agent_id}.md"
+  1164:     if not agent_file.exists():
+  1165:         return jsonify({"error": f"Agent file not found: agents/{agent_id}.md"}), 404
+  1166: 
+  1167:     try:
+  1168:         agent_file.unlink()
+  1169:     except Exception as e:
+  1170:         return jsonify({"error": f"删除文件失败: {e}"}), 500
+  1171: 
+  1172:     # 广播删除事件到所有客户端
+  1173:     updated = parser.parse_all()
+  1174:     socketio.emit("project_update", {
+  1175:         "type": "deleted",
+  1176:         "changed_file": f"agents/{agent_id}.md",
+  1177:         "data": updated,
+  1178:         "timestamp": time.time(),
+  1179:     })
+  1180:     print(f"[DELETE] Agent deleted: agents/{agent_id}.md")
+  1181:     return jsonify({"status": "ok", "agent_id": agent_id})
+  1182: 
+  1183: 
+  1184: # ──────────────────────────────────────────────────────────────────────────────
+  1185: # Skill CRUD APIs
+  1186: # ──────────────────────────────────────────────────────────────────────────────
+  1187: 
+  1188: @app.route("/api/skill_config/<skill_id>")
+  1189: def api_skill_config(skill_id):
+  1190:     """返回 Skill 完整配置（frontmatter + sections），供前端编辑弹窗使用。"""
+  1191:     skill_file = PROJECT_ROOT / "skills" / skill_id / "SKILL.md"
+  1192:     if not skill_file.exists():
+  1193:         return jsonify({"error": f"Skill not found: skills/{skill_id}/SKILL.md"}), 404
+  1194:     try:
+  1195:         content = skill_file.read_text(encoding="utf-8")
+  1196:     except Exception as e:
+  1197:         return jsonify({"error": f"读取文件失败: {e}"}), 500
+  1198:     fm_match = re.match(r"^---\n(.*?)\n---", content, re.DOTALL)
+  1199:     fm: dict = {}
+  1200:     if fm_match:
+  1201:         try:
+  1202:             fm = yaml.safe_load(fm_match.group(1)) or {}
+  1203:         except Exception:
+  1204:             fm = {}
+  1205:     sections = ProjectParser._parse_md_sections(content)
+  1206:     return jsonify({
+  1207:         "id": skill_id,
+  1208:         "name": fm.get("name", skill_id),
+  1209:         "frontmatter": fm,
+  1210:         "sections": sections,
+  1211:         "path": f"skills/{skill_id}/SKILL.md",
+  1212:     })
+  1213: 
+  1214: 
+  1215: @app.route("/api/save_skill", methods=["POST"])
+  1216: def api_save_skill():
+  1217:     """保存 Skill 配置到对应的 SKILL.md，并广播更新。"""
+  1218:     body = request.get_json(silent=True) or {}
+  1219:     skill_id = body.get("skill_id", "").strip()
+  1220:     if not skill_id:
+  1221:         return jsonify({"error": "skill_id is required"}), 400
+  1222:     skill_file = PROJECT_ROOT / "skills" / skill_id / "SKILL.md"
+  1223:     if not skill_file.exists():
+  1224:         return jsonify({"error": f"Skill file not found: skills/{skill_id}/SKILL.md"}), 404
+  1225:     try:
+  1226:         content = skill_file.read_text(encoding="utf-8")
+  1227:     except Exception as e:
+  1228:         return jsonify({"error": f"读取文件失败: {e}"}), 500
+  1229: 
+  1230:     fm_fields = body.get("fm_fields", {})
+  1231:     sections_content = body.get("sections_content", {})
+  1232:     sections_order = body.get("sections_order", None)
+  1233: 
+  1234:     # 更新 frontmatter
+  1235:     fm_match = re.match(r"^---\n(.*?)\n---", content, re.DOTALL)
+  1236:     fm: dict = {}
+  1237:     if fm_match:
+  1238:         try:
+  1239:             fm = yaml.safe_load(fm_match.group(1)) or {}
+  1240:         except Exception:
+  1241:             fm = {}
+  1242:     for field in ("version", "category", "subcategory", "domain", "description"):
+  1243:         if field in fm_fields and fm_fields[field]:
+  1244:             fm[field] = fm_fields[field]
+  1245:     if "use_cases" in fm_fields:
+  1246:         fm["use_cases"] = [u for u in fm_fields["use_cases"] if u]
+  1247:     if "automotive_standards" in fm_fields:
+  1248:         fm["automotive_standards"] = [s for s in fm_fields["automotive_standards"] if s]
+  1249: 
+  1250:     # 重建 sections
+  1251:     orig_sections = ProjectParser._parse_md_sections(content)
+  1252: 
+  1253:     def _apply(sections, updates):
+  1254:         for sec in sections:
+  1255:             if sec["title"] in updates:
+  1256:                 sec["content"] = updates[sec["title"]]
+  1257:             for child in sec.get("children", []):
+  1258:                 if child["title"] in updates:
+  1259:                     child["content"] = updates[child["title"]]
+  1260:         return sections
+  1261: 
+  1262:     updated = _apply(orig_sections, sections_content)
+  1263: 
+  1264:     # 处理前端新增的子节（如 instructions 下新增的 A/B/C/D 子节）
+  1265:     new_children = body.get("new_children", {})
+  1266:     for sec in updated:
+  1267:         if sec["title"] in new_children:
+  1268:             existing_child_titles = {c["title"] for c in sec.get("children", [])}
+  1269:             for ctitle in new_children[sec["title"]]:
+  1270:                 if ctitle not in existing_child_titles and ctitle in sections_content:
+  1271:                     sec.setdefault("children", []).append({
+  1272:                         "title": ctitle,
+  1273:                         "content": sections_content[ctitle],
+  1274:                         "content_type": "markdown"
+  1275:                     })
+  1276:                     existing_child_titles.add(ctitle)
+  1277: 
+  1278:     if sections_order is not None:
+  1279:         orig_map = {sec["title"]: sec for sec in updated}
+  1280:         new_secs = []
+  1281:         for title in sections_order:
+  1282:             if title in orig_map:
+  1283:                 new_secs.append(orig_map[title])
+  1284:             elif title in sections_content:
+  1285:                 new_secs.append({"title": title, "content": sections_content[title], "content_type": "yaml", "children": []})
+  1286:         updated = new_secs
+  1287:     else:
+  1288:         existing = {sec["title"] for sec in orig_sections}
+  1289:         for c in [ch for sec in orig_sections for ch in sec.get("children", [])]:
+  1290:             existing.add(c["title"])
+  1291:         for title, sc in sections_content.items():
+  1292:             if title not in existing:
+  1293:                 updated.append({"title": title, "content": sc, "content_type": "yaml", "children": []})
+  1294: 
+  1295:     new_fm_str = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
+  1296:     new_content = f"---\n{new_fm_str}---\n"
+  1297:     for sec in updated:
+  1298:         new_content += f"\n## {sec['title']}\n\n"
+  1299:         if sec.get("children"):
+  1300:             if sec["content"]:
+  1301:                 new_content += f"{sec['content']}\n\n"
+  1302:             for child in sec["children"]:
+  1303:                 new_content += f"### {child['title']}\n\n"
+  1304:                 if child.get("content"):
+  1305:                     new_content += f"{child['content']}\n\n"
+  1306:                 new_content += "---\n"
+  1307:         else:
+  1308:             c = sec.get("content", "")
+  1309:             if sec.get("content_type") == "yaml":
+  1310:                 new_content += f"```yaml\n{c}\n```\n\n"
+  1311:             else:
+  1312:                 if c:
+  1313:                     new_content += f"{c}\n\n"
+  1314:             new_content += "---\n"
+  1315: 
+  1316:     try:
+  1317:         skill_file.write_text(new_content, encoding="utf-8")
+  1318:     except Exception as e:
+  1319:         return jsonify({"error": f"写入文件失败: {e}"}), 500
+  1320: 
+  1321:     all_data = parser.parse_all()
+  1322:     socketio.emit("project_update", {"type": "modified", "changed_file": f"skills/{skill_id}/SKILL.md", "data": all_data, "timestamp": time.time()})
+  1323:     print(f"[SAVE] Skill config saved: skills/{skill_id}/SKILL.md")
+  1324:     return jsonify({"status": "ok", "skill_id": skill_id})
+  1325: 
+  1326: 
+  1327: @app.route("/api/create_skill", methods=["POST"])
+  1328: def api_create_skill():
+  1329:     """创建新 Skill 目录和 SKILL.md 模板文件。"""
+  1330:     body = request.get_json(silent=True) or {}
+  1331:     raw_name = body.get("skill_name", "").strip()
+  1332:     if not raw_name:
+  1333:         return jsonify({"error": "skill_name is required"}), 400
+  1334:     import re as _re
+  1335:     skill_id = _re.sub(r"[^a-z0-9-]", "-", raw_name.lower())
+  1336:     skill_id = _re.sub(r"-+", "-", skill_id).strip("-")
+  1337:     if not skill_id:
+  1338:         return jsonify({"error": "skill_name is invalid (use lowercase letters, digits and hyphens)"}), 400
+  1339:     category = body.get("category", "communication-driver")
+  1340:     skill_dir = PROJECT_ROOT / "skills" / skill_id
+  1341:     if skill_dir.exists():
+  1342:         return jsonify({"error": f"Skill already exists: skills/{skill_id}"}), 409
+  1343:     skill_dir.mkdir(parents=True, exist_ok=True)
+  1344:     skill_file = skill_dir / "SKILL.md"
+  1345:     display_name = skill_id.replace("-", " ").title()
+  1346:     import datetime as _dt
+  1347:     today = _dt.date.today().strftime("%Y-%m-%d")
+  1348:     default_content = (
+  1349:         "---\n"
+  1350:         f"name: {skill_id}\n"
+  1351:         "version: \"1.0.0\"\n"
+  1352:         f"category: {category}\n"
+  1353:         "domain: automotive\n"
+  1354:         f"subcategory: {skill_id}\n"
+  1355:         "\ndescription: >\n"
+  1356:         f"  专注于 {display_name} 驱动开发，覆盖初始化配置、数据收发、\n"
+  1357:         "  故障检测与保护机制，确保满足 AUTOSAR 规范与 ISO 26262 功能安全要求。\n"
+  1358:         "\nuse_cases:\n"
+  1359:         f"  - \"初始化 {display_name} 并完成基础配置\"\n"
+  1360:         f"  - \"实现 {display_name} 数据读写接口\"\n"
+  1361:         f"  - \"实现 {display_name} 故障检测与保护逻辑\"\n"
+  1362:         f"  - \"生成符合 AUTOSAR 规范的 {display_name} 驱动源码\"\n"
+  1363:         "\nautomotive_standards:\n"
+  1364:         "  - \"ISO 26262 (Functional Safety)\"\n"
+  1365:         "  - \"AUTOSAR Classic 4.x\"\n"
+  1366:         "  - \"ASPICE Level 3\"\n"
+  1367:         "  - \"MISRA-C:2012\"\n"
+  1368:         "---\n"
+  1369:         "\n## knowledge_areas\n\n"
+  1370:         "```yaml\n"
+  1371:         "knowledge_areas:\n"
+  1372:         f"  - primary-area: \"{display_name} 技术\"\n"
+  1373:         "    topics:\n"
+  1374:         f"      - \"{display_name} 工作原理与架构\"\n"
+  1375:         f"      - \"{display_name} 寄存器/接口规范\"\n"
+  1376:         f"      - \"{display_name} 初始化序列与配置参数\"\n"
+  1377:         f"      - \"{display_name} 故障检测与保护机制\"\n"
+  1378:         "\n"
+  1379:         "  - secondary-area: \"AUTOSAR MCAL 集成\"\n"
+  1380:         "    topics:\n"
+  1381:         "      - \"AUTOSAR 相关 SWS 接口规范\"\n"
+  1382:         "      - \"MCAL 配置工具使用（EB tresos/DaVinci）\"\n"
+  1383:         "      - \"MISRA-C:2012 合规编码要求\"\n"
+  1384:         "```\n\n---\n"
+  1385:         "\n## instructions\n\n"
+  1386:         f"### A. Core Competencies（能力声明）\n\n"
+  1387:         f"你是一名 {display_name} 专家，精通：\n"
+  1388:         f"- {display_name} 寄存器级驱动实现\n"
+  1389:         "- AUTOSAR MCAL 驱动集成与配置\n"
+  1390:         "- 故障检测状态机与保护动作实现\n"
+  1391:         "- MISRA-C:2012 合规代码开发\n\n"
+  1392:         "### B. Approach（执行步骤）\n\n"
+  1393:         f"当被调用执行 {display_name} 驱动开发任务时：\n"
+  1394:         f"1. 查询相关知识库文档（芯片手册/接口规范）\n"
+  1395:         "2. 评审硬件原理图，确认接口参数\n"
+  1396:         "3. 按 AUTOSAR 规范实现初始化与控制 API\n"
+  1397:         "4. 🤖 AGENT CHECK：验证接口时序与参数正确性\n"
+  1398:         "5. 实现故障检测状态机，确保每个故障模式均有对应处理动作\n"
+  1399:         "6. 🤖 AGENT CHECK：验证所有保护逻辑满足安全等级要求\n"
+  1400:         "7. 调用 `tools/static_analyzer` 执行 MISRA-C 检查\n"
+  1401:         "8. 调用 `tools/unit_test_runner` 执行单元测试，验证覆盖率达标\n\n"
+  1402:         "### C. Standards & Best Practices（规范遵循）\n\n"
+  1403:         "- 遵循 `rules/coding-rules.md`（编码规范）\n"
+  1404:         "- 遵循 AUTOSAR 相关 SWS 接口规范\n"
+  1405:         "- 遵循 MISRA-C:2012 全规则集（零未批准违规）\n"
+  1406:         "- ASIL-B 及以上：强制 peer review，关键路径必须有测试覆盖\n\n"
+  1407:         "### D. Deliverables（交付物定义）\n\n"
+  1408:         "每次执行必须输出：\n"
+  1409:         f"- **驱动源码**：`{display_name.replace(' ','')}_Drv.c / .h`，含完整 Doxygen 注释\n"
+  1410:         f"- **配置文件**：`{display_name.replace(' ','')}_Cfg.h`，含编译开关与阈值参数宏\n"
+  1411:         "- **单元测试**：`Test_<Feature>.c`，基于 Unity/ceedling 框架\n"
+  1412:         "- **评审清单**：MISRA 合规报告 + 故障路径覆盖矩阵\n\n"
+  1413:         "### E. Safety & Security Considerations（安全合规检查）\n\n"
+  1414:         "- 验证通信失败时驱动进入安全状态\n"
+  1415:         "- 验证边界条件的安全处理逻辑\n"
+  1416:         f"- ✋ HUMAN CHECK：若驱动用于 ASIL-C/D 安全关键功能，需人工审查保护逻辑\n\n"
+  1417:         "---\n"
+  1418:         "\n## examples\n\n"
+  1419:         "```yaml\n"
+  1420:         "examples:\n"
+  1421:         f"  - prompt: \"为 {display_name} 实现初始化驱动\"\n"
+  1422:         "    response: |\n"
+  1423:         "      ## 分析说明\n"
+  1424:         f"      {display_name} 初始化流程：配置接口参数 → 上电序列 → 验证器件 ID → 完成初始化。\n"
+  1425:         "      \n"
+  1426:         "      ## 代码片段\n"
+  1427:         "      ```c\n"
+  1428:         f"      /* {display_name.replace(' ','')}_Drv.h */\n"
+  1429:         f"      Std_ReturnType {display_name.replace(' ','')}_Init(\n"
+  1430:         f"          const {display_name.replace(' ','')}_ConfigType* ConfigPtr\n"
+  1431:         "      );\n"
+  1432:         "      ```\n"
+  1433:         "      \n"
+  1434:         "      ## 检查结论\n"
+  1435:         "      - MISRA-C:2012 合规\n"
+  1436:         "      - 边界检查：NULL 指针保护\n"
+  1437:         "      - 故障保护：初始化失败返回 E_NOT_OK\n"
+  1438:         "```\n\n---\n"
+  1439:         "\n## constraints\n\n"
+  1440:         "```yaml\n"
+  1441:         "constraints:\n"
+  1442:         "  - \"标准合规：所有生成代码必须符合 MISRA-C:2012，零未批准违规\"\n"
+  1443:         "  - \"安全等级：ASIL-B 及以上驱动变更必须触发 HUMAN CHECK 并进行独立评审\"\n"
+  1444:         "  - \"实时性：驱动操作延迟须满足系统实时性要求\"\n"
+  1445:         "  - \"内存：驱动模块 RAM 占用须在合理范围内\"\n"
+  1446:         "```\n\n---\n"
+  1447:         "\n## tools_required\n\n"
+  1448:         "```yaml\n"
+  1449:         "tools_required:\n"
+  1450:         "  - \"tools/static_analyzer    # MISRA-C:2012 静态检查\"\n"
+  1451:         "  - \"tools/unit_test_runner   # 单元测试执行与覆盖率报告\"\n"
+  1452:         "  - \"tools/code_generator     # AUTOSAR 驱动框架代码生成\"\n"
+  1453:         "```\n\n---\n"
+  1454:         "\n## related_skills\n\n"
+  1455:         "```yaml\n"
+  1456:         "related_skills:\n"
+  1457:         "  - skill: \"mcu\"\n"
+  1458:         "    relationship: \"complementary\"\n"
+  1459:         "  - skill: \"safetypack\"\n"
+  1460:         "    relationship: \"complementary\"\n"
+  1461:         "```\n\n---\n"
+  1462:         "\n## integration_points\n\n"
+  1463:         "```yaml\n"
+  1464:         "integration_points:\n"
+  1465:         f"  - system: \"车规 ECU（{display_name} 应用场景）\"\n"
+  1466:         "    interface: \"待填写接口类型\"\n"
+  1467:         "    protocol: \"待填写 AUTOSAR 接口规范\"\n"
+  1468:         "  - system: \"故障管理模块（DEM）\"\n"
+  1469:         "    interface: \"软件接口\"\n"
+  1470:         "    protocol: \"AUTOSAR Dem_ReportErrorStatus API\"\n"
+  1471:         "```\n\n---\n"
+  1472:         "\n## performance_criteria\n\n"
+  1473:         "```yaml\n"
+  1474:         "performance_criteria:\n"
+  1475:         "  - metric: \"执行时间\"\n"
+  1476:         f"    target: \"< 30 分钟完成 {display_name} 标准初始化模块开发\"\n"
+  1477:         "  - metric: \"首次质量\"\n"
+  1478:         "    target: \"> 95% 生成代码通过 MISRA static_analyzer 检查\"\n"
+  1479:         "  - metric: \"标准合规性\"\n"
+  1480:         "    target: \"100% MISRA-C:2012 合规（零未批准违规）\"\n"
+  1481:         "```\n\n---\n"
+  1482:         "\n## validation\n\n"
+  1483:         "```yaml\n"
+  1484:         "validation:\n"
+  1485:         "  - method: \"单元测试\"\n"
+  1486:         "    coverage: \"语句覆盖 ≥ 95%，MC/DC ≥ 90%（ASIL-B/C/D）\"\n"
+  1487:         "  - method: \"静态分析\"\n"
+  1488:         "    scope: \"MISRA-C:2012 全规则集\"\n"
+  1489:         "  - method: \"HIL/SIL 验证\"\n"
+  1490:         "    requirements: \"故障注入触发验证（ASIL-B 及以上必填）\"\n"
+  1491:         "```\n\n---\n"
+  1492:         "\n## metadata\n\n"
+  1493:         "```yaml\n"
+  1494:         "metadata:\n"
+  1495:         "  author: \"Driver HAL Team\"\n"
+  1496:         f"  last_updated: \"{today}\"\n"
+  1497:         "  maturity: \"draft\"\n"
+  1498:         "  complexity: \"intermediate\"\n"
+  1499:         "  estimated_time: \"20-40 分钟\"\n"
+  1500:         "\n"
+  1501:         "tags:\n"
+  1502:         "  - automotive\n"
+  1503:         f"  - {skill_id}\n"
+  1504:         "  - iso26262\n"
+  1505:         "  - autosar\n"
+  1506:         "  - misra\n"
+  1507:         "```\n"
+  1508:     )
+  1509:     try:
+  1510:         skill_file.write_text(default_content, encoding="utf-8")
+  1511:     except Exception as e:
+  1512:         return jsonify({"error": f"创建文件失败: {e}"}), 500
+  1513:     all_data = parser.parse_all()
+  1514:     socketio.emit("project_update", {"type": "created", "changed_file": f"skills/{skill_id}/SKILL.md", "data": all_data, "timestamp": time.time()})
+  1515:     print(f"[CREATE] Skill created: skills/{skill_id}/SKILL.md")
+  1516:     return jsonify({"status": "ok", "skill_id": skill_id, "path": f"skills/{skill_id}/SKILL.md"})
+  1517: 
+  1518: 
+  1519: @app.route("/api/delete_skill", methods=["POST"])
+  1520: def api_delete_skill():
+  1521:     """删除指定 Skill 目录，并广播更新。"""
+  1522:     import shutil
+  1523:     body = request.get_json(silent=True) or {}
+  1524:     skill_id = body.get("skill_id", "").strip()
+  1525:     if not skill_id:
+  1526:         return jsonify({"error": "skill_id is required"}), 400
+  1527:     skill_dir = PROJECT_ROOT / "skills" / skill_id
+  1528:     if not skill_dir.exists():
+  1529:         return jsonify({"error": f"Skill not found: skills/{skill_id}"}), 404
+  1530:     try:
+  1531:         shutil.rmtree(skill_dir)
+  1532:     except Exception as e:
+  1533:         return jsonify({"error": f"删除失败: {e}"}), 500
+  1534:     all_data = parser.parse_all()
+  1535:     socketio.emit("project_update", {"type": "deleted", "changed_file": f"skills/{skill_id}/SKILL.md", "data": all_data, "timestamp": time.time()})
+  1536:     print(f"[DELETE] Skill deleted: skills/{skill_id}")
+  1537:     return jsonify({"status": "ok", "skill_id": skill_id})
+  1538: 
+  1539: 
+  1540: # ──────────────────────────────────────────────────────────────────────────────
+  1541: # Socket.IO 事件
+  1542: # ──────────────────────────────────────────────────────────────────────────────
+  1543: 
+  1544: @socketio.on("connect")
+  1545: def on_connect():
+  1546:     print(f"[WS] 客户端已连接: {request.sid}")
+  1547:     data = parser.parse_all()
+  1548:     emit("project_update", {"type": "initial", "data": data, "timestamp": time.time()})
+  1549:     # 重播最近一次路由结果，让新客户端立即看到路由图
+  1550:     if _last_routing_result:
+  1551:         emit("routing_result", _last_routing_result)
+  1552:         print(f"[WS] 重播路由: {_last_routing_result.get('instruction','')}")
+  1553: 
+  1554: 
+  1555: @socketio.on("disconnect")
+  1556: def on_disconnect():
+  1557:     print(f"[WS] 客户端已断开: {request.sid}")
+  1558: 
+  1559: 
+  1560: @socketio.on("route_instruction")
+  1561: def on_route_instruction(payload):
+  1562:     """客户端请求路由分析，返回 routing_result 事件。"""
+  1563:     global _last_routing_result
+  1564:     instruction = payload.get("instruction", "") if isinstance(payload, dict) else ""
+  1565:     data = parser.parse_all()
+  1566:     result = route_instruction(instruction, data)
+  1567:     _last_routing_result = result   # 缓存，供后续新客户端重播
+  1568:     emit("routing_result", result)
+  1569: 
+  1570: 
+  1571: @socketio.on("refresh_components")
+  1572: def on_refresh():
+  1573:     """客户端主动请求全量刷新。"""
+  1574:     data = parser.parse_all()
+  1575:     emit("project_update", {"type": "refresh", "data": data, "timestamp": time.time()})
+  1576: 
+  1577: 
+  1578: # ──────────────────────────────────────────────────────────────────────────────
+  1579: # 文件监听启动
+  1580: # ──────────────────────────────────────────────────────────────────────────────
+  1581: 
+  1582: def start_file_watcher():
+  1583:     event_handler = ProjectFileWatcher(socketio, parser)
+  1584:     observer = Observer()
+  1585:     watch_dirs = ["agents", "skills", "rules", "knowledge", "tools"]
+  1586:     watched = 0
+  1587:     for d in watch_dirs:
+  1588:         watch_path = PROJECT_ROOT / d
+  1589:         if watch_path.exists():
+  1590:             observer.schedule(event_handler, str(watch_path), recursive=True)
+  1591:             watched += 1
+  1592:     if watched:
+  1593:         observer.start()
+  1594:         print(f"[FS] 文件监听已启动，监控 {watched} 个目录")
+  1595:     return observer
+  1596: 
+  1597: 
+  1598: # ──────────────────────────────────────────────────────────────────────────────
+  1599: # 入口
+  1600: # ──────────────────────────────────────────────────────────────────────────────
+  1601: 
+  1602: if __name__ == "__main__":
+  1603:     print("=" * 60)
+  1604:     print("  [DRIVER HAL]  Agent Route Visualizer Web GUI")
+  1605:     print("=" * 60)
+  1606:     print(f"  [ROOT] {PROJECT_ROOT}")
+  1607:     print("  [URL]  http://localhost:5000")
+  1608:     print("=" * 60)
+  1609: 
+  1610:     observer = start_file_watcher()
+  1611:     try:
+  1612:         socketio.run(app, host="0.0.0.0", port=5000, debug=False)
+  1613:     except KeyboardInterrupt:
+  1614:         print("\n[SERVER] 正在关闭...")
+  1615:     finally:
+  1616:         observer.stop()
+  1617:         observer.join()
+  1618:         print("[SERVER] 已停止。")

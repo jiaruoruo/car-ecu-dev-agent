@@ -1,0 +1,13 @@
+[OK] 1. editor footer patched
+[OK] 2. agent pool tab added
+[OK] 3. skill pool tab added
+[OK] 4. pcOpenFile patched
+[OK] 5. pcCloseFile patched
+[OK] 6. pcTeamSwitchSource patched
+[OK] 7. pcShowTeamModal patched
+[OK] 8a. pcTeamAdd body patched
+[OK] 8b. pcTeamAdd success part patched
+[OK] 9. pcTeamRefreshPool inserted
+[OK] 10. pool CSS added
+
+ALL DONE - gui/index.html written

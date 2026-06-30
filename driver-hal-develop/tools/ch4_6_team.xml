@@ -1,0 +1,1 @@
+<p>组建团队弹窗从开发资源池中列出所有可用 Agent，工程师按驱动领域勾选所需成员（如 MCAL Agent、PMIC Agent、Communication Agent、Safety Agent 等）。确认后系统执行 <b>deploy_to_team</b>：自动解析每个 Agent 的依赖图，将 Agent 本体、关联的 Skills、Rules、Knowledge、Tools 批量复制到项目的 .claude/ 目录，形成完整隔离的项目 AI 开发环境。整个过程无需手动管理文件路径或依赖关系，从点击确认到环境就绪通常在 2 秒内完成。</p>

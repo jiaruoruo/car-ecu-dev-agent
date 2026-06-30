@@ -1,0 +1,5 @@
+OK: patched pcLoadSkills
+OK: patched pcLoadAgents
+OK: patched pcFilterList
+SKIP: pcGetMergedSkillList already exists
+OK: patched pcRenderSkillList map body

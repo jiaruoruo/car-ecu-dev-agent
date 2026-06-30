@@ -1,0 +1,77 @@
+/**
+ * @file           ZCU_TLF35584.h
+ * @brief          TLF35584 PMIC Driver - Public API Header
+ * @version        {{ VERSION }}
+ * @asil           ASIL-D
+ * =============================================================================
+ * [TEMPLATE LOCKED] - All API signatures are FIXED.
+ *                    See consistency_contract.api.fixed_signatures
+ * =============================================================================
+ */
+#ifndef ZCU_TLF35584_H
+#define ZCU_TLF35584_H
+
+#include "ZCU_TLF35584_Types.h"
+#include "ZCU_TLF35584_Cfg.h"
+
+/*===========================================================================*/
+/* Module Initialization                                                     */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_Init(const {{ PREFIX }}_ConfigType *cfgPtr);
+Std_ReturnType {{ PREFIX }}_MainFunction(void);
+Std_ReturnType {{ PREFIX }}_DeInit(void);
+
+/*===========================================================================*/
+/* SPI Register Access                                                       */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_ReadReg(uint8 addr, uint8 *data);
+Std_ReturnType {{ PREFIX }}_WriteReg(uint8 addr, uint8 data);
+
+/*===========================================================================*/
+/* Protection Register Management                                            */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_UnlockProtRegs(void);
+Std_ReturnType {{ PREFIX }}_LockProtRegs(void);
+
+/*===========================================================================*/
+/* Device State Management                                                   */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_SetState({{ PREFIX }}_DeviceStateType state);
+Std_ReturnType {{ PREFIX }}_GetState({{ PREFIX }}_DeviceStateType *state);
+
+/*===========================================================================*/
+/* Watchdog Services                                                         */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_ServiceFwd(void);
+Std_ReturnType {{ PREFIX }}_ServiceWwd(void);
+Std_ReturnType {{ PREFIX }}_ServiceAllWdgs(void);
+
+/*===========================================================================*/
+/* Fault Management                                                          */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_ReadFaults({{ PREFIX }}_FaultInfoType *info);
+Std_ReturnType {{ PREFIX }}_ClearFaults(void);
+Std_ReturnType {{ PREFIX }}_ClearFaultReg(uint8 addr);
+uint32         {{ PREFIX }}_GetFaultGroup({{ PREFIX }}_FaultGroupType grp);
+
+/*===========================================================================*/
+/* BIST / ABIST Self-Test                                                    */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_RunBistSingle(uint8 path);
+Std_ReturnType {{ PREFIX }}_RunFullBist(void);
+boolean        {{ PREFIX }}_GetBistResult(void);
+
+/*===========================================================================*/
+/* EMB Recovery                                                              */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_EmbFastRecovery(void);
+Std_ReturnType {{ PREFIX }}_EmbSlowRecovery(void);
+
+/*===========================================================================*/
+/* Status Query                                                              */
+/*===========================================================================*/
+boolean        {{ PREFIX }}_IsInitialized(void);
+{{ PREFIX }}_InitPhaseType {{ PREFIX }}_GetInitPhase(void);
+{{ PREFIX }}_OpStateType   {{ PREFIX }}_GetOpState(void);
+
+#endif /* ZCU_TLF35584_H */

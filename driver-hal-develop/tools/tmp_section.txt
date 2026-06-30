@@ -1,0 +1,881 @@
+4620:   // Frontmatter item
+4621:   const fmEl = document.createElement('div');
+4622:   fmEl.className = 'l1nav-item'; fmEl.dataset.key = 'fm';
+4623:   fmEl.innerHTML = '<span class="l1nav-icon">📋</span><span class="l1nav-lbl">基本信息</span><span class="l1nav-badge csec-tag-yaml">FM</span>';
+4624:   fmEl.addEventListener('click', () => _selectSkillL1('fm'));
+4625:   nav.appendChild(fmEl);
+4626:   const sep = document.createElement('div'); sep.className = 'l1nav-sep'; nav.appendChild(sep);
+4627:   // Sections
+4628:   (data.sections || []).forEach((sec, i) => {
+4629:     const el = document.createElement('div');
+4630:     el.className = 'l1nav-item'; el.dataset.key = 'sec:' + i;
+4631:     const icon = sec.content_type === 'yaml' ? '🔧' : '📝';
+4632:     el.innerHTML = `<span class="l1nav-icon">${icon}</span><span class="l1nav-lbl" title="${escHtml(sec.title)}">${escHtml(sec.title)}</span>`;
+4633:     el.addEventListener('click', () => _selectSkillL1('sec:' + i));
+4634:     nav.appendChild(el);
+4635:   });
+4636: }
+4637: 
+4638: function _selectSkillL1(key) {
+4639:   _navSkillL1 = key;
+4640:   document.querySelectorAll('#skill-l1nav .l1nav-item').forEach(el =>
+4641:     el.classList.toggle('active', el.dataset.key === key));
+4642:   if (key === 'fm') {
+4643:     _renderSkillFMEditor();
+4644:   } else {
+4645:     const idx = parseInt(key.split(':')[1]);
+4646:     const sec = (_modalSkillData.sections || [])[idx];
+4647:     if (!sec) return;
+4648:     if (_isKnAreaSec(sec)) { _renderKnAreaEditor(sec); return; }
+4649:     if (_isInstrSec(sec))  { _renderInstrEditor(sec);  return; }
+4650:     const _ssCfgHit = _getSSCfg(sec);
+4651:     if (_ssCfgHit) { _renderSSEditor(sec, _ssCfgHit); return; }
+4652:     const content = _editSkillSec[sec.title] !== undefined ? _editSkillSec[sec.title] : (sec.content || '');
+4653:     const tagCls = sec.content_type === 'yaml' ? 'csec-tag-yaml' : 'csec-tag-md';
+4654:     const ed = document.getElementById('skill-modal-editor');
+4655:     ed.innerHTML = `<div class="editor-hdr">
+4656:       <span class="editor-level">##</span>
+4657:       <span class="editor-ttl">${escHtml(sec.title)}</span>
+4658:       <span class="editor-tag ${tagCls}">${sec.content_type === 'yaml' ? '' : 'Markdown'}</span>
+4659:     </div>
+4660:     <textarea class="form-textarea" id="skill-sec-ta" rows="18" style="flex:1;min-height:280px">${escHtml(content)}</textarea>`;
+4661:     const ta = document.getElementById('skill-sec-ta');
+4662:     ta.addEventListener('input', () => { _editSkillSec[sec.title] = ta.value; });
+4663:     setTimeout(() => ta.focus(), 80);
+4664:   }
+4665: }
+4666: 
+4667: function _renderSkillFMEditor() {
+4668:   const ed = document.getElementById('skill-modal-editor');
+4669:   ed.innerHTML = `
+4670:     <div class="editor-hdr">
+4671:       <span class="editor-level">FM</span>
+4672:       <span class="editor-ttl">基本信息</span>
+4673:       <span class="editor-tag csec-tag-yaml">Frontmatter</span>
+4674:     </div>
+4675:     <div class="form-row">
+4676:       <label class="form-label">名称 <span class="form-hint">（只读）</span></label>
+4677:       <input class="form-input" value="${escHtml(_modalSkillData.name||'')}" readonly>
+4678:     </div>
+4679:     <div class="form-row">
+4680:       <label class="form-label">Version</label>
+4681:       <input class="form-input" id="skfm-version" value="${escHtml(_editSkillFM.version||'')}">
+4682:     </div>
+4683:     <div class="form-row">
+4684:       <label class="form-label">Category</label>
+4685:       <input class="form-input" id="skfm-category" value="${escHtml(_editSkillFM.category||'')}">
+4686:     </div>
+4687:     <div class="form-row">
+4688:       <label class="form-label">Subcategory</label>
+4689:       <input class="form-input" id="skfm-subcategory" value="${escHtml(_editSkillFM.subcategory||'')}">
+4690:     </div>
+4691:     <div class="form-row">
+4692:       <label class="form-label">Domain</label>
+4693:       <input class="form-input" id="skfm-domain" value="${escHtml(_editSkillFM.domain||'')}">
+4694:     </div>
+4695:     <div class="form-row">
+4696:       <label class="form-label">Description</label>
+4697:       <textarea class="form-textarea" id="skfm-desc" rows="3">${escHtml(_editSkillFM.description||'')}</textarea>
+4698:     </div>
+4699:     <div class="form-row">
+4700:       <label class="form-label">Use Cases <span class="form-hint">每行一项</span></label>
+4701:       <textarea class="form-textarea" id="skfm-usecases" rows="4">${escHtml(_editSkillFM.use_cases||'')}</textarea>
+4702:     </div>
+4703:     <div class="form-row">
+4704:       <label class="form-label">Automotive Standards <span class="form-hint">每行一项</span></label>
+4705:       <textarea class="form-textarea" id="skfm-standards" rows="3">${escHtml(_editSkillFM.automotive_standards||'')}</textarea>
+4706:     </div>`;
+4707:   [['skfm-version','version'],['skfm-category','category'],['skfm-subcategory','subcategory'],
+4708:    ['skfm-domain','domain'],['skfm-desc','description'],
+4709:    ['skfm-usecases','use_cases'],['skfm-standards','automotive_standards']
+4710:   ].forEach(([id, f]) => {
+4711:     const e = document.getElementById(id);
+4712:     if (e) e.addEventListener('input', () => { _editSkillFM[f] = e.value; });
+4713:   });
+4714: }
+4715: 
+4716: /* ── Knowledge Areas Editor ── */
+4717: function _isKnAreaSec(sec) {
+4718:   if (!sec || !sec.title) return false;
+4719:   const t = sec.title.toLowerCase().replace(/[\s_-]/g, '');
+4720:   return t === 'knowledgeareas';
+4721: }
+4722: 
+4723: function _parseKnAreaYaml(str) {
+4724:   if (!str || !str.trim()) return [];
+4725:   try {
+4726:     // 如果内容是 "knowledge_areas:\n  - ..." 形式，先取第一个顶层 key 的值
+4727:     let parsed = jsyaml.load(str);
+4728:     // 支持 {knowledge_areas: [...]} 对象包装格式
+4729:     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+4730:       const keys = Object.keys(parsed);
+4731:       if (keys.length === 1 && Array.isArray(parsed[keys[0]])) parsed = parsed[keys[0]];
+4732:     }
+4733:     if (!Array.isArray(parsed)) return [];
+4734:     return parsed.map(item => {
+4735:       if (!item || typeof item !== 'object') return null;
+4736:       // 支持 primary-area / secondary-area / area（兼容旧格式，映射为 primary-area）
+4737:       const type = item['primary-area'] !== undefined ? 'primary-area'
+4738:                  : item['secondary-area'] !== undefined ? 'secondary-area'
+4739:                  : item['area'] !== undefined ? 'primary-area' : null;
+4740:       if (!type) return null;
+4741:       const rawKey = type === 'primary-area' && item['area'] !== undefined ? 'area'
+4742:                    : type === 'secondary-area' ? 'secondary-area' : 'primary-area';
+4743:       const name = (item[rawKey] !== null && item[rawKey] !== undefined ? item[rawKey] : type) + '';
+4744:       const rawTopics = item.topics;
+4745:       let topics = [];
+4746:       if (Array.isArray(rawTopics)) {
+4747:         topics = rawTopics.map(t => (t || '').toString().trim()).filter(Boolean);
+4748:       } else if (typeof rawTopics === 'string' && rawTopics.trim()) {
+4749:         topics = rawTopics.split('\n').map(t => t.trim()).filter(Boolean);
+4750:       }
+4751:       return { type, name, topics };
+4752:     }).filter(Boolean);
+4753:   } catch(e) { return []; }
+4754: }
+4755: 
+4756: function _dumpKnAreaYaml(data) {
+4757:   if (!data || data.length === 0) return '';
+4758:   return data.map(item => {
+4759:     const esc = s => s.replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+4760:     const nameVal = '"' + esc(item.name || '') + '"';
+4761:     const topicsStr = item.topics.length === 0
+4762:       ? ' []'
+4763:       : '\n' + item.topics.map(t => '    - "' + esc(t) + '"').join('\n');
+4764:     return `- ${item.type}: ${nameVal}\n  topics:${topicsStr}`;
+4765:   }).join('\n');
+4766: }
+4767: 
+4768: function _renderKnAreaEditor(sec) {
+4769:   _knAreaSecTitle = sec.title;
+4770:   const raw = _editSkillSec[sec.title] !== undefined ? _editSkillSec[sec.title] : (sec.content || '');
+4771:   _knAreaData = _parseKnAreaYaml(raw);
+4772:   const ed = document.getElementById('skill-modal-editor');
+4773:   ed.innerHTML = `
+4774:     <div class="editor-hdr" style="flex-wrap:wrap;gap:6px">
+4775:       <span class="editor-level">##</span>
+4776:       <span class="editor-ttl">${escHtml(sec.title)}</span>
+4777:       <span class="editor-tag csec-tag-yaml">YAML</span>
+4778:       <button class="btn-add-wf" onclick="_addKnAreaItem('primary-area')" style="margin-left:auto">＋ primary-area</button>
+4779:       <button class="btn-add-wf" onclick="_addKnAreaItem('secondary-area')">＋ secondary-area</button>
+4780:     </div>
+4781:     <div id="kn-area-list" style="display:flex;flex-direction:column;gap:10px;margin-top:4px"></div>`;
+4782:   _rebuildKnAreaEditor();
+4783: }
+4784: 
+4785: function _rebuildKnAreaEditor() {
+4786:   const list = document.getElementById('kn-area-list');
+4787:   if (!list) return;
+4788:   if (_knAreaData.length === 0) {
+4789:     list.innerHTML = `<div style="color:var(--tx-m);font-size:12px;text-align:center;padding:28px 0">暂无知识区域，点击上方按钮添加</div>`;
+4790:     return;
+4791:   }
+4792:   list.innerHTML = _knAreaData.map((item, idx) => {
+4793:     const isPrimary = item.type === 'primary-area';
+4794:     const typeBg = isPrimary ? '#1f3358' : '#1a3327';
+4795:     const typeFg = isPrimary ? 'var(--ca)' : 'var(--cs)';
+4796:     const typeBd = isPrimary ? '#388bfd40' : '#3fb95040';
+4797:     const topicsHtml = item.topics.map((t, ti) => `
+4798:       <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+4799:         <span style="color:var(--tx-m);font-size:10px;flex-shrink:0">▸</span>
+4800:         <input class="form-input" style="flex:1;padding:4px 8px;font-size:11px"
+4801:           value="${escHtml(t)}"
+4802:           oninput="_syncKnAreaTopic(${idx},${ti},this.value)"
+4803:           placeholder="topic 内容...">
+4804:         <button onclick="_deleteKnAreaTopic(${idx},${ti})"
+4805:           style="background:none;border:none;color:var(--tx-m);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px;line-height:1;transition:.15s"
+4806:           onmouseover="this.style.color='var(--cr)'"
+4807:           onmouseout="this.style.color='var(--tx-m)'">✕</button>
+4808:       </div>`).join('');
+4809:     return `
+4810:     <div class="wf-card" id="kna-card-${idx}">
+4811:       <div class="wf-card-hdr" style="cursor:default">
+4812:         <span style="background:${typeBg};color:${typeFg};border:1px solid ${typeBd};
+4813:           font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;flex-shrink:0">${item.type}</span>
+4814:         <input class="wf-card-name" value="${escHtml(item.name)}"
+4815:           oninput="_syncKnAreaName(${idx},this.value)"
+4816:           placeholder="卡片名称...">
+4817:         <button onclick="_deleteKnAreaItem(${idx})" class="btn-wf-del" title="删除此区域">✕</button>
+4818:       </div>
+4819:       <div style="padding:10px 12px">
+4820:         <div style="font-size:10px;color:var(--tx-m);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Topics</div>
+4821:         <div id="kna-topics-${idx}">${topicsHtml}</div>
+4822:         <button onclick="_addKnAreaTopic(${idx})"
+4823:           style="background:var(--bg-card2);border:1px dashed #3fb95040;color:var(--cs);
+4824:             padding:3px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:700;
+4825:             display:inline-flex;align-items:center;gap:4px;margin-top:6px;transition:.15s"
+4826:           onmouseover="this.style.borderColor='var(--cs)'"
+4827:           onmouseout="this.style.borderColor='#3fb95040'">＋ 添加 Topic</button>
+4828:       </div>
+4829:     </div>`;
+4830:   }).join('');
+4831: }
+4832: 
+4833: function _syncKnAreaToCache() {
+4834:   if (!_knAreaSecTitle) return;
+4835:   _editSkillSec[_knAreaSecTitle] = _dumpKnAreaYaml(_knAreaData);
+4836: }
+4837: 
+4838: function _syncKnAreaName(idx, val) {
+4839:   if (_knAreaData[idx]) { _knAreaData[idx].name = val; _syncKnAreaToCache(); }
+4840: }
+4841: 
+4842: function _syncKnAreaTopic(idx, ti, val) {
+4843:   if (_knAreaData[idx] && _knAreaData[idx].topics[ti] !== undefined) {
+4844:     _knAreaData[idx].topics[ti] = val;
+4845:     _syncKnAreaToCache();
+4846:   }
+4847: }
+4848: 
+4849: function _addKnAreaItem(type) {
+4850:   let name = type;
+4851:   let suffix = 1;
+4852:   const existingNames = _knAreaData.map(d => d.name);
+4853:   while (existingNames.includes(name)) { name = type + '-' + (suffix++); }
+4854:   _knAreaData.push({ type, name, topics: [] });
+4855:   _syncKnAreaToCache();
+4856:   _rebuildKnAreaEditor();
+4857: }
+4858: 
+4859: function _deleteKnAreaItem(idx) {
+4860:   _knAreaData.splice(idx, 1);
+4861:   _syncKnAreaToCache();
+4862:   _rebuildKnAreaEditor();
+4863: }
+4864: 
+4865: function _addKnAreaTopic(idx) {
+4866:   if (_knAreaData[idx]) {
+4867:     _knAreaData[idx].topics.push('');
+4868:     _syncKnAreaToCache();
+4869:     _rebuildKnAreaEditor();
+4870:     setTimeout(() => {
+4871:       const container = document.getElementById('kna-topics-' + idx);
+4872:       if (container) {
+4873:         const inputs = container.querySelectorAll('input');
+4874:         if (inputs.length) inputs[inputs.length - 1].focus();
+4875:       }
+4876:     }, 50);
+4877:   }
+4878: }
+4879: 
+4880: function _deleteKnAreaTopic(idx, ti) {
+4881:   if (_knAreaData[idx]) {
+4882:     _knAreaData[idx].topics.splice(ti, 1);
+4883:     _syncKnAreaToCache();
+4884:     _rebuildKnAreaEditor();
+4885:   }
+4886: }
+4887: 
+4888: /* ── Instructions Editor ── */
+4889: function _isInstrSec(sec) {
+4890:   if (!sec || !sec.title) return false;
+4891:   return sec.title.toLowerCase().replace(/[\s_-]/g, '') === 'instructions';
+4892: }
+4893: 
+4894: /* 解析 instructions yaml 块，提取 A/B/C/D 段落内容
+4895:  * 支持格式：```yaml\n段落 A：Title\n  content...\n段落 B：...```
+4896:  * 返回: { 'A. Approach（执行步骤）': 'content...', 'B. Standards...': '...', ... }
+4897:  */
+4898: function _parseInstrYamlBlocks(rawContent) {
+4899:   if (!rawContent) return {};
+4900:   // 去掉 ```yaml ... ``` 代码围栏
+4901:   const content = rawContent
+4902:     .replace(/^[\s\S]*?```ya?ml\s*\n/i, '')
+4903:     .replace(/\n?```[\s]*$/, '');
+4904:   const result = {};
+4905:   const headerRe = /^段落\s+([A-Z])[：:]\s*(.+)$/gm;
+4906:   const headers = [];
+4907:   let m;
+4908:   while ((m = headerRe.exec(content)) !== null) {
+4909:     headers.push({ letter: m[1], pos: m.index, endOfLine: m.index + m[0].length });
+4910:   }
+4911:   headers.forEach((h, i) => {
+4912:     const nlPos   = content.indexOf('\n', h.endOfLine);
+4913:     const bodyStart = nlPos >= 0 ? nlPos + 1 : h.endOfLine;
+4914:     const bodyEnd   = i + 1 < headers.length ? headers[i + 1].pos : content.length;
+4915:     const body = content.slice(bodyStart, bodyEnd).replace(/^  /gm, '').trim();
+4916:     // 匹配对应的 _INSTR_PRESETS label（如 "A. Approach..."）
+4917:     const preset = _INSTR_PRESETS.find(p => p.label.startsWith(h.letter + '.'));
+4918:     if (preset) result[preset.label] = body;
+4919:   });
+4920:   return result;
+4921: }
+4922: 
+4923: const _INSTR_PRESETS = [
+4924:   {
+4925:     label: 'A. Approach（执行步骤）',
+4926:     defaultContent: `当被调用执行驱动开发任务时：\n1. 查询相关知识库文档（芯片手册/接口规范）\n2. 评审硬件原理图，确认接口参数\n3. 按 AUTOSAR 规范实现初始化与控制 API\n4. 🤖 AGENT CHECK：验证接口时序与参数正确性\n5. 实现故障检测状态机，确保每个故障模式均有对应处理动作\n6. 🤖 AGENT CHECK：验证所有保护逻辑满足安全等级要求\n7. 调用 \`tools/static_analyzer\` 执行 MISRA-C 检查\n8. 调用 \`tools/unit_test_runner\` 执行单元测试，验证覆盖率达标`
+4927:   },
+4928:   {
+4929:     label: 'B. Standards & Best Practices（规范遵循）',
+4930:     defaultContent: `- 遵循 \`rules/coding-rules.md\`（编码规范）\n- 遵循 AUTOSAR 相关 SWS 接口规范\n- 遵循 MISRA-C:2012 全规则集（零未批准违规）\n- ASIL-B 及以上：强制 peer review，关键路径必须有测试覆盖`
+4931:   },
+4932:   {
+4933:     label: 'C. Deliverables（交付物定义）',
+4934:     defaultContent: `每次执行必须输出：\n- **驱动源码**：\`<Module>_Drv.c / .h\`，含完整 Doxygen 注释\n- **配置文件**：\`<Module>_Cfg.h\`，含编译开关与阈值参数宏\n- **单元测试**：\`Test_<Feature>.c\`，基于 Unity/ceedling 框架\n- **评审清单**：MISRA 合规报告 + 故障路径覆盖矩阵`
+4935:   },
+4936:   {
+4937:     label: 'D. Safety & Security Considerations（安全合规检查）',
+4938:     defaultContent: `- 验证通信失败时驱动进入安全状态\n- 验证边界条件的安全处理逻辑\n- ✋ HUMAN CHECK：若驱动用于 ASIL-C/D 安全关键功能，需人工审查保护逻辑`
+4939:   }
+4940: ];
+4941: 
+4942: function _renderInstrEditor(sec) {
+4943:   const ed = document.getElementById('skill-modal-editor');
+4944: 
+4945:   // ── 解析 yaml 块内容，用于预填默认数据 ──
+4946:   const _instrRaw    = _editSkillSec[sec.title] !== undefined ? _editSkillSec[sec.title] : (sec.content || '');
+4947:   const _instrParsed = _parseInstrYamlBlocks(_instrRaw);
+4948: 
+4949:   // ── 自动初始化：当 SKILL.md 中 instructions 为 yaml 块（无子节）时，解析并预填子节 ──
+4950:   if (!(sec.children && sec.children.length) && !_instrNewChildren['instructions']) {
+4951:     const parsedKeys = Object.keys(_instrParsed);
+4952:     if (parsedKeys.length > 0) {
+4953:       _instrNewChildren['instructions'] = [];
+4954:       parsedKeys.forEach(label => {
+4955:         _instrNewChildren['instructions'].push(label);
+4956:         if (_editSkillSec[label] === undefined) _editSkillSec[label] = _instrParsed[label];
+4957:       });
+4958:     }
+4959:   }
+4960: 
+4961:   const existingChildren = sec.children || [];
+4962:   const existingTitles   = new Set(existingChildren.map(c => c.title));
+4963:   const newChildTitles   = _instrNewChildren['instructions'] || [];
+4964:   const allChildTitles   = new Set([...existingTitles, ...newChildTitles]);
+4965:   const availPresets     = _INSTR_PRESETS.filter(p => !allChildTitles.has(p.label));
+4966: 
+4967:   // Existing child cards
+4968:   const cardsHtml = existingChildren.map(child => {
+4969:     const content = _editSkillSec[child.title] !== undefined ? _editSkillSec[child.title] : (child.content || '');
+4970:     return `<div class="wf-card" style="padding:0;overflow:hidden;margin-bottom:6px">
+4971:       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.04);border-bottom:1px solid rgba(255,255,255,.07)">
+4972:         <span style="font-size:10px;opacity:.5;font-family:monospace;flex-shrink:0">###</span>
+4973:         <span style="flex:1;font-size:13px;font-weight:600;color:var(--tx-p);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(child.title)}">${escHtml(child.title)}</span>
+4974:         <span style="font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(120,200,255,.15);color:#78c8ff;flex-shrink:0">Markdown</span>
+4975:       </div>
+4976:       <textarea class="form-textarea instr-child-ta" style="border:none;border-radius:0;margin:0;resize:vertical;min-height:90px;background:rgba(255,255,255,.02)"
+4977:         rows="5" data-child="${escHtml(child.title)}">${escHtml(content)}</textarea>
+4978:     </div>`;
+4979:   }).join('');
+4980: 
+4981:   // Newly added child cards
+4982:   const newCardsHtml = newChildTitles.map(title => {
+4983:     const content = _editSkillSec[title] || '';
+4984:     return `<div class="wf-card" style="padding:0;overflow:hidden;margin-bottom:6px;border-color:rgba(0,200,100,.3)">
+4985:       <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,200,100,.06);border-bottom:1px solid rgba(0,200,100,.2)">
+4986:         <span style="font-size:10px;opacity:.5;font-family:monospace;flex-shrink:0">###</span>
+4987:         <span style="flex:1;font-size:13px;font-weight:600;color:var(--tx-p);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(title)}">${escHtml(title)}</span>
+4988:         <span style="font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(0,200,100,.2);color:#00c864;flex-shrink:0">新增</span>
+4989:         <button class="btn-wf-del instr-del-btn" data-del-title="${escHtml(title)}" title="撤销新增" style="flex-shrink:0">✕</button>
+4990:       </div>
+4991:       <textarea class="form-textarea instr-child-ta" style="border:none;border-radius:0;margin:0;resize:vertical;min-height:90px;background:rgba(0,200,100,.02)"
+4992:         rows="5" data-child="${escHtml(title)}">${escHtml(content)}</textarea>
+4993:     </div>`;
+4994:   }).join('');
+4995: 
+4996:   // Add panel
+4997:   const addPanelHtml = availPresets.length > 0
+4998:     ? `<div style="padding:4px 0 8px">
+4999:         <button class="btn-add-wf" id="instr-add-trigger">＋ 添加子节</button>
+5000:         <div id="instr-add-panel" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:12px;margin-top:8px">
+5001:           <div class="form-row" style="margin-bottom:10px">
+5002:             <label class="form-label" style="margin-bottom:5px">选择配置项 <span class="form-hint">（仅显示未添加的项）</span></label>
+5003:             <select class="form-input" id="instr-preset-sel">
+5004:               ${availPresets.map(p => `<option value="${escHtml(p.label)}">${escHtml(p.label)}</option>`).join('')}
+5005:             </select>
+5006:           </div>
+5007:           <div class="form-row" style="margin-bottom:10px">
+5008:             <label class="form-label" style="margin-bottom:5px">默认内容 <span class="form-hint">（可修改后添加）</span></label>
+5009:             <textarea class="form-textarea" id="instr-new-content" rows="7">${escHtml(availPresets[0] ? (_instrParsed[availPresets[0].label] || availPresets[0].defaultContent || '') : '')}</textarea>
+5010:           </div>
+5011:           <div style="display:flex;gap:8px">
+5012:             <button class="btn-add-wf" id="instr-confirm-add" style="background:var(--ca);color:#000;padding:5px 18px;font-weight:700">✓ 确认添加</button>
+5013:             <button class="btn-add-wf" id="instr-cancel-add" style="padding:5px 14px;background:rgba(255,255,255,.08)">取消</button>
+5014:           </div>
+5015:         </div>
+5016:       </div>`
+5017:     : `<div style="padding:6px 0;color:var(--tx-m);font-size:.82em;opacity:.7">✓ 所有预设配置项均已添加</div>`;
+5018: 
+5019:   ed.innerHTML = `
+5020:     <div class="editor-hdr" style="flex-wrap:wrap;gap:6px">
+5021:       <span class="editor-level">##</span>
+5022:       <span class="editor-ttl">instructions</span>
+5023:       <span class="editor-tag" style="background:rgba(120,200,255,.18);color:#78c8ff">Markdown</span>
+5024:     </div>
+5025:     <div style="display:flex;flex-direction:column;flex:1;overflow-y:auto;padding-right:2px">
+5026:       ${cardsHtml}${newCardsHtml}
+5027:       ${addPanelHtml}
+5028:     </div>`;
+5029: 
+5030:   // Bind textarea events
+5031:   ed.querySelectorAll('.instr-child-ta').forEach(ta => {
+5032:     ta.addEventListener('input', () => { _editSkillSec[ta.dataset.child] = ta.value; });
+5033:   });
+5034: 
+5035:   // Bind delete buttons
+5036:   ed.querySelectorAll('.instr-del-btn').forEach(btn => {
+5037:     btn.addEventListener('click', () => _instrDelNew(btn.dataset.delTitle));
+5038:   });
+5039: 
+5040:   // Bind add panel controls
+5041:   const addTrigger = document.getElementById('instr-add-trigger');
+5042:   const addPanel   = document.getElementById('instr-add-panel');
+5043:   const presetSel  = document.getElementById('instr-preset-sel');
+5044:   const confirmBtn = document.getElementById('instr-confirm-add');
+5045:   const cancelBtn  = document.getElementById('instr-cancel-add');
+5046: 
+5047:   if (addTrigger && addPanel) {
+5048:     addTrigger.addEventListener('click', () => {
+5049:       addPanel.style.display = 'block';
+5050:       addTrigger.style.display = 'none';
+5051:     });
+5052:   }
+5053:   if (cancelBtn && addPanel && addTrigger) {
+5054:     cancelBtn.addEventListener('click', () => {
+5055:       addPanel.style.display = 'none';
+5056:       addTrigger.style.display = '';
+5057:     });
+5058:   }
+5059:   if (presetSel) {
+5060:     presetSel.addEventListener('change', () => {
+5061:       const preset = _INSTR_PRESETS.find(p => p.label === presetSel.value);
+5062:       const ta = document.getElementById('instr-new-content');
+5063:       if (preset && ta) ta.value = _instrParsed[preset.label] || preset.defaultContent || '';
+5064:     });
+5065:   }
+5066:   if (confirmBtn) {
+5067:     confirmBtn.addEventListener('click', () => {
+5068:       const title     = presetSel ? presetSel.value : '';
+5069:       const contentTa = document.getElementById('instr-new-content');
+5070:       if (!title || !contentTa) return;
+5071:       // Double-check no duplicate
+5072:       const existCh = ((_modalSkillData.sections || []).find(s => _isInstrSec(s)) || {}).children || [];
+5073:       const newOnes  = _instrNewChildren['instructions'] || [];
+5074:       const allNow   = new Set([...existCh.map(c => c.title), ...newOnes]);
+5075:       if (allNow.has(title)) { toast('⚠️ 该配置项已存在：' + title, 'm'); return; }
+5076:       if (!_instrNewChildren['instructions']) _instrNewChildren['instructions'] = [];
+5077:       _instrNewChildren['instructions'].push(title);
+5078:       _editSkillSec[title] = contentTa.value;
+5079:       // Re-render
+5080:       const instrSec = (_modalSkillData.sections || []).find(s => _isInstrSec(s));
+5081:       if (instrSec) _renderInstrEditor(instrSec);
+5082:     });
+5083:   }
+5084: }
+5085: 
+5086: function _instrDelNew(title) {
+5087:   if (_instrNewChildren['instructions']) {
+5088:     const idx = _instrNewChildren['instructions'].indexOf(title);
+5089:     if (idx >= 0) _instrNewChildren['instructions'].splice(idx, 1);
+5090:   }
+5091:   delete _editSkillSec[title];
+5092:   const instrSec = (_modalSkillData.sections || []).find(s => _isInstrSec(s));
+5093:   if (instrSec) _renderInstrEditor(instrSec);
+5094: }
+5095: 
+5096: /* ══════════════════════════════════════════════════════════════
+5097:    STRUCTURED SECTION EDITORS
+5098:    constraints / tools_required / related_skills /
+5099:    integration_points / performance_criteria / validation /
+5100:    human_checks / examples / metadata
+5101:    ══════════════════════════════════════════════════════════════ */
+5102: 
+5103: const _SS_CFGS = {
+5104:   constraints: {
+5105:     type:'stringlist', key:'constraints', label:'约束条件', icon:'🚫',
+5106:     placeholder:'约束条件描述...', addLabel:'+ 添加约束'
+5107:   },
+5108:   tools_required: {
+5109:     type:'stringlist', key:'tools_required', label:'所需工具', icon:'🔧',
+5110:     placeholder:'tools/tool_name   # 描述...', addLabel:'+ 添加工具'
+5111:   },
+5112:   related_skills: {
+5113:     type:'cardlist', key:'related_skills', label:'关联 Skills', icon:'🔗',
+5114:     addLabel:'+ 添加关联 Skill',
+5115:     fields:[
+5116:       { key:'skill',        label:'Skill',        placeholder:'spi',          flex:1 },
+5117:       { key:'relationship', label:'Relationship', placeholder:'prerequisite', flex:1,
+5118:         options:['prerequisite','complementary','builds-upon','alternative'] }
+5119:     ]
+5120:   },
+5121:   integration_points: {
+5122:     type:'cardlist', key:'integration_points', label:'集成接口', icon:'🔌',
+5123:     addLabel:'+ 添加集成接口',
+5124:     fields:[
+5125:       { key:'system',    label:'System',    placeholder:'目标系统名称...',  full:true },
+5126:       { key:'interface', label:'Interface', placeholder:'SPI / CAN ...',   flex:1 },
+5127:       { key:'protocol',  label:'Protocol',  placeholder:'AUTOSAR 规范...', full:true }
+5128:     ]
+5129:   },
+5130:   performance_criteria: {
+5131:     type:'cardlist', key:'performance_criteria', label:'性能指标', icon:'📊',
+5132:     addLabel:'+ 添加性能指标',
+5133:     fields:[
+5134:       { key:'metric', label:'Metric', placeholder:'指标名称...', flex:1 },
+5135:       { key:'target', label:'Target', placeholder:'目标值...',   full:true }
+5136:     ]
+5137:   },
+5138:   validation: {
+5139:     type:'cardlist', key:'validation', label:'验证方法', icon:'✅',
+5140:     addLabel:'+ 添加验证方法',
+5141:     fields:[
+5142:       { key:'method',  label:'Method',  placeholder:'验证方法...', flex:1 },
+5143:       { key:'_detail', label:'Details', placeholder:'验证详情...', full:true,
+5144:         varKeys:['coverage','scope','requirements'] }
+5145:     ]
+5146:   },
+5147:   human_checks: {
+5148:     type:'cardlist', key:'human_checks', label:'Human Checks', icon:'✋',
+5149:     addLabel:'+ 添加 Human Check',
+5150:     fields:[
+5151:       { key:'condition', label:'Condition', placeholder:'触发条件...', full:true, multiline:true, rows:3 },
+5152:       { key:'action',    label:'Action',    placeholder:'处理动作...', full:true, multiline:true, rows:3 }
+5153:     ]
+5154:   },
+5155:   examples: {
+5156:     type:'cardlist', key:'examples', label:'示例', icon:'💡',
+5157:     addLabel:'+ 添加示例',
+5158:     fields:[
+5159:       { key:'prompt',   label:'Prompt',   placeholder:'用户输入示例...', full:true, multiline:true, rows:3 },
+5160:       { key:'response', label:'Response', full:true, subfields:[
+5161:           { key:'分析说明', label:'分析说明', placeholder:'分析过程与背景说明...', rows:4 },
+5162:           { key:'代码片段', label:'代码片段', placeholder:'```c\n// 代码示例...\n```', rows:8, mono:true },
+5163:           { key:'检查结论', label:'检查结论', placeholder:'MISRA/合规/逻辑检查结果...', rows:4 },
+5164:           { key:'建议',    label:'建议',    placeholder:'优化建议与注意事项...', rows:3 }
+5165:         ]
+5166:       }
+5167:     ]
+5168:   },
+5169:   metadata: {
+5170:     type:'metadata', key:'metadata', label:'Metadata', icon:'📄'
+5171:   }
+5172: };
+5173: 
+5174: function _getSSCfg(sec) {
+5175:   if (!sec || !sec.title) return null;
+5176:   const t = sec.title.toLowerCase().replace(/[\s-]/g, '_');
+5177:   return _SS_CFGS[t] || null;
+5178: }
+5179: 
+5180: function _parseSSData(raw, cfg) {
+5181:   if (!raw || !raw.trim()) return [];
+5182:   try {
+5183:     let parsed = jsyaml.load(raw);
+5184:     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+5185:       const keys = Object.keys(parsed);
+5186:       if (keys.length === 1 && Array.isArray(parsed[keys[0]])) {
+5187:         parsed = parsed[keys[0]];
+5188:       } else {
+5189:         // metadata or single-object
+5190:         return [{ _meta: parsed.metadata || parsed, _tags: parsed.tags || [] }];
+5191:       }
+5192:     }
+5193:     if (!Array.isArray(parsed)) return [];
+5194:     if (cfg.type === 'stringlist') {
+5195:       return parsed.map(s => ({ value: String(s || '') }));
+5196:     }
+5197:     return parsed.map(item => {
+5198:       if (typeof item !== 'object' || item === null) return { _raw: String(item) };
+5199:       const obj = Object.assign({}, item);
+5200:       (cfg.fields || []).forEach(f => {
+5201:         if (f.varKeys) {
+5202:           let found = false;
+5203:           for (const vk of f.varKeys) {
+5204:             if (obj[vk] !== undefined) {
+5205:               obj[f.key]          = obj[vk];
+5206:               obj['_vk_' + f.key] = vk;
+5207:               found = true; break;
+5208:             }
+5209:           }
+5210:           if (!found) obj[f.key] = '';
+5211:         }
+5212:       });
+5213:       return obj;
+5214:     });
+5215:   } catch(e) { return []; }
+5216: }
+5217: 
+5218: function _dumpSSData(data, cfg) {
+5219:   if (!data || !cfg) return '';
+5220:   if (cfg.type === 'metadata') {
+5221:     const d = data[0] || {};
+5222:     return jsyaml.dump({ metadata: d._meta || {}, tags: d._tags || [] }, { lineWidth:120, indent:2 });
+5223:   }
+5224:   if (cfg.type === 'stringlist') {
+5225:     if (!data.length) return cfg.key + ':\n  []\n';
+5226:     return jsyaml.dump({ [cfg.key]: data.map(d => d.value || '') }, { lineWidth:120, indent:2 });
+5227:   }
+5228:   const cleanItems = data.map(item => {
+5229:     const obj = {};
+5230:     (cfg.fields || []).forEach(f => {
+5231:       if (f.varKeys) {
+5232:         const vk = item['_vk_' + f.key] || f.varKeys[0];
+5233:         obj[vk] = item[f.key] || '';
+5234:       } else if (!f.key.startsWith('_')) {
+5235:         obj[f.key] = item[f.key] || '';
+5236:       }
+5237:     });
+5238:     return obj;
+5239:   });
+5240:   return jsyaml.dump({ [cfg.key]: cleanItems }, { lineWidth:120, indent:2 });
+5241: }
+5242: 
+5243: /* ── Response subfields helpers ── */
+5244: function _parseRespSubfields(str, subfields) {
+5245:   const result = {};
+5246:   subfields.forEach(sf => { result[sf.key] = ''; });
+5247:   if (!str) return result;
+5248:   // Split on "## Header" boundaries
+5249:   const parts = str.split(/^## /m).filter(Boolean);
+5250:   for (const part of parts) {
+5251:     const nl = part.indexOf('\n');
+5252:     if (nl < 0) continue;
+5253:     const header  = part.slice(0, nl).trim();
+5254:     const content = part.slice(nl + 1).trim();
+5255:     const sf = subfields.find(s => s.key === header || s.label === header);
+5256:     if (sf) result[sf.key] = content;
+5257:   }
+5258:   return result;
+5259: }
+5260: 
+5261: function _dumpRespSubfields(parts, subfields) {
+5262:   return subfields.map(sf => {
+5263:     const content = (parts[sf.key] || '').trimEnd();
+5264:     return '## ' + sf.label + '\n' + content;
+5265:   }).join('\n\n');
+5266: }
+5267: 
+5268: function _renderSSEditor(sec, cfg) {
+5269:   _ssTitle = sec.title;
+5270:   _ssCfg   = cfg;
+5271:   const raw = _editSkillSec[sec.title] !== undefined ? _editSkillSec[sec.title] : (sec.content || '');
+5272:   _ssData  = _parseSSData(raw, cfg);
+5273:   if (cfg.type === 'metadata') { _renderSSMetadata(); return; }
+5274:   _rebuildSSEditor();
+5275: }
+5276: 
+5277: function _rebuildSSEditor() {
+5278:   const cfg = _ssCfg;
+5279:   if (!cfg) return;
+5280:   const ed = document.getElementById('skill-modal-editor');
+5281:   const hdr = `<div class="editor-hdr"><span class="editor-level">##</span><span class="editor-ttl">${cfg.icon} ${escHtml(_ssTitle)}</span><span class="editor-tag csec-tag-yaml">YAML</span></div>`;
+5282: 
+5283:   if (cfg.type === 'stringlist') {
+5284:     const items = _ssData.map((item, idx) => `
+5285:       <div class="wf-card" style="padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:4px">
+5286:         <span style="color:var(--tx-d);font-size:11px;min-width:18px;text-align:right">${idx + 1}</span>
+5287:         <input class="form-input" style="flex:1" value="${escHtml(item.value || '')}"
+5288:           placeholder="${escHtml(cfg.placeholder || '')}"
+5289:           oninput="_ssSetStr(${idx},this.value)">
+5290:         <button class="btn-wf-del" onclick="_ssDelItem(${idx})" title="删除">✕</button>
+5291:       </div>`).join('');
+5292:     ed.innerHTML = hdr +
+5293:       `<div id="ss-list">${items || '<div style="color:var(--tx-d);font-size:12px;padding:12px">暂无数据</div>'}</div>
+5294:        <div style="padding:6px 0"><button class="btn-add-wf" onclick="_ssAddStr()">${escHtml(cfg.addLabel || '+ 添加')}</button></div>`;
+5295:   } else {
+5296:     const cards = _ssData.map((item, idx) => {
+5297:       const fieldsHtml = (cfg.fields || []).map(f => {
+5298:         const val = escHtml(item[f.key] || '');
+5299:         const sty = f.full ? 'width:100%' : ('flex:' + (f.flex || 1));
+5300:         let inputEl;
+5301:         if (f.subfields) {
+5302:           // Response 拆分子字段渲染
+5303:           const sfVals = _parseRespSubfields(item[f.key] || '', f.subfields);
+5304:           const sfHtml = f.subfields.map(sf => `
+5305:             <div style="margin-bottom:10px">
+5306:               <label class="form-label" style="margin-bottom:3px;font-size:11px;color:var(--tx-m)">${escHtml(sf.label)}</label>
+5307:               <textarea class="form-textarea" rows="${sf.rows || 4}"
+5308:                 style="width:100%;min-height:${(sf.rows || 4) * 22}px${sf.mono ? ';font-family:monospace;font-size:11px' : ''}"
+5309:                 oninput="_ssSetSubfield(${idx},'${f.key}','${sf.key}',this.value)"
+5310:                 placeholder="${escHtml(sf.placeholder || '')}">${escHtml(sfVals[sf.key] || '')}</textarea>
+5311:             </div>`).join('');
+5312:           return `<div class="form-row" style="margin-bottom:5px">
+5313:             <label class="form-label" style="margin-bottom:6px">${escHtml(f.label)}</label>
+5314:             <div style="border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px 12px;background:rgba(255,255,255,.02)">${sfHtml}</div>
+5315:           </div>`;
+5316:         } else if (f.options) {
+5317:           const curVal = item[f.key] || '';
+5318:           const allOpts = f.options.includes(curVal) ? f.options : [curVal].concat(f.options);
+5319:           inputEl = `<select class="form-input" style="${sty}" onchange="_ssSetField(${idx},'${f.key}',this.value)">${
+5320:             allOpts.map(o => `<option value="${escHtml(o)}" ${o === curVal ? 'selected' : ''}>${escHtml(o)}</option>`).join('')
+5321:           }</select>`;
+5322:         } else if (f.multiline) {
+5323:           inputEl = `<textarea class="form-textarea" rows="${f.rows || 3}" style="${sty};min-height:${(f.rows || 3) * 22}px"
+5324:             oninput="_ssSetField(${idx},'${f.key}',this.value)">${val}</textarea>`;
+5325:         } else {
+5326:           inputEl = `<input class="form-input" style="${sty}" value="${val}"
+5327:             placeholder="${escHtml(f.placeholder || '')}" oninput="_ssSetField(${idx},'${f.key}',this.value)">`;
+5328:         }
+5329:         return `<div class="form-row" style="margin-bottom:5px">
+5330:           <label class="form-label" style="margin-bottom:2px">${escHtml(f.label)}</label>
+5331:           ${f.full ? inputEl : `<div style="display:flex;gap:6px">${inputEl}</div>`}
+5332:         </div>`;
+5333:       }).join('');
+5334:       const firstF = (cfg.fields || [])[0];
+5335:       const preview = firstF ? (item[firstF.key] || '') : '';
+5336:       const previewTxt = (preview.replace(/\n/g,' ').slice(0,55) + (preview.length > 55 ? '…' : '')) || '（空）';
+5337:       const bodyId = 'ssc-' + _ssTitle.replace(/\W/g,'') + '-' + idx;
+5338:       return `<div class="wf-card" style="margin-bottom:6px;padding:0;overflow:hidden">
+5339:         <div onclick="toggleSSCard('${bodyId}',this)" style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;user-select:none">
+5340:           <span style="font-size:11px;color:var(--tx-d);font-weight:600;min-width:16px;text-align:right">${idx + 1}</span>
+5341:           <span style="flex:1;font-size:11px;color:var(--tx-p);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(previewTxt)}</span>
+5342:           <button class="btn-wf-del" onclick="event.stopPropagation();_ssDelItem(${idx})" title="删除">✕</button>
+5343:           <span class="ss-card-arr" style="color:var(--tx-m);font-size:15px;font-weight:700;transition:transform .15s;flex-shrink:0">›</span>
+5344:         </div>
+5345:         <div id="${bodyId}" style="display:none;padding:10px 12px;border-top:1px solid rgba(255,255,255,.07)">
+5346:           ${fieldsHtml}
+5347:         </div>
+5348:       </div>`;
+5349:     }).join('');
+5350:     ed.innerHTML = hdr +
+5351:       `<div id="ss-list">${cards || '<div style="color:var(--tx-d);font-size:12px;padding:12px">暂无数据，点击下方按钮添加</div>'}</div>
+5352:        <div style="padding:6px 0"><button class="btn-add-wf" onclick="_ssAddCard()">${escHtml(cfg.addLabel || '+ 添加')}</button></div>`;
+5353:   }
+5354: }
+5355: 
+5356: function _renderSSMetadata() {
+5357:   const raw = _editSkillSec[_ssTitle] !== undefined ? _editSkillSec[_ssTitle] : '';
+5358:   let mo = {}, tagsArr = [];
+5359:   try {
+5360:     const p = jsyaml.load(raw) || {};
+5361:     mo = p.metadata || p;
+5362:     tagsArr = p.tags || [];
+5363:   } catch(e) {}
+5364:   _ssData = [{ _meta: mo, _tags: tagsArr }];
+5365:   const ed = document.getElementById('skill-modal-editor');
+5366:   const mOpts = (list, cur) => list.map(v =>
+5367:     `<option value="${v}" ${v === cur ? 'selected' : ''}>${v}</option>`).join('');
+5368:   ed.innerHTML = `
+5369:     <div class="editor-hdr">
+5370:       <span class="editor-level">##</span>
+5371:       <span class="editor-ttl">📄 ${escHtml(_ssTitle)}</span>
+5372:       <span class="editor-tag csec-tag-yaml">YAML</span>
+5373:     </div>
+5374:     <div class="form-row">
+5375:       <label class="form-label">Author</label>
+5376:       <input class="form-input" id="ss-m-author" value="${escHtml(mo.author || '')}">
+5377:     </div>
+5378:     <div class="form-row">
+5379:       <label class="form-label">Last Updated</label>
+5380:       <input class="form-input" id="ss-m-date" value="${escHtml(mo.last_updated || '')}" placeholder="2026-05-28">
+5381:     </div>
+5382:     <div class="form-row">
+5383:       <label class="form-label">Maturity</label>
+5384:       <select class="form-input" id="ss-m-maturity">
+5385:         ${mOpts(['draft','alpha','beta','stable','deprecated'], mo.maturity || 'beta')}
+5386:       </select>
+5387:     </div>
+5388:     <div class="form-row">
+5389:       <label class="form-label">Complexity</label>
+5390:       <select class="form-input" id="ss-m-complexity">
+5391:         ${mOpts(['beginner','intermediate','advanced','expert'], mo.complexity || 'intermediate')}
+5392:       </select>
+5393:     </div>
+5394:     <div class="form-row">
+5395:       <label class="form-label">Estimated Time</label>
+5396:       <input class="form-input" id="ss-m-time" value="${escHtml(mo.estimated_time || '')}" placeholder="20-40 分钟">
+5397:     </div>
+5398:     <div class="form-row">
+5399:       <label class="form-label">Tags <span class="form-hint">逗号分隔</span></label>
+5400:       <input class="form-input" id="ss-m-tags" value="${escHtml((tagsArr || []).join(', '))}" placeholder="automotive, spi, misra...">
+5401:     </div>`;
+5402:   const syncMeta = () => {
+5403:     const author     = (document.getElementById('ss-m-author')?.value     || '').trim();
+5404:     const date       = (document.getElementById('ss-m-date')?.value       || '').trim();
+5405:     const maturity   =  document.getElementById('ss-m-maturity')?.value   || 'beta';
+5406:     const complexity =  document.getElementById('ss-m-complexity')?.value || 'intermediate';
+5407:     const time       = (document.getElementById('ss-m-time')?.value       || '').trim();
+5408:     const tags       = (document.getElementById('ss-m-tags')?.value || '').split(',').map(s => s.trim()).filter(Boolean);
+5409:     _editSkillSec[_ssTitle] = jsyaml.dump(
+5410:       { metadata: { author, last_updated: date, maturity, complexity, estimated_time: time }, tags },
+5411:       { lineWidth: 120, indent: 2 }
+5412:     );
+5413:   };
+5414:   ['ss-m-author','ss-m-date','ss-m-maturity','ss-m-complexity','ss-m-time','ss-m-tags'].forEach(id => {
+5415:     const el = document.getElementById(id);
+5416:     if (el) { el.addEventListener('input', syncMeta); el.addEventListener('change', syncMeta); }
+5417:   });
+5418: }
+5419: 
+5420: function _ssSetStr(idx, val)        { if (_ssData[idx]) { _ssData[idx].value  = val; _ssSyncCache(); } }
+5421: function _ssSetField(idx, key, val) { if (_ssData[idx]) { _ssData[idx][key]   = val; _ssSyncCache(); } }
+5422: function _ssSetSubfield(idx, key, sfKey, val) {
+5423:   if (!_ssData[idx] || !_ssCfg) return;
+5424:   const field = (_ssCfg.fields || []).find(f => f.key === key);
+5425:   if (!field || !field.subfields) return;
+5426:   const current = _parseRespSubfields(_ssData[idx][key] || '', field.subfields);
+5427:   current[sfKey] = val;
+5428:   _ssData[idx][key] = _dumpRespSubfields(current, field.subfields);
+5429:   _ssSyncCache();
+5430: }
+5431: 
+5432: function _ssDelItem(idx) {
+5433:   _ssData.splice(idx, 1);
+5434:   _ssSyncCache();
+5435:   _rebuildSSEditor();
+5436: }
+5437: 
+5438: function _ssAddStr() {
+5439:   _ssData.push({ value: '' });
+5440:   _ssSyncCache();
+5441:   _rebuildSSEditor();
+5442:   setTimeout(() => {
+5443:     const els = document.querySelectorAll('#ss-list .form-input');
+5444:     if (els.length) els[els.length - 1].focus();
+5445:   }, 50);
+5446: }
+5447: 
+5448: function _ssAddCard() {
+5449:   const newItem = {};
+5450:   (_ssCfg.fields || []).forEach(f => { newItem[f.key] = f.options ? f.options[0] : ''; });
+5451:   _ssData.push(newItem);
+5452:   _ssSyncCache();
+5453:   _rebuildSSEditor();
+5454:   setTimeout(() => {
+5455:     const flen = (_ssCfg.fields || []).length;
+5456:     const els = document.querySelectorAll('#ss-list .form-input, #ss-list .form-textarea, #ss-list select');
+5457:     if (els.length >= flen) els[els.length - flen].focus();
+5458:   }, 50);
+5459: }
+5460: 
+5461: function _ssSyncCache() {
+5462:   if (_ssTitle && _ssCfg) _editSkillSec[_ssTitle] = _dumpSSData(_ssData, _ssCfg);
+5463: }
+5464: 
+5465: function toggleSSCard(id, hdrEl) {
+5466:   const body = document.getElementById(id);
+5467:   if (!body) return;
+5468:   const isOpen = body.style.display !== 'none';
+5469:   body.style.display = isOpen ? 'none' : 'block';
+5470:   const arr = hdrEl ? hdrEl.querySelector('.ss-card-arr') : null;
+5471:   if (arr) arr.style.transform = isOpen ? '' : 'rotate(90deg)';
+5472: }
+5473: 
+5474: async function saveSkillConfig() {
+5475:   const skillId = document.getElementById('skill-modal-id').value;
+5476:   if (!skillId) return;
+5477:   const btn = document.getElementById('skill-save-btn');
+5478:   btn.classList.add('saving'); btn.innerHTML = '⏳ 保存中...';
+5479:   const fm_fields = {
+5480:     version:              _editSkillFM.version || '',
+5481:     category:             _editSkillFM.category || '',
+5482:     subcategory:          _editSkillFM.subcategory || '',
+5483:     domain:               _editSkillFM.domain || '',
+5484:     description:          _editSkillFM.description || '',
+5485:     use_cases:            (_editSkillFM.use_cases||'').split('\n').map(s=>s.trim()).filter(Boolean),
+5486:     automotive_standards: (_editSkillFM.automotive_standards||'').split('\n').map(s=>s.trim()).filter(Boolean),
+5487:   };
+5488:   const sections_order = (_modalSkillData && _modalSkillData.sections || []).map(s => s.title);
+5489:   const payload = { skill_id: skillId, fm_fields, sections_content: {..._editSkillSec}, sections_order, new_children: _instrNewChildren };
+5490:   try {
+5491:     const resp = await fetch('/api/save_skill', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+5492:     const data = await resp.json();
+5493:     if (resp.ok && data.status === 'ok') { toast('✅ Skill 配置已保存: ' + skillId, 'c'); closeSkillModal(); }
+5494:     else { toast('❌ 保存失败: ' + (data.error || ''), 'd'); }
+5495:   } catch(e) { toast('❌ 网络错误: ' + e.message, 'd'); }
+5496:   finally { btn.classList.remove('saving'); btn.innerHTML = '💾 保存到文件'; }
+5497: }
+5498: 
+5499: /* ── Create Skill ── */
+5500: function openCreateSkillModal() {

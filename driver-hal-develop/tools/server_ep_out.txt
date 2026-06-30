@@ -1,0 +1,79 @@
+
+===== add_agent + add_skill endpoints (lines 2314-2390) =====
+2314: @app.route("/api/projects/<project_id>/add_agent", methods=["POST"])
+2315: def api_add_project_agent(project_id):
+2316:     """向项目添加 Agent（本地文件复制或 GitHub URL 下载）。"""
+2317:     body = request.get_json(silent=True) or {}
+2318:     source = body.get("source", "local")
+2319:     try:
+2320:         if source == "local":
+2321:             src_path = body.get("path", "").strip()
+2322:             if not src_path:
+2323:                 return jsonify({"error": "path 为必填项"}), 400
+2324:             result = project_manager.add_agent_local(project_id, src_path)
+2325:         elif source == "github":
+2326:             url = body.get("url", "").strip()
+2327:             if not url:
+2328:                 return jsonify({"error": "url 为必填项"}), 400
+2329:             result = project_manager.add_agent_github(project_id, url)
+2330:         else:
+2331:             return jsonify({"error": "source 必须为 local 或 github"}), 400
+2332:         return jsonify({"status": "ok", "agent": result})
+2333:     except Exception as e:
+2334:         return jsonify({"error": str(e)}), 500
+2335: 
+2336: 
+2337: @app.route("/api/projects/<project_id>/agents/<agent_name>", methods=["DELETE"])
+2338: def api_delete_project_agent(project_id, agent_name):
+2339:     """删除项目中的指定 Agent。"""
+2340:     try:
+2341:         project_manager.delete_agent(project_id, agent_name)
+2342:         return jsonify({"status": "ok"})
+2343:     except Exception as e:
+2344:         return jsonify({"error": str(e)}), 500
+2345: 
+2346: 
+2347: @app.route("/api/projects/<project_id>/skills")
+2348: def api_project_skills(project_id):
+2349:     """列出项目的所有 Skills。"""
+2350:     return jsonify({"skills": project_manager.list_skills(project_id)})
+2351: 
+2352: 
+2353: @app.route("/api/projects/<project_id>/add_skill", methods=["POST"])
+2354: def api_add_project_skill(project_id):
+2355:     """向项目添加 Skill（本地目录复制或 GitHub URL 下载）。"""
+2356:     body = request.get_json(silent=True) or {}
+2357:     source = body.get("source", "local")
+2358:     try:
+2359:         if source == "local":
+2360:             src_path = body.get("path", "").strip()
+2361:             if not src_path:
+2362:                 return jsonify({"error": "path 为必填项"}), 400
+2363:             result = project_manager.add_skill_local(project_id, src_path)
+2364:         elif source == "github":
+2365:             url = body.get("url", "").strip()
+2366:             if not url:
+2367:                 return jsonify({"error": "url 为必填项"}), 400
+2368:             result = project_manager.add_skill_github(project_id, url)
+2369:         else:
+2370:             return jsonify({"error": "source 必须为 local 或 github"}), 400
+2371:         return jsonify({"status": "ok", "skill": result})
+2372:     except Exception as e:
+2373:         return jsonify({"error": str(e)}), 500
+2374: 
+2375: 
+2376: @app.route("/api/projects/<project_id>/skills/<skill_name>", methods=["DELETE"])
+2377: def api_delete_project_skill(project_id, skill_name):
+2378:     """删除项目中的指定 Skill。"""
+2379:     try:
+2380:         project_manager.delete_skill(project_id, skill_name)
+2381:         return jsonify({"status": "ok"})
+2382:     except Exception as e:
+2383:         return jsonify({"error": str(e)}), 500
+2384: 
+2385: 
+2386: # ──────────────────────────────────────────────────────────────────────────────
+2387: # Socket.IO 事件
+2388: # ──────────────────────────────────────────────────────────────────────────────
+2389: 
+2390: @socketio.on("connect")

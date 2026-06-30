@@ -1,0 +1,65 @@
+=== B candidate (around stringlist render) ===
+Found at line 5270:
+  5270: "  if (cfg.type === 'stringlist') {\n"
+  5271: '    const items = _ssData.map((item, idx) => `\n'
+  5272: '      <div class="wf-card" style="padding:8px 10px;display:flex;align-items:center;gap:8px;margin-bottom:4px">\n'
+  5273: '        <span style="color:var(--tx-d);font-size:11px;min-width:18px;text-align:right">${idx + 1}</span>\n'
+  5274: '        <input class="form-input" style="flex:1" value="${escHtml(item.value || \'\')}"\n'
+  5275: '          placeholder="${escHtml(cfg.placeholder || \'\')}"\n'
+  5276: '          oninput="_ssSetStr(${idx},this.value)">\n'
+  5277: '        <button class="btn-wf-del" onclick="_ssDelItem(${idx})" title="删除">✕</button>\n'
+  5278: "      </div>`).join('');\n"
+  5279: '    ed.innerHTML = hdr +\n'
+  5280: '      `<div id="ss-list">${items || \'<div style="color:var(--tx-d);font-size:12px;padding:12px">暂无数据</div>\'}</div>\n'
+  5281: '       <div style="padding:6px 0"><button class="btn-add-wf" onclick="_ssAddStr()">${escHtml(cfg.addLabel || \'+ 添加\')}</button></div>`;\n'
+  5282: '  } else {\n'
+  5283: '    const cards = _ssData.map((item, idx) => {\n'
+  5284: '      const fieldsHtml = (cfg.fields || []).map(f => {\n'
+  5285: "        const val = escHtml(item[f.key] || '');\n"
+  5286: "        const sty = f.full ? 'width:100%' : ('flex:' + (f.flex || 1));\n"
+  5287: '        let inputEl;\n'
+  5288: '        if (f.subfields) {\n'
+  5289: '          // Response 拆分子字段渲染\n'
+  5290: "          const sfVals = _parseRespSubfields(item[f.key] || '', f.subfields);\n"
+
+=== E candidate (kna delete btn + body div) ===
+_deleteKnAreaItem found at line 4805:
+  4804: '          placeholder="卡片名称...">\n'
+  4805: '        <button onclick="_deleteKnAreaItem(${idx})" class="btn-wf-del" title="删除此区域">✕</button>\n'
+  4806: '      </div>\n'
+  4807: '      <div style="padding:10px 12px">\n'
+  4808: '        <div style="font-size:10px;color:var(--tx-m);font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px">Topics</div>\n'
+  4809: '        <div id="kna-topics-${idx}">${topicsHtml}</div>\n'
+  4810: '        <button onclick="_addKnAreaTopic(${idx})"\n'
+  4811: '          style="background:var(--bg-card2);border:1px dashed #3fb95040;color:var(--cs);\n'
+  4812: '            padding:3px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:700;\n'
+  4813: '            display:inline-flex;align-items:center;gap:4px;margin-top:6px;transition:.15s"\n'
+
+=== G candidate (newCardsHtml) ===
+newCardsHtml found at line 4972:
+  4972: '  const newCardsHtml = newChildTitles.map(title => {\n'
+  4973: "    const content = _editSkillSec[title] || '';\n"
+  4974: '    return `<div class="wf-card" style="padding:0;overflow:hidden;margin-bottom:6px;border-color:rgba(0,200,100,.3)">\n'
+  4975: '      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(0,200,100,.06);border-bottom:1px solid rgba(0,200,100,.2)">\n'
+  4976: '        <span style="flex:1;font-size:13px;font-weight:600;color:var(--tx-p);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(title)}">${escHtml(title)}</span>\n'
+  4977: '        <span style="font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(0,200,100,.2);color:#00c864;flex-shrink:0">新增</span>\n'
+  4978: '        <button class="btn-wf-del instr-del-btn" data-del-title="${escHtml(title)}" title="撤销新增" style="flex-shrink:0">✕</button>\n'
+  4979: '      </div>\n'
+  4980: '      <textarea class="form-textarea instr-child-ta" style="border:none;border-radius:0;margin:0;resize:vertical;min-height:90px;background:rgba(0,200,100,.02)"\n'
+  4981: '        rows="5" data-child="${escHtml(title)}">${escHtml(content)}</textarea>\n'
+  4982: '    </div>`;\n'
+  4983: "  }).join('');\n"
+  4984: '\n'
+  4985: '  // Add panel\n'
+  4986: '  const addPanelHtml = availPresets.length > 0\n'
+  4987: '    ? `<div style="padding:4px 0 8px">\n'
+  4988: '        <button class="btn-add-wf" id="instr-add-trigger">＋ 添加子节</button>\n'
+  4989: '        <div id="instr-add-panel" style="display:none;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:12px;margin-top:8px">\n'
+  4990: '          <div class="form-row" style="margin-bottom:10px">\n'
+  4991: '            <label class="form-label" style="margin-bottom:5px">选择配置项 <span class="form-hint">（仅显示未添加的项）</span></label>\n'
+  4992: '            <select class="form-input" id="instr-preset-sel">\n'
+  4993: '              ${availPresets.map(p => `<option value="${escHtml(p.label)}">${escHtml(p.label)}</option>`).join(\'\')}\n'
+  4994: '            </select>\n'
+  4995: '          </div>\n'
+  4996: '          <div class="form-row" style="margin-bottom:10px">\n'
+  4997: '            <label class="form-label" style="margin-bottom:5px">默认内容 <span class="form-hint">（可修改后添加）</span></label>\n'

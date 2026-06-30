@@ -1,0 +1,4 @@
+B delete content: '✕' = U+2715
+E delete content: '✕' = U+2715
+G delete content: '✕' = U+2715
+Already-applied cardlist del content: '✕' = U+2715

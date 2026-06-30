@@ -1,0 +1,92 @@
+=== pcScanCLI (8087-8103) ===
+8087: }
+8088: 
+8089: async function pcScanCLI() {
+8090:   var listEl = document.getElementById('pc-cli-list');
+8091:   if (!listEl) return;
+8092:   listEl.innerHTML = '<div style="padding:14px;text-align:center;color:var(--tx-m);font-size:11px">🔍 正在扫描...</div>';
+8093:   try {
+8094:     var res  = await fetch('/api/scan_cli');
+8095:     var data = await res.json();
+8096:     pcCLIScanDone = true;
+8097:     window._pcLastCLITools = data.tools || [];
+8098:     pcRenderCLIList(window._pcLastCLITools);
+8099:   } catch(e) {
+8100:     listEl.innerHTML = '<div style="padding:12px;color:var(--cr);font-size:11px">扫描失败: ' + e.message + '</div>';
+8101:   }
+8102: }
+8103: 
+8104: function pcRenderCLIList(tools) {
+8105:   var listEl = document.getElementById('pc-cli-list');
+
+=== pcSelectCLI (8130-8165) ===
+8130:   }).join('');
+8131: }
+8132: 
+8133: function pcSelectCLI(id, name, folder) {
+8134:   if (!id) {
+8135:     pcSelectedCLI = null;
+8136:     var lb = document.getElementById('pc-cli-sel-label');
+8137:     if (lb) { lb.textContent = ''; lb.style.display = 'none'; }
+8138:     toast('已取消 CLI 选择', 'w');
+8139:   } else {
+8140:     // 若再次点击已选中项则取消选中（toggle）
+8141:     if (pcSelectedCLI && pcSelectedCLI.id === id) {
+8142:       pcSelectedCLI = null;
+8143:       var lb = document.getElementById('pc-cli-sel-label');
+8144:       if (lb) { lb.textContent = ''; lb.style.display = 'none'; }
+8145:       toast('已取消 CLI 选择', 'w');
+8146:     } else {
+8147:       pcSelectedCLI = { id: id, name: name, folder: folder };
+8148:       var lb = document.getElementById('pc-cli-sel-label');
+8149:       if (lb) { lb.textContent = name; lb.style.display = 'inline'; }
+8150:       toast('已选择 CLI: ' + name, 's');
+8151:     }
+8152:   }
+8153:   // 下拉保持打开，重新渲染列表以更新勾选标记
+8154:   if (window._pcLastCLITools && window._pcLastCLITools.length) {
+8155:     pcRenderCLIList(window._pcLastCLITools);
+8156:   }
+8157: }
+8158: 
+8159: async function pcSetupTeamDir(silent) {
+8160:   if (!currentProjectId || !pcSelectedCLI) return;
+8161:   try {
+8162:     var res = await fetch('/api/projects/' + currentProjectId + '/setup_team_dir', {
+8163:       method: 'POST',
+8164:       headers: {'Content-Type': 'application/json'},
+8165:       body: JSON.stringify({ folder: pcSelectedCLI.folder })
+8166:     });
+8167:     var data = await res.json();
+8168:     if (data.error) {
+8169:       if (!silent) toast('创建团队目录失败: ' + data.error, 'd');
+8170:       return;
+
+=== pcSelectProject (7124-7135) ===
+7124:   ['pc-btn-newfile','pc-btn-newdir','pc-btn-add-agent','pc-btn-add-skill']
+7125:     .forEach(function(id) { document.getElementById(id).disabled = false; });
+7126:   pcShowOverview();
+7127:   await Promise.all([pcLoadFileTree(), pcLoadAgents(), pcLoadSkills()]);
+7128:   // 首次选择项目时自动后台扫描 CLI（结果驻留列表）
+7129:   if (!pcCLIScanDone) { setTimeout(function(){ pcScanCLI(); }, 600); }
+7130:   const proj = pcProjects.find(function(p) { return p.id === projectId; });
+7131:   document.getElementById('pc-current-path').textContent = proj ? proj.path : '';
+7132: }
+7133: 
+7134: // ── 项目概览 ──────────────────────────────────────────────────
+7135: function pcShowOverview() {
+7136:   document.getElementById('pc-editor-wrap').style.display = 'none';
+7137:   const overview = document.getElementById('pc-overview');
+
+=== pc-cli-sel-label HTML (1590-1600) ===
+1590:                 color:#4a7098;cursor:pointer;transition:all .2s;white-space:nowrap">
+1591:                 <span style="font-size:11px">🔍</span>
+1592:                 <span>运行时 CLI</span>
+1593:                 <span id="pc-cli-sel-label" style="color:#5de070;font-size:10px;
+1594:                   white-space:nowrap;display:none"></span>
+1595:                 <span style="font-size:9px;opacity:.5">▼</span>
+1596:               </button>
+1597:               <div id="pc-cli-dropdown" style="display:none">
+1598:                 <div style="padding:7px 12px 5px;font-size:10px;font-weight:700;color:var(--tx-m);
+1599:                   display:flex;align-items:center;gap:6px;border-bottom:1px solid #1e3050">
+1600:                   <span>本地 CLI 工具</span>

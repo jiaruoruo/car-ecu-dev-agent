@@ -1,0 +1,41 @@
+Found at line 537
+537:     def create_project(self, name: str, path: str) -> dict:
+538:         """在指定路径创建新项目目录结构，并注册到配置文件。"""
+539:         project_path = Path(path)
+540:         project_path.mkdir(parents=True, exist_ok=True)
+541:         # 创建标准子目录
+542:         for d in ["agents", "skills", "rules", "knowledge", "tools"]:
+543:             (project_path / d).mkdir(exist_ok=True)
+544:         # 创建项目说明文件
+545:         readme = project_path / "README.md"
+546:         if not readme.exists():
+547:             readme.write_text(f"# {name}\n\n项目创建于 {time.strftime('%Y-%m-%d %H:%M:%S')}\n",
+548:                               encoding="utf-8")
+549:         project = {
+550:             "id": str(uuid.uuid4())[:8],
+551:             "name": name,
+552:             "path": str(project_path.resolve()).replace("\\", "/"),
+553:             "created_at": time.time(),
+554:         }
+555:         config = self._read_config()
+556:         config["projects"].append(project)
+557:         self._write_config(config)
+558:         print(f"[PM] 创建项目: {name} @ {project['path']}")
+559:         return project
+560: 
+561:     def open_project(self, path: str) -> dict:
+562:         """导入已有本地目录为项目（如已存在则直接返回）。"""
+563:         project_path = Path(path)
+564:         if not project_path.exists():
+565:             raise ValueError(f"路径不存在: {path}")
+566:         config = self._read_config()
+567:         resolved = str(project_path.resolve()).replace("\\", "/")
+568:         # 检查是否已注册
+569:         for p in config["projects"]:
+570:             if p["path"] == resolved:
+571:                 return p
+572:         project = {
+573:             "id": str(uuid.uuid4())[:8],
+574:             "name": project_path.name,
+575:             "path": resolved,
+576:             "created_at": time.time(),

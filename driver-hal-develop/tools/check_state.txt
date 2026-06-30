@@ -1,0 +1,21 @@
+ss-card-arr pos: 198688
+'Title.replace(/\\W/g,\'\') + \'-\' + idx;\n      return `<div class="wf-card" style="margin-bottom:6px;padding:0;overflow:hidden">\n        <div onclick="toggleSSCard(\'${bodyId}\',this)" style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;user-select:none">\n          <span class="ss-card-arr" style="color:var(--tx-m);font-size:15px;font-weight:700;transition:transform .15s;flex-shrink:0">›</span>\n          <span style="font-size:11px;color:var(--tx-d);font-weight:600;min-width:16px;text-align:right">${idx + 1}</span>\n          <span style="flex:1;font-size:11px;color:var(--t'
+
+
+editor-level count: 13
+editor-level: 'ass="editor-hdr">\n      <span class="editor-level">FM</span>\n      <span class="editor-ttl">基本信息</span>\n      <span class="editor-'
+editor-level: 'ass="editor-hdr">\n      <span class="editor-level">##</span>\n      <span class="editor-ttl">${escHtml(sec.title)}</span>\n      <sp'
+editor-level: 'ass="editor-hdr">\n      <span class="editor-level">###</span>\n      <span class="editor-ttl">${escHtml(child.title)}</span>\n      '
+editor-level: 'oolbar.innerHTML =\n    \'<span class="editor-level">##</span>\' +\n    \'<span class="editor-ttl">workflows</span>\' +\n    \'<span class'
+editor-level: 'oolbar.innerHTML =\n    \'<span class="editor-level">##</span>\' +\n    \'<span class="editor-ttl">skills</span>\' +\n    \'<span class="e'
+editor-level: 'oolbar.innerHTML =\n    \'<span class="editor-level">##</span>\' +\n    \'<span class="editor-ttl">rules</span>\' +\n    \'<span class="ed'
+editor-level: 'hdrDiv.innerHTML =\n    \'<span class="editor-level">##</span>\' +\n    \'<span class="editor-ttl">tools</span>\' +\n    \'<span class="ed'
+editor-level: 'hdrDiv.innerHTML =\n    \'<span class="editor-level">##</span>\' +\n    \'<span class="editor-ttl">\' + _knSecTitle + \'</span>\' +\n    \'<'
+editor-level: 'hdrDiv.innerHTML =\n    \'<span class="editor-level">##</span>\' +\n    \'<span class="editor-ttl">multi-agent-collaboration</span>\' +\n'
+editor-level: 'hdrDiv.innerHTML =\n    \'<span class="editor-level">##</span>\' +\n    \'<span class="editor-ttl">human_checks</span>\' +\n    \'<span cl'
+editor-level: 'hdrDiv.innerHTML =\n    \'<span class="editor-level">##</span>\' +\n    \'<span class="editor-ttl">output_formats</span>\' +\n    \'<span '
+editor-level: 'hdrDiv.innerHTML =\n    \'<span class="editor-level">##</span>\' +\n    \'<span class="editor-ttl">performance_metrics</span>\' +\n    \'<'
+editor-level: 'ass="editor-hdr">\n      <span class="editor-level">FM</span>\n      <span class="editor-ttl">基本信息</span>\n      <span class="editor-'
+
+### span count: 1
+### span: '   <div class="editor-hdr">\n      <span class="editor-level">###</span>\n      <span class="editor-ttl">${escHtml(child.title)}</span>\n      <span class="editor-tag csec-tag-md">Markdown'

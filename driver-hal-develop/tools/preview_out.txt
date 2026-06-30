@@ -1,0 +1,37 @@
+
+[cardlist previewTxt span] line 5369:
+  5368: '          <span style="font-size:11px;color:var(--tx-d);font-weight:600;min-width:16px;text-align:right">${idx + 1}</span>'
+  5369: '          <span style="flex:1;font-size:11px;color:var(--tx-p);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(previewTxt)}</span>'
+  5370: '          <button class="btn-wf-del" onclick="event.stopPropagation();_ssDelItem(${idx})" title="删除">✕</button>'
+  5371: '        </div>'
+  5372: '        <div id="${bodyId}" style="display:none;padding:10px 12px;border-top:1px solid rgba(255,255,255,.07)">'
+  5373: '          ${fieldsHtml}'
+  5374: '        </div>'
+  5375: '      </div>`;'
+  5376: "    }).join('');"
+  5377: '    ed.innerHTML = hdr +'
+
+[stringlist _pv span] line 5298:
+  5297: '          <span style="font-size:11px;color:var(--tx-d);font-weight:600;min-width:16px;text-align:right">${idx + 1}</span>'
+  5298: '          <span style="flex:1;font-size:11px;color:var(--tx-p);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(_pv)}</span>'
+  5299: '          <button class="btn-wf-del" onclick="event.stopPropagation();_ssDelItem(${idx})" title="删除">✕</button>'
+  5300: '        </div>'
+  5301: '        <div id="${_bid}" style="display:none;padding:8px 12px;border-top:1px solid rgba(255,255,255,.07)">'
+  5302: '          <textarea class="form-textarea" style="width:100%;min-height:60px;resize:vertical" rows="2"'
+
+[skillPath select onchange] line 5335:
+  5334: '          const allOpts = f.options.includes(curVal) ? f.options : [curVal].concat(f.options);'
+  5335: '          inputEl = `<select class="form-input" style="${sty}" onchange="_ssSetField(${idx},\'${f.key}\',this.value)">${'
+  5336: '            allOpts.map(o => `<option value="${escHtml(o)}" ${o === curVal ? \'selected\' : \'\'}>${escHtml(o)}</option>`).join(\'\')'
+  5337: '          }</select>`;'
+  5338: '        } else if (f.skillPath) {'
+  5339: '          const _spOpts = (_availSkillPaths||[]);'
+  5340: '          const _spAOpts = _spOpts.includes(val) ? _spOpts : (val ? [val].concat(_spOpts) : _spOpts);'
+
+[stringlist textarea oninput] line 5304:
+  5303: '            placeholder="${escHtml(cfg.placeholder || \'\')}"'
+  5304: '            oninput="_ssSetStr(${idx},this.value)">${escHtml(item.value || \'\')}</textarea>'
+  5305: '        </div>'
+  5306: '      </div>`;'
+  5307: "    }).join('');"
+  5308: '    ed.innerHTML = hdr +'

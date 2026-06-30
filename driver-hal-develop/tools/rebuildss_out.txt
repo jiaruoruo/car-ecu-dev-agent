@@ -1,0 +1,101 @@
+
+[_rebuildSSEditor def] line 5278:
+  5276: }
+  5277: 
+  5278: function _rebuildSSEditor() {
+  5279:   const cfg = _ssCfg;
+  5280:   if (!cfg) return;
+  5281:   const ed = document.getElementById('skill-modal-editor');
+  5282:   const hdr = `<div class="editor-hdr"><span class="editor-ttl">${cfg.icon} ${escHtml(_ssTitle)}</span></div>`;
+  5283: 
+  5284:   if (cfg.type === 'stringlist') {
+  5285:     const items = _ssData.map((item, idx) => {
+  5286:       const _pv = (item.value||'').replace(/\n/g,' ').slice(0,55)+((item.value||'').length>55?'\u2026':'') || '\uff08\u7a7a\uff09';
+  5287:       const _bid = 'ssl-'+_ssTitle.replace(/\W/g,'')+'-'+idx;
+  5288:       return `
+  5289:       <div class="wf-card" style="margin-bottom:4px;padding:0;overflow:hidden">
+  5290:         <div onclick="toggleSSCard('${_bid}',this)" style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;user-select:none">
+  5291:           <span class="ss-card-arr" style="color:var(--tx-m);font-size:15px;font-weight:700;transition:transform .15s;flex-shrink:0">›</span>
+  5292:           <span style="font-size:11px;color:var(--tx-d);font-weight:600;min-width:16px;text-align:right">${idx + 1}</span>
+  5293:           <span style="flex:1;font-size:11px;color:var(--tx-p);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(_pv)}</span>
+  5294:           <button class="btn-wf-del" onclick="event.stopPropagation();_ssDelItem(${idx})" title="删除">✕</button>
+  5295:         </div>
+  5296:         <div id="${_bid}" style="display:none;padding:8px 12px;border-top:1px solid rgba(255,255,255,.07)">
+  5297:           <textarea class="form-textarea" style="width:100%;min-height:60px;resize:vertical" rows="2"
+  5298:             placeholder="${escHtml(cfg.placeholder || '')}"
+
+[_rebuildSSEditor call] line 5275:
+  5273:   _ssData  = _parseSSData(raw, cfg);
+  5274:   if (cfg.type === 'metadata') { _renderSSMetadata(); return; }
+  5275:   _rebuildSSEditor();
+  5276: }
+  5277: 
+  5278: function _rebuildSSEditor() {
+  5279:   const cfg = _ssCfg;
+  5280:   if (!cfg) return;
+  5281:   const ed = document.getElementById('skill-modal-editor');
+  5282:   const hdr = `<div class="editor-hdr"><span class="editor-ttl">${cfg.icon} ${escHtml(_ssTitle)}</span></div>`;
+  5283: 
+  5284:   if (cfg.type === 'stringlist') {
+  5285:     const items = _ssData.map((item, idx) => {
+  5286:       const _pv = (item.value||'').replace(/\n/g,' ').slice(0,55)+((item.value||'').length>55?'\u2026':'') || '\uff08\u7a7a\uff09';
+  5287:       const _bid = 'ssl-'+_ssTitle.replace(/\W/g,'')+'-'+idx;
+  5288:       return `
+  5289:       <div class="wf-card" style="margin-bottom:4px;padding:0;overflow:hidden">
+  5290:         <div onclick="toggleSSCard('${_bid}',this)" style="display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;user-select:none">
+  5291:           <span class="ss-card-arr" style="color:var(--tx-m);font-size:15px;font-weight:700;transition:transform .15s;flex-shrink:0">›</span>
+  5292:           <span style="font-size:11px;color:var(--tx-d);font-weight:600;min-width:16px;text-align:right">${idx + 1}</span>
+  5293:           <span style="flex:1;font-size:11px;color:var(--tx-p);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(_pv)}</span>
+  5294:           <button class="btn-wf-del" onclick="event.stopPropagation();_ssDelItem(${idx})" title="删除">✕</button>
+  5295:         </div>
+
+[_selectSkillL1 def] line 4627:
+  4625: }
+  4626: 
+  4627: function _selectSkillL1(key) {
+  4628:   _navSkillL1 = key;
+  4629:   document.querySelectorAll('#skill-l1nav .l1nav-item').forEach(el =>
+  4630:     el.classList.toggle('active', el.dataset.key === key));
+  4631:   if (key === 'fm') {
+  4632:     _renderSkillFMEditor();
+  4633:   } else {
+  4634:     const idx = parseInt(key.split(':')[1]);
+  4635:     const sec = (_modalSkillData.sections || [])[idx];
+  4636:     if (!sec) return;
+  4637:     if (_isKnAreaSec(sec)) { _renderKnAreaEditor(sec); return; }
+  4638:     if (_isInstrSec(sec))  { _renderInstrEditor(sec);  return; }
+  4639:     const _ssCfgHit = _getSSCfg(sec);
+  4640:     if (_ssCfgHit) { _renderSSEditor(sec, _ssCfgHit); return; }
+  4641:     const content = _editSkillSec[sec.title] !== undefined ? _editSkillSec[sec.title] : (sec.content || '');
+  4642:     const tagCls = sec.content_type === 'yaml' ? 'csec-tag-yaml' : 'csec-tag-md';
+  4643:     const ed = document.getElementById('skill-modal-editor');
+  4644:     ed.innerHTML = `<div class="editor-hdr">
+  4645:       <span class="editor-ttl">${escHtml(sec.title)}</span>
+  4646:       <span class="editor-tag ${tagCls}">${sec.content_type === 'yaml' ? '' : 'Markdown'}</span>
+  4647:     </div>
+  4648:     <textarea class="form-textarea" id="skill-sec-ta" rows="18" style="flex:1;min-height:280px">${escHtml(content)}</textarea>`;
+  4649:     const ta = document.getElementById('skill-sec-ta');
+  4650:     ta.addEventListener('input', () => { _editSkillSec[sec.title] = ta.value; });
+  4651:     setTimeout(() => ta.focus(), 80);
+  4652:   }
+  4653: }
+  4654: 
+  4655: function _renderSkillFMEditor() {
+  4656:   const ed = document.getElementById('skill-modal-editor');
+  4657:   ed.innerHTML = `
+
+[skillPath branch] line 5333:
+  5332:           }</select>`;
+  5333:         } else if (f.skillPath) {
+  5334:           const _lid = 'skp-'+_ssTitle.replace(/\W/g,'')+'-'+idx+'-'+f.key;
+  5335:           inputEl = `<input class="form-input" style="${sty}" value="${val}"
+  5336:             placeholder="${escHtml(f.placeholder||'')}" list="${_lid}"
+  5337:             oninput="_ssSetField(${idx},'${f.key}',this.value)"><datalist id="${_lid}">${
+  5338:               (_availSkillPaths||[]).map(p=>`<option value="${escHtml(p)}">`).join('')
+  5339:             }</datalist>`;
+  5340:         } else if (f.multiline) {
+  5341:           inputEl = `<textarea class="form-textarea" rows="${f.rows || 3}" style="${sty};min-height:${(f.rows || 3) * 22}px"
+  5342:             oninput="_ssSetField(${idx},'${f.key}',this.value)">${val}</textarea>`;
+  5343:         } else {
+  5344:           inputEl = `<input class="form-input" style="${sty}" value="${val}"
+  5345:             placeholder="${escHtml(f.placeholder || '')}" oninput="_ssSetField(${idx},'${f.key}',this.value)">`;

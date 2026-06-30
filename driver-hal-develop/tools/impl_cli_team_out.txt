@@ -1,0 +1,10 @@
+[OK] server.py: Added CLI scan & team dir API endpoints
+[OK] CSS: Added CLI dropdown & copy modal styles
+[OK] HTML: Replaced team button area with CLI scan + team button
+[OK] HTML: Added copy files modal before </body>
+[OK] JS: Modified pcShowTeamModal to setup team dir
+[OK] JS: Modified pcTeamAdd to trigger copy dialog
+[OK] JS: Added CLI scanner & copy dialog functions
+
+[DONE] All patches applied to index.html
+[SIZE] index.html: 335485 bytes

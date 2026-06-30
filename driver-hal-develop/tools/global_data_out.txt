@@ -1,0 +1,41 @@
+2281:   renderAgents(data.agents || []);
+2282:   renderSkills(data.skills || []);
+2721:   const agents = result.matched_agents || [];
+2722:   const skills = result.activated_skills || [];
+2806:   document.getElementById('cnt-agents').textContent    = (data.agents||[]).length;
+2807:   document.getElementById('cnt-skills').textContent    = (data.skills||[]).length;
+
+--- lines around project_update handler ---
+2236:   });
+2237: 
+2238:   socket.on('project_update', (msg) => {
+2239:     projectData = msg.data || msg;
+2240:     renderAllCards(projectData);
+2241:     updateCounts(projectData);
+2242:     if (msg.type === 'initial' || msg.type === 'refresh') {
+2243:       hideLd();
+2244:     } else if (msg.type === 'modified') {
+2245:       toast('已修改: ' + msg.changed_file, 'm');
+2246:       highlightCard(msg.changed_file);
+2247:     } else if (msg.type === 'created') {
+2248:       toast('新增: ' + msg.changed_file, 'c');
+2249:     } else if (msg.type === 'deleted') {
+2250:       toast('已删除: ' + msg.changed_file, 'd');
+2251:     }
+2252:   });
+2253: 
+2254:   socket.on('routing_result', (result) => {
+2255:     renderRoutingFlow(result);
+2256:   });
+2257: 
+2258:   socket.on('connect_error', () => {
+2259:     setLdSub('连接失败，请确认 server.py 已启动');
+2260:   });
+2261: }
+2262: 
+2263: /* ────────── Tab ────────── */
+2264: function switchTab(name) {
+2265:   currentTab = name;
+2266:   document.querySelectorAll('.tab').forEach(t =>
+2267:     t.classList.toggle('active', t.dataset.tab === name));
+---

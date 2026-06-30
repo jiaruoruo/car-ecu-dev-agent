@@ -1,0 +1,39 @@
+=== skillPath select branch ===
+  5337:           }</select>`;
+  5338:         } else if (f.skillPath) {
+  5339:           const _spOpts = (_availSkillPaths||[]);
+  5340:           const _spAOpts = _spOpts.includes(val) ? _spOpts : (val ? [val].concat(_spOpts) : _spOpts);
+  5341:           inputEl = _spOpts.length > 0
+  5342:             ? `<select class="form-input" style="${sty}" onchange="_ssSetField(${idx},'${f.key}',this.value)">
+  5343:                 <option value="">— 选择 Skill 路径 —</option>
+  5344:                 ${_spAOpts.map(o=>`<option value="${escHtml(o)}"${o===val?' selected':''}>${escHtml(o)}</option>`).join('')}
+  5345:               </select>`
+  5346:             : `<input class="form-input" style="${sty}" value="${val}"
+  5347:                 placeholder="${escHtml(f.placeholder||'')}"
+  5348:                 oninput="_ssSetField(${idx},'${f.key}',this.value)">`;
+  5349:         } else if (f.multiline) {
+  5350:           inputEl = `<textarea class="form-textarea" rows="${f.rows || 3}" style="${sty};min-height:${(f.rows || 3) * 22}px"
+  5351:             oninput="_ssSetField(${idx},'${f.key}',this.value)">${val}</textarea>`;
+  5352:         } else {
+
+=== _renderSSEditor tail ===
+  5275:   // 如果有 skillPath 字段且路径列表未加载，先加载再渲染
+  5276:   if ((cfg.fields||[]).some(f=>f.skillPath) && !_availSkillPaths.length) {
+  5277:     _loadAvailSkillPaths().then(() => _rebuildSSEditor());
+  5278:   } else {
+  5279:     _rebuildSSEditor();
+  5280:   }
+  5281: }
+  5282: 
+  5283: function _rebuildSSEditor() {
+
+=======================================================
+  PASS: 5   FAIL: 0
+=======================================================
+  ✓ A: skillPath renders as <select> with dynamic options
+  ✓ A: datalist completely removed
+  ✓ A: default empty option present
+  ✓ B: skillPath-aware pre-load in _renderSSEditor
+  ✓ B: async load → rebuild chain present
+
+  All checks passed!

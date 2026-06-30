@@ -1,0 +1,37 @@
+Skills开发配置页面
+
+<image token="DXNMbPOM8o84YFx4tE0cav6Jnbe" width="1859" height="882" align="center"/>
+
+Skill 配置页分为两个区域：左侧 **Front-matter 表单**编辑结构化元数据，右侧 **Section 列表编辑器**管理 SKILL.md 的 Markdown 章节体，支持章节新增、内容编辑与顺序调整。
+
+**Front-matter 各字段设计逻辑：**
+
+- **name / version** — Skill 的唯一标识与版本号。**【设计逻辑】** 版本化是 skill-router.md 精确检索的基础——路由引擎按 name 定位 Skill，按 version 决定是否触发更新；version 字段也是 deploy 快照的校验基准，确保项目运行时始终对应明确版本，支持回滚与可追溯。
+- **category** — 按技术域分类（如 Serial / CAN / Power / Safety 等）。**【设计逻辑】** 分类标签是批量检索的索引键——路由引擎需要"所有 CAN 相关 Skill"时，category 可直接过滤，无需逐一扫描全量 Skill 内容，显著提升大规模资源池中的检索效率。
+- **automotive_standards** — 关联的汽车行业规范（如 ISO 26262 / AUTOSAR / MISRA-C）。**【设计逻辑】** 合规要求前置声明使 Agent 调用 Skill 时自动感知约束，在代码生成阶段内建合规性校验，而非靠事后 Code Review 兜底——这是从"检测质量"升级为"内建质量"的关键设计。
+- **use_cases** — 明确 Skill 适用的典型场景与边界条件。**【设计逻辑】** 场景边界比功能描述更重要——LLM 需要知道"什么时候不该用"才能避免误触发；显式 use_cases 约束可将 Skill 调用误触发率降至最低，也为日后 Skill 评测提供了可量化的精度基准。
+
+**Section 章节体各项设计逻辑：**
+
+- **Overview** — Skill 功能概述与适用前提。**【设计逻辑】** Overview 是路由引擎的"一句话摘要"——LLM 先读 Overview 快速判断场景是否命中，命中后再深入加载完整 Skill 内容，实现"按需加载"策略，避免无关 Skill 占用宝贵的上下文窗口。
+- **Parameters** — 显式声明调用参数、数据类型与约束条件（Skill 的 API 合同）。**【设计逻辑】** 参数显式声明消除"猜测空间"——当输入输出有明确类型与约束时，LLM 生成的调用代码格式错误率可显著降低；参数段是提升 Skill 调用准确率贡献最高的结构化字段之一。
+- **Code Examples** — 真实可运行的驱动代码模板（含具体芯片型号与寄存器配置）。**【设计逻辑】** 真实代码示例是提升生成准确率最直接的手段——LLM 遵循示例的准确率远高于从自然语言描述中推断；经实测，Code Examples 段是对最终代码输出质量贡献最大的单一章节。
+- **Automotive Context** — 注入芯片型号、寄存器地址、时序约束等领域专属上下文。**【设计逻辑】** 领域专属上下文是消除 LLM 幻觉的关键——通用大模型不掌握具体芯片的寄存器映射，显式注入后可将"编造寄存器地址"的幻觉风险降至极低，这是汽车嵌入式场景中最不可或缺的上下文补偿机制。
+
+Skill 遵循 **Karpathy Skill 规范**——高度结构化、参数显式声明、附有真实代码示例——确保 AI 调用时能精准理解每个 Skill 的用法边界，经实测可显著提升代码生成的准确率。
+
+【设计说明】Skill 的设计遵循 Karpathy Skill Encoding 理念：Skill 不是一段提示词，而是一个携带完整上下文的"知识胶囊"。Front-matter 的结构化元数据（name / version / automotive_standards 等）使 skill-router.md 可以精准索引与匹配触发条件；Section 体中的 Parameters 段声明调用参数与约束条件，Code Examples 段提供真实可运行的驱动代码模板，Automotive Context 段注入芯片型号、寄存器地址等领域专属上下文。这种"元数据 + 结构化内容"的双层编码，经实测能将 LLM 的 Skill 调用准确率显著提升——因为结构化信息减少了模型的"猜测空间"，明确约束了输出的格式边界。Skill 版本化存储在资源池中，可通过 PR 流程评审与合并，每一次 Skill 优化都是团队可继承、可量化的能力沉淀。
+
+### rules开发配置页面
+
+<image token="DBNbbBnd5oZHLqxVn9FcSPVDnud" width="1914" height="654" align="center"/>
+
+Rules 页面展示团队统一的编码规范约束文件（如 MISRA-C:2012、AUTOSAR 接口规范、ISO 26262 功能安全要求等），以卡片形式陈列，每条规则标注启用状态。所有 Agent 在生成代码时强制读入这些规则，是保障代码质量与功能安全等级（ASIL-D）的底线约束——相当于给每个 AI 工程师发放一本不可违背的团队编码宪法。
+
+【设计说明】Rules 的设计是将"团队共识"从隐式经验转化为显式约束。在传统开发中，MISRA-C 合规性依赖每位工程师的个人记忆与 Code Review；而在 Agent 体系中，Rules 文件在 Agent 加载时被强制注入上下文，成为代码生成的硬性约束前置条件。从架构角度看，Rules 与 Agent 分离存储（而非内嵌在 Agent 的 .md 里）是有意为之的解耦设计：规则集可独立版本化演进——当 MISRA-C 版本更新或新增 ISO 26262 条款时，只需修改 rules/ 目录，所有 Agent 自动获得新约束，无需逐一改写 Agent 配置，实现了"约束横切面"与"领域能力"的正交分离。这一设计思路与面向切面编程（AOP）的核心理念一致：将横跨多个模块的质量约束从业务逻辑中抽离，统一在一处声明与维护。
+
+### 项目管理概貌
+
+<image token="EXExbhypwoDgB4xCJwVcuxhSnzh" width="1886" height="984" align="center"/>
+
+项目管理视图分为左右两栏：**左侧边栏**列出所有项目及各项目绑定的 Agent、Skill 清单，支持折叠展开；**右侧主区**展示所选项目的详细配置，包括项目名称、本地路径、绑定的 CLI 运行时（claude-code / gemini / openai-cli 均可）及已部署的团队成员。多个项目共享同一个开发资源池，但各自拥有独立隔离的 AI 团队配置，工程师可同时维护不同

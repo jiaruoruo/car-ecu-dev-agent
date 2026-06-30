@@ -1,0 +1,22 @@
+{
+  "projects": [
+    {
+      "id": "10e365da",
+      "name": "demo",
+      "path": "D:/temp/demo-hal",
+      "created_at": 1780025532.2515981
+    },
+    {
+      "id": "2f5ffb8e",
+      "name": "acu",
+      "path": "D:/WorkSpace/ACU/code/acu",
+      "created_at": 1780025695.5482378
+    },
+    {
+      "id": "aadc184b",
+      "name": "test111",
+      "path": "D:/AI/myproject/ecu-project/test111",
+      "created_at": 1780563471.9153955
+    }
+  ]
+}

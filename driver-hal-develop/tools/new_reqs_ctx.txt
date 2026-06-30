@@ -1,0 +1,287 @@
+
+============================================================
+  Team button HTML  (lines 1538-1562)
+============================================================
+ 1538 |           <div class="pc-overview-title" id="pc-overview-name">📦 项目名称</div>
+ 1539 |           <div class="pc-overview-meta" id="pc-overview-meta"></div>
+ 1540 |           <div style="margin-top:12px">
+ 1541 |             <button id="pc-btn-team" onclick="pcShowTeamModal()" title="管理本项目的 Agents 和 Skills" style="
+ 1542 |               display:inline-flex;align-items:center;gap:7px;
+ 1543 |               padding:8px 20px;font-size:13px;font-weight:700;letter-spacing:0.8px;
+ 1544 |               background:linear-gradient(135deg,#0d1b2a 0%,#1b2d45 50%,#0d1b2a 100%);
+ 1545 |               border:1px solid #3a7bd5;border-radius:8px;
+ 1546 |               color:#7eb8ff;cursor:pointer;
+ 1547 |               box-shadow:0 0 12px rgba(58,123,213,0.35),inset 0 1px 0 rgba(120,180,255,.15);
+ 1548 |               text-shadow:0 0 8px rgba(126,184,255,0.6);
+ 1549 |               transition:all .25s;position:relative;overflow:hidden;">
+ 1550 |               <span style="font-size:15px">⬡</span> 组建项目团队
+ 1551 |             </button>
+ 1552 |           </div>
+ 1553 |           <div class="pc-stat-grid" id="pc-stat-grid" style="margin-top:14px"></div>
+ 1554 |         </div>
+ 1555 |       </div>
+ 1556 | 
+ 1557 |     </div><!-- /pc-main -->
+ 1558 | 
+ 1559 |   </div><!-- /project-config-view -->
+ 1560 | 
+ 1561 | </div>
+ 1562 | 
+
+============================================================
+  Agents/Skills sidebar headers  (lines 1455-1510)
+============================================================
+ 1455 | 
+ 1456 |       <!-- Agents 列表 -->
+ 1457 |       <div class="pc-sb-section" style="flex:1;overflow:hidden;min-height:80px">
+ 1458 |         <div class="pc-sb-hdr" onclick="pcToggleSection('agents-body')">
+ 1459 |           <span class="sb-icon">🤖</span>
+ 1460 |           <span class="sb-title">Agents</span>
+ 1461 |           <span class="sb-count" id="pc-agents-count">0</span>
+ 1462 |           <span class="sb-toggle" id="pc-agents-toggle">▾</span>
+ 1463 |         </div>
+ 1464 |         <div class="pc-sb-body" id="agents-body" style="display:flex;flex-direction:column">
+ 1465 |           <div class="pc-search-wrap">
+ 1466 |             <input class="pc-search-input" id="pc-agent-search" placeholder="🔍 搜索 Agent..."
+ 1467 |               oninput="pcFilterList('agent')" autocomplete="off">
+ 1468 |           </div>
+ 1469 |           <div id="pc-agents-list" style="flex:1;overflow-y:auto"></div>
+ 1470 |         </div>
+ 1471 |       </div>
+ 1472 | 
+ 1473 |       <!-- Skills 列表 -->
+ 1474 |       <div class="pc-sb-section" style="flex:1;overflow:hidden;min-height:80px">
+ 1475 |         <div class="pc-sb-hdr" onclick="pcToggleSection('skills-body')">
+ 1476 |           <span class="sb-icon">🛠</span>
+ 1477 |           <span class="sb-title">Skills</span>
+ 1478 |           <span class="sb-count" id="pc-skills-count">0</span>
+ 1479 |           <span class="sb-toggle" id="pc-skills-toggle">▾</span>
+ 1480 |         </div>
+ 1481 |         <div class="pc-sb-body" id="skills-body" style="display:flex;flex-direction:column">
+ 1482 |           <div class="pc-search-wrap">
+ 1483 |             <input class="pc-search-input" id="pc-skill-search" placeholder="🔍 搜索 Skill..."
+ 1484 |               oninput="pcFilterList('skill')" autocomplete="off">
+ 1485 |           </div>
+ 1486 |           <div id="pc-skills-list" style="flex:1;overflow-y:auto"></div>
+ 1487 |         </div>
+ 1488 |       </div>
+ 1489 | 
+ 1490 |     </div><!-- /pc-sidebar -->
+ 1491 | 
+ 1492 |     <!-- 侧边栏拖拽调宽手柄 -->
+ 1493 |     <div class="pc-sb-resize" id="pc-sb-resize-handle"></div>
+ 1494 | 
+ 1495 |     <!-- 右侧主内容区 -->
+ 1496 |     <div id="pc-main">
+ 1497 | 
+ 1498 |       <!-- 工具栏 -->
+ 1499 |       <div class="pc-toolbar" id="pc-toolbar">
+ 1500 |         <button class="pc-tb-btn" onclick="pcNewFile()" id="pc-btn-newfile" disabled title="新建文件（需先选择项目）">📄 新建文件</button>
+ 1501 |         <button class="pc-tb-btn" onclick="pcNewDir()" id="pc-btn-newdir" disabled title="新建目录">📁 新建目录</button>
+ 1502 |         <div class="pc-toolbar-sep"></div>
+ 1503 |         <button class="pc-tb-btn agent-btn" onclick="pcShowAddAgentModal()" id="pc-btn-add-agent" disabled title="添加 Agent">🤖 添加 Agent</button>
+ 1504 |         <button class="pc-tb-btn skill-btn" onclick="pcShowAddSkillModal()" id="pc-btn-add-skill" disabled title="添加 Skill">🛠 添加 Skill</button>
+ 1505 |         <div class="pc-toolbar-sep"></div>
+ 1506 |         <span class="pc-tb-file-path" id="pc-current-path">未选择项目</span>
+ 1507 |       </div>
+ 1508 | 
+ 1509 |       <!-- 编辑器包裹（文件打开时显示） -->
+ 1510 |       <div id="pc-editor-wrap" style="display:none">
+
+============================================================
+  pcRenderAgentList & pcRenderSkillList  (lines 7407-7500)
+============================================================
+ 7407 | function pcRenderAgentList(agents) {
+ 7408 |   const list = document.getElementById('pc-agents-list');
+ 7409 |   if (!agents.length) {
+ 7410 |     list.innerHTML = '<div style="padding:10px 12px;font-size:11px;color:var(--tx-m)">暂无 Agent，点击工具栏添加</div>';
+ 7411 |     return;
+ 7412 |   }
+ 7413 |   list.innerHTML = agents.map(function(a) {
+ 7414 |     return '<div class="pc-list-item agent-item" onclick="pcOpenFile(\'' + escHtml(a.path) + '\')">'
+ 7415 |       + '<span class="item-icon">🤖</span>'
+ 7416 |       + '<span class="item-name" title="' + escHtml(a.name) + '">' + escHtml(a.name) + '</span>'
+ 7417 |       + '<span class="item-del" onclick="event.stopPropagation();pcDeleteAgent(\'' + escHtml(a.name) + '\')" title="删除 Agent">✕</span>'
+ 7418 |       + '</div>';
+ 7419 |   }).join('');
+ 7420 | }
+ 7421 | 
+ 7422 | function pcFilterList(type) {
+ 7423 |   const q = document.getElementById('pc-' + type + '-search').value.toLowerCase();
+ 7424 |   if (type === 'agent') pcRenderAgentList(pcAgentsList.filter(function(a) { return a.name.toLowerCase().indexOf(q) >= 0; }));
+ 7425 |   else pcRenderSkillList(pcSkillsList.filter(function(s) { return s.name.toLowerCase().indexOf(q) >= 0; }));
+ 7426 | }
+ 7427 | 
+ 7428 | async function pcDoAddAgent() {
+ 7429 |   const btn = document.getElementById('pc-add-agent-confirm-btn');
+ 7430 |   const spinner = document.getElementById('pc-add-agent-spinner');
+ 7431 |   let body;
+ 7432 |   if (pcAddAgentMode === 'local') {
+ 7433 |     const path = document.getElementById('pc-add-agent-local-path').value.trim();
+ 7434 |     if (!path) { toast('请输入本地文件路径', 'w'); return; }
+ 7435 |     body = { source: 'local', path: path };
+ 7436 |   } else {
+ 7437 |     const url = document.getElementById('pc-add-agent-github-url').value.trim();
+ 7438 |     if (!url) { toast('请输入 GitHub URL', 'w'); return; }
+ 7439 |     body = { source: 'github', url: url };
+ 7440 |   }
+ 7441 |   btn.disabled = true; spinner.style.display = 'inline-block';
+ 7442 |   try {
+ 7443 |     const res = await fetch('/api/projects/' + currentProjectId + '/add_agent', {
+ 7444 |       method: 'POST', headers: {'Content-Type': 'application/json'},
+ 7445 |       body: JSON.stringify(body)
+ 7446 |     });
+ 7447 |     const data = await res.json();
+ 7448 |     if (data.error) { toast('添加失败: ' + data.error, 'd'); return; }
+ 7449 |     pcHideModal('pc-add-agent-modal');
+ 7450 |     toast('Agent "' + data.agent.name + '" 已添加', 's');
+ 7451 |     pcLoadAgents(); pcLoadFileTree();
+ 7452 |   } catch(e) { toast('添加失败: ' + e.message, 'd'); }
+ 7453 |   finally { btn.disabled = false; spinner.style.display = 'none'; }
+ 7454 | }
+ 7455 | 
+ 7456 | async function pcDeleteAgent(agentName) {
+ 7457 |   if (!confirm('确认从项目中删除 Agent: ' + agentName + '？')) return;
+ 7458 |   try {
+ 7459 |     const res = await fetch('/api/projects/' + currentProjectId + '/agents/' + encodeURIComponent(agentName), { method: 'DELETE' });
+ 7460 |     const data = await res.json();
+ 7461 |     if (data.error) { toast('删除失败: ' + data.error, 'd'); return; }
+ 7462 |     toast('Agent "' + agentName + '" 已删除', 's');
+ 7463 |     pcLoadAgents(); pcLoadFileTree();
+ 7464 |   } catch(e) { toast('删除失败: ' + e.message, 'd'); }
+ 7465 | }
+ 7466 | 
+ 7467 | // ── Skills 管理 ────────────────────────────────────────────────
+ 7468 | async function pcLoadSkills() {
+ 7469 |   if (!currentProjectId) return;
+ 7470 |   try {
+ 7471 |     const res = await fetch('/api/projects/' + currentProjectId + '/skills');
+ 7472 |     const data = await res.json();
+ 7473 |     pcSkillsList = data.skills || [];
+ 7474 |     pcRenderSkillList(pcSkillsList);
+ 7475 |     document.getElementById('pc-skills-count').textContent = pcSkillsList.length;
+ 7476 |     pcUpdateStatGrid();
+ 7477 |   } catch(e) { console.error('加载 skills 失败', e); }
+ 7478 | }
+ 7479 | 
+ 7480 | function pcRenderSkillList(skills) {
+ 7481 |   const list = document.getElementById('pc-skills-list');
+ 7482 |   if (!skills.length) {
+ 7483 |     list.innerHTML = '<div style="padding:10px 12px;font-size:11px;color:var(--tx-m)">暂无 Skill，点击工具栏添加</div>';
+ 7484 |     return;
+ 7485 |   }
+ 7486 |   list.innerHTML = skills.map(function(s) {
+ 7487 |     return '<div class="pc-list-item skill-item" onclick="pcOpenSkillDir(\'' + escHtml(s.name) + '\',\'' + escHtml(s.path) + '\')">'
+ 7488 |       + '<span class="item-icon">' + (s.has_skill_md ? '🛠' : '📁') + '</span>'
+ 7489 |       + '<span class="item-name" title="' + escHtml(s.name) + '">' + escHtml(s.name) + '</span>'
+ 7490 |       + '<span class="item-del" onclick="event.stopPropagation();pcDeleteSkill(\'' + escHtml(s.name) + '\')" title="删除 Skill">✕</span>'
+ 7491 |       + '</div>';
+ 7492 |   }).join('');
+ 7493 | }
+ 7494 | 
+ 7495 | function pcOpenSkillDir(skillName, skillPath) {
+ 7496 |   pcOpenFile(skillPath + '/SKILL.md');
+ 7497 | }
+ 7498 | 
+ 7499 | async function pcDoAddSkill() {
+ 7500 |   const btn = document.getElementById('pc-add-skill-confirm-btn');
+
+============================================================
+  pc-list-item CSS  (lines 1140-1165)
+============================================================
+ 1140 | .pc-search-input:focus{border-color:var(--ca)}
+ 1141 | 
+ 1142 | /* Agent/Skill 列表条目 */
+ 1143 | .pc-list-item{
+ 1144 |   display:flex;align-items:center;gap:6px;padding:5px 10px;
+ 1145 |   cursor:pointer;transition:.15s;font-size:12px;
+ 1146 |   border-left:2px solid transparent;
+ 1147 | }
+ 1148 | .pc-list-item:hover{background:var(--bg-card2)}
+ 1149 | .pc-list-item.agent-item{border-left-color:transparent}
+ 1150 | .pc-list-item.agent-item:hover{border-left-color:var(--ca)}
+ 1151 | .pc-list-item.skill-item{border-left-color:transparent}
+ 1152 | .pc-list-item.skill-item:hover{border-left-color:var(--cs)}
+ 1153 | .pc-list-item .item-icon{font-size:13px;flex-shrink:0}
+ 1154 | .pc-list-item .item-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ 1155 | .pc-list-item .item-del{
+ 1156 |   opacity:0;color:var(--cr);cursor:pointer;font-size:11px;
+ 1157 |   padding:1px 4px;border-radius:3px;flex-shrink:0;transition:.15s
+ 1158 | }
+ 1159 | .pc-list-item:hover .item-del{opacity:.6}
+ 1160 | .pc-list-item .item-del:hover{opacity:1!important;background:#3d1f1f}
+ 1161 | 
+ 1162 | /* ── 主内容区 ── */
+ 1163 | #pc-main{
+ 1164 |   flex:1;display:flex;flex-direction:column;overflow:hidden;
+ 1165 |   background:var(--bg)
+
+============================================================
+  sb-section CSS  (lines 1080-1145)
+============================================================
+ 1080 | 
+ 1081 | /* 项目列表条目 */
+ 1082 | .pc-proj-item{
+ 1083 |   display:flex;align-items:center;gap:6px;padding:6px 12px;
+ 1084 |   cursor:pointer;border-left:3px solid transparent;transition:.15s;
+ 1085 |   font-size:12px;
+ 1086 | }
+ 1087 | .pc-proj-item:hover{background:var(--bg-card2)}
+ 1088 | .pc-proj-item.active{background:#1a2540;border-left-color:var(--ca);color:var(--ca)}
+ 1089 | .pc-proj-item .proj-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ 1090 | .pc-proj-item .proj-del{
+ 1091 |   opacity:0;color:var(--cr);cursor:pointer;font-size:11px;padding:1px 4px;
+ 1092 |   border-radius:3px;transition:.15s;flex-shrink:0
+ 1093 | }
+ 1094 | .pc-proj-item:hover .proj-del{opacity:.6}
+ 1095 | .pc-proj-item .proj-del:hover{opacity:1;background:#3d1f1f}
+ 1096 | 
+ 1097 | /* 项目操作按钮区 */
+ 1098 | .pc-proj-actions{
+ 1099 |   display:flex;gap:6px;padding:6px 10px;
+ 1100 |   border-top:1px solid var(--border);flex-shrink:0
+ 1101 | }
+ 1102 | .pc-action-btn{
+ 1103 |   flex:1;padding:4px 6px;background:var(--bg-card2);
+ 1104 |   border:1px solid var(--border);border-radius:5px;
+ 1105 |   color:var(--tx-s);font-size:11px;cursor:pointer;transition:.2s;
+ 1106 |   display:flex;align-items:center;justify-content:center;gap:3px
+ 1107 | }
+ 1108 | .pc-action-btn:hover{border-color:var(--ca);color:var(--ca)}
+ 1109 | 
+ 1110 | /* 文件树 */
+ 1111 | .pc-tree-node{
+ 1112 |   display:flex;align-items:center;gap:4px;padding:2px 0 2px 4px;
+ 1113 |   cursor:pointer;border-radius:4px;font-size:12px;transition:.15s;
+ 1114 |   user-select:none;
+ 1115 | }
+ 1116 | .pc-tree-node:hover{background:var(--bg-card2)}
+ 1117 | .pc-tree-node.selected{background:#1a2540;color:var(--ca)}
+ 1118 | .pc-tree-node .tree-indent{display:inline-block;width:16px;flex-shrink:0}
+ 1119 | .pc-tree-node .tree-icon{font-size:13px;flex-shrink:0;width:18px}
+ 1120 | .pc-tree-node .tree-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ 1121 | .pc-tree-node .tree-actions{
+ 1122 |   display:none;gap:2px;margin-right:4px;align-items:center
+ 1123 | }
+ 1124 | .pc-tree-node:hover .tree-actions{display:flex}
+ 1125 | .tree-action-btn{
+ 1126 |   color:var(--tx-m);cursor:pointer;padding:1px 3px;border-radius:3px;
+ 1127 |   font-size:11px;transition:.15s
+ 1128 | }
+ 1129 | .tree-action-btn:hover{color:var(--tx-p);background:var(--bg)}
+ 1130 | 
+ 1131 | /* Agent/Skill 搜索框 */
+ 1132 | .pc-search-wrap{
+ 1133 |   padding:6px 8px;border-bottom:1px solid var(--border);flex-shrink:0
+ 1134 | }
+ 1135 | .pc-search-input{
+ 1136 |   width:100%;padding:5px 8px;background:var(--bg);
+ 1137 |   border:1px solid var(--border);border-radius:5px;
+ 1138 |   color:var(--tx-p);font-size:11px;outline:none;transition:.2s
+ 1139 | }
+ 1140 | .pc-search-input:focus{border-color:var(--ca)}
+ 1141 | 
+ 1142 | /* Agent/Skill 列表条目 */
+ 1143 | .pc-list-item{
+ 1144 |   display:flex;align-items:center;gap:6px;padding:5px 10px;
+ 1145 |   cursor:pointer;transition:.15s;font-size:12px;

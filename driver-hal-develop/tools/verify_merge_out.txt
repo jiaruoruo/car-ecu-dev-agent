@@ -1,0 +1,8 @@
+[OK]   function pcGetMergedSkillList
+[OK]   function pcRefreshSkillsDisplay
+[OK]   pcRefreshSkillsDisplay called
+[OK]   pcGetMergedSkillList called
+[OK]   pcLoadSkills uses pcRefreshSkillsDisplay
+[OK]   pcLoadAgents refreshes skills
+[OK]   pcFilterList uses merged
+[OK]   fromAgent in render

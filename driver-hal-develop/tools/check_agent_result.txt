@@ -1,0 +1,24 @@
+本身即是一种能力资产化的工程建模，使 AI 能力的边界、依赖与状态对团队完全透明可感知。
+
+### Agent开发配置页面
+
+<image token="HUuhbaGxLoaYK5xxqQscALNbnSh" width="1100" height="777" align="center"/>
+
+点击 Agent 卡片的配置按钮后，弹出 YAML 可视化编辑器。编辑器将 Agent 的 .md 配置文件解析为六个可交互的配置节（Section），实现结构化能力声明：
+
+- **description** — 职责边界声明，定义 Agent 的能力范围（只做什么、不做什么）。**【设计逻辑】** 显式边界声明强制 Agent 不越权，是单一职责原则的落地体现；明确"不做什么"比"做什么"更重要——只有边界清晰，路由引擎才能精确分流，多 Agent 协作时才不会出现职责重叠与指令冲突。
+- **expertise** — Chip 标签形式的专长列表（如 SPI / DMA / MISRA-C），供路由引擎精确匹配领域关键词。**【设计逻辑】** 标签化专长使 agent-router.md 的路由变为"关键词查找"而非"LLM 推理"，大幅降低路由延迟与误判率；标签粒度越细，多 Agent 协作时的分工越清晰，也越容易单独评测每个 Agent 的领域命中率。
+- **skills** — 关联 Skill 路径列表，带可视化勾选下拉，自动构建 deploy 时的依赖图。**【设计逻辑】** 显式依赖声明是 deploy_to_team 自动化的基础——系统递归解析 skills 字段，无需人工梳理文件关系，确保"部署完整性"：凡 Agent 声明依赖的 Skill，均被自动打包到项目目录，消除"忘记部署依赖"的人为失误。
+- **rules** — 约束规则引用，链接 rules/ 目录下的编码规范文件（MISRA-C / AUTOSAR / ISO 26262 等）。**【设计逻辑】** Rules 与 Agent 分离存储是 AOP（面向切面编程）思想的体现：约束横切面从业务逻辑中抽离，独立版本化演进——当 MISRA-C 升级或新增 ISO 条款时只需修改 rules/ 目录，所有 Agent 自动获得新约束，无需逐一改写 Agent 配置。
+- **knowledge** — 知识库引用，注入领域技术标准与流程文档。**【设计逻辑】** Knowledge 与 Agent 解耦有两层价值：一是同一份技术标准可被多个 Agent 共享，避免内容冗余；二是知识库可独立版本化，新增 Agent 时可"即时继承"团队历史积累的全部领域知识，无需重新录入。
+- **tools** — 工具绑定，分 required / optional 两级，支持缺失时优雅降级。**【设计逻辑】** required/optional 两级设计实现 fast-fail + 优雅降级：required 工具缺失时 Agent 主动报错（避免静默失败），optional 工具缺失时自动跳过（不因非核心依赖阻断主流程）；两级机制大幅降低了不同团队环境配置差异带来的调试成本。
+
+编辑完成后点击"保存到文件"，内容直接写回对应 .md 源文件，FileWatcher 触发实时热重载，整个配置操作在浏览器中闭环完成。
+
+【设计说明】Agent 的核心设计原则是"显式优于隐式"：每个 Agent 的 .md 文件并不只是一个提示词，而是一个结构化的能力声明文档。description 定义了 Agent 的身份边界（它只做什么、不做什么）；expertise 标签确保路由引擎能精确匹配领域关键词；skills 字段建立了 Agent 与 Skill 包的显式依赖图，deploy_to_team 时系统据此自动解析依赖并打包部署，无需人工梳理文件关系。tools 分 required / optional 两级的设计，允许 Agent 在核心工具缺失时主动报错、在可选工具缺失时优雅降级，大幅降低了环境配置出错带来的调试成本。编辑完成后 FileWatcher 触发的热重载形成了一个"改文件 → 即生效"的紧凑反馈闭环，工程师在浏览器中完成全部配置操作，无需切换工具链。
+
+### Skills开发配置页面
+
+<image token="DXNMbPOM8o84YFx4tE0cav6Jnbe" width="1859" height="882" align="center"/>
+
+Skill 配置页分为两个区域：左侧 **Front-matter 表单**编辑 name / version / category / description / use_cases / automotive_standards 等结构化元数据；右侧 **Section 列表编辑器*

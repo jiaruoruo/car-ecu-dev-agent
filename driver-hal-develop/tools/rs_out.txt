@@ -1,0 +1,82 @@
+=== Lines 5085-5165 ===
+5085: '}\n'
+5086: '\n'
+5087: '/* ══════════════════════════════════════════════════════════════\n'
+5088: '   STRUCTURED SECTION EDITORS\n'
+5089: '   constraints / tools_required / related_skills /\n'
+5090: '   integration_points / performance_criteria / validation /\n'
+5091: '   human_checks / examples / metadata\n'
+5092: '   ══════════════════════════════════════════════════════════════ */\n'
+5093: '\n'
+5094: 'const _SS_CFGS = {\n'
+5095: '  constraints: {\n'
+5096: "    type:'stringlist', key:'constraints', label:'约束条件', icon:'🚫',\n"
+5097: "    placeholder:'约束条件描述...', addLabel:'+ 添加约束'\n"
+5098: '  },\n'
+5099: '  tools_required: {\n'
+5100: "    type:'stringlist', key:'tools_required', label:'所需工具', icon:'🔧',\n"
+5101: "    placeholder:'tools/tool_name   # 描述...', addLabel:'+ 添加工具'\n"
+5102: '  },\n'
+5103: '  related_skills: {\n'
+5104: "    type:'cardlist', key:'related_skills', label:'关联 Skills', icon:'🔗',\n"
+5105: "    addLabel:'+ 添加关联 Skill',\n"
+5106: '    fields:[\n'
+5107: "      { key:'skill',        label:'Skill',        placeholder:'spi',          flex:1 },\n"
+5108: "      { key:'relationship', label:'Relationship', placeholder:'prerequisite', flex:1,\n"
+5109: "        options:['prerequisite','complementary','builds-upon','alternative'] }\n"
+5110: '    ]\n'
+5111: '  },\n'
+5112: '  integration_points: {\n'
+5113: "    type:'cardlist', key:'integration_points', label:'集成接口', icon:'🔌',\n"
+5114: "    addLabel:'+ 添加集成接口',\n"
+5115: '    fields:[\n'
+5116: "      { key:'system',    label:'System',    placeholder:'目标系统名称...',  full:true },\n"
+5117: "      { key:'interface', label:'Interface', placeholder:'SPI / CAN ...',   flex:1 },\n"
+5118: "      { key:'protocol',  label:'Protocol',  placeholder:'AUTOSAR 规范...', full:true }\n"
+5119: '    ]\n'
+5120: '  },\n'
+5121: '  performance_criteria: {\n'
+5122: "    type:'cardlist', key:'performance_criteria', label:'性能指标', icon:'📊',\n"
+5123: "    addLabel:'+ 添加性能指标',\n"
+5124: '    fields:[\n'
+5125: "      { key:'metric', label:'Metric', placeholder:'指标名称...', flex:1 },\n"
+5126: "      { key:'target', label:'Target', placeholder:'目标值...',   full:true }\n"
+5127: '    ]\n'
+5128: '  },\n'
+5129: '  validation: {\n'
+5130: "    type:'cardlist', key:'validation', label:'验证方法', icon:'✅',\n"
+5131: "    addLabel:'+ 添加验证方法',\n"
+5132: '    fields:[\n'
+5133: "      { key:'method',  label:'Method',  placeholder:'验证方法...', flex:1 },\n"
+5134: "      { key:'_detail', label:'Details', placeholder:'验证详情...', full:true,\n"
+5135: "        varKeys:['coverage','scope','requirements'] }\n"
+5136: '    ]\n'
+5137: '  },\n'
+5138: '  human_checks: {\n'
+5139: "    type:'cardlist', key:'human_checks', label:'Human Checks', icon:'✋',\n"
+5140: "    addLabel:'+ 添加 Human Check',\n"
+5141: '    fields:[\n'
+5142: "      { key:'condition', label:'Condition', placeholder:'触发条件...', full:true, multiline:true, rows:3 },\n"
+5143: "      { key:'action',    label:'Action',    placeholder:'处理动作...', full:true, multiline:true, rows:3 }\n"
+5144: '    ]\n'
+5145: '  },\n'
+5146: '  examples: {\n'
+5147: "    type:'cardlist', key:'examples', label:'示例', icon:'💡',\n"
+5148: "    addLabel:'+ 添加示例',\n"
+5149: '    fields:[\n'
+5150: "      { key:'prompt',   label:'Prompt',   placeholder:'用户输入示例...', full:true, multiline:true, rows:3 },\n"
+5151: "      { key:'response', label:'Response', full:true, subfields:[\n"
+5152: "          { key:'分析说明', label:'分析说明', placeholder:'分析过程与背景说明...', rows:4 },\n"
+5153: "          { key:'代码片段', label:'代码片段', placeholder:'```c\\n// 代码示例...\\n```', rows:8, mono:true },\n"
+5154: "          { key:'检查结论', label:'检查结论', placeholder:'MISRA/合规/逻辑检查结果...', rows:4 },\n"
+5155: "          { key:'建议',    label:'建议',    placeholder:'优化建议与注意事项...', rows:3 }\n"
+5156: '        ]\n'
+5157: '      }\n'
+5158: '    ]\n'
+5159: '  },\n'
+5160: '  metadata: {\n'
+5161: "    type:'metadata', key:'metadata', label:'Metadata', icon:'📄'\n"
+5162: '  }\n'
+5163: '};\n'
+5164: '\n'
+5165: 'function _getSSCfg(sec) {\n'

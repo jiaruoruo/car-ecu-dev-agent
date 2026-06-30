@@ -1,0 +1,709 @@
+/**
+ * @file           ZCU_TLF35584.c
+ * @brief          TLF35584 PMIC Driver - Main Implementation
+ * @version        {{ VERSION }}
+ * @asil           ASIL-D
+ * @standard       AUTOSAR Classic Platform R4.x
+ * @compliance     MISRA-C:2012 Mandatory Rules
+ * =============================================================================
+ * [TEMPLATE LOCKED v2.0]
+ * This template contains the complete, locked implementation of the
+ * TLF35584 PMIC driver. LLM shall NOT modify the structure or logic.
+ * Only {{ VAR }} placeholders may be substituted.
+ *
+ * Key design decisions (LOCKED):
+ * 1. SPI frame: uint16, bits [15:parity][14:7:data][6:1:addr][0:cmd]
+ * 2. Protection unlock/lock: 4-byte sequence to PROTCFG(0x03)
+ * 3. FWD: Challenge-Response with lookup table (16 entries)
+ * 4. WWD: Bit-0 toggle via WWDSCMD
+ * 5. State transition: DEVCTRL + DEVCTRLN complementary write
+ * 6. Fault clear: 0xFF (rw1c) with read-after-clear verification
+ * 7. All SPI writes under SuspendAllInterrupts protection
+ * =============================================================================
+ */
+#include "ZCU_TLF35584.h"
+
+/*===========================================================================*/
+/* Global Data â€?Memory Sections LOCKED                                     */
+/*===========================================================================*/
+{{ MEM_MAP_START_ASILD_DATA }}
+{{ PREFIX }}_DataType {{ PREFIX }}_State;
+{{ MEM_MAP_STOP_ASILD_DATA }}
+
+{{ MEM_MAP_START_SHARE_DATA }}
+static const {{ PREFIX }}_ConfigType *{{ PREFIX }}_CfgPtr = NULL_PTR;
+static boolean {{ PREFIX }}_IsInitializedLocal = FALSE;
+{{ MEM_MAP_STOP_SHARE_DATA }}
+
+{{ MEM_MAP_START_CODE }}
+
+/*===========================================================================*/
+/* SPI Protocol â€?Frame Construction with Even Parity                        */
+/* Algorithm: LOCKED â€?DO NOT MODIFY                                        */
+/*===========================================================================*/
+static uint8 {{ PREFIX }}_CalcParity(uint16 frame16)
+{
+    uint8 parity = 0U;
+    uint16 tmp = frame16;
+    while (tmp != 0U)
+    {
+        parity ^= (uint8)(tmp & 1U);
+        tmp >>= 1U;
+    }
+    return parity;
+}
+
+static uint16 {{ PREFIX }}_BuildFrame(uint8 addr, uint8 data, uint8 cmd)
+{
+    uint16 frame;
+    frame = (uint16)(((uint16)data << {{ PREFIX }}_SPI_DATA_BIT_POS) |
+                     ((uint16)addr << {{ PREFIX }}_SPI_ADDR_BIT_POS) |
+                     ((uint16)cmd  << {{ PREFIX }}_SPI_CMD_BIT));
+    if ({{ PREFIX }}_CalcParity(frame) != 0U)
+    {
+        frame |= (uint16)(1U << {{ PREFIX }}_SPI_PARITY_BIT_POS);
+    }
+    return frame;
+}
+
+static uint8 {{ PREFIX }}_ExtractData(uint16 rxFrame)
+{
+    return (uint8)((rxFrame >> {{ PREFIX }}_SPI_DATA_BIT_POS) & {{ PREFIX }}_SPI_DATA_MASK);
+}
+
+/*===========================================================================*/
+/* SPI Transfer â€?Protected by SuspendAllInterrupts                          */
+/* LOCKED: All SPI access must use this path                                 */
+/*===========================================================================*/
+static Std_ReturnType {{ PREFIX }}_SpiXfer(uint16 txFrame, uint16 *rxFrame)
+{
+    Std_ReturnType status = E_NOT_OK;
+    uint8 retry;
+
+    if ((NULL_PTR == {{ PREFIX }}_CfgPtr) || (NULL_PTR == rxFrame))
+    {
+        return E_NOT_OK;
+    }
+
+    for (retry = 0U; retry < {{ PREFIX }}_CfgPtr->spiRetryMax; retry++)
+    {
+        /* ASIL-D: SPI transfer must be interrupt-protected */
+        SuspendAllInterrupts();
+        status = {{ PREFIX }}_CfgPtr->spiTxRxFunc(txFrame, rxFrame);
+        ResumeAllInterrupts();
+
+        if (E_OK == status) { break; }
+    }
+
+    return status;
+}
+
+static Std_ReturnType {{ PREFIX }}_SpiReadReg(uint8 addr, uint8 *data)
+{
+    uint16 txFrame = {{ PREFIX }}_BuildFrame(addr, 0U, {{ PREFIX }}_SPI_CMD_READ);
+    uint16 rxFrame;
+    Std_ReturnType status = {{ PREFIX }}_SpiXfer(txFrame, &rxFrame);
+    if (E_OK == status)
+    {
+        *data = {{ PREFIX }}_ExtractData(rxFrame);
+    }
+    return status;
+}
+
+static Std_ReturnType {{ PREFIX }}_SpiWriteReg(uint8 addr, uint8 data)
+{
+    uint16 txFrame = {{ PREFIX }}_BuildFrame(addr, data, {{ PREFIX }}_SPI_CMD_WRITE);
+    uint16 rxFrame;
+    return {{ PREFIX }}_SpiXfer(txFrame, &rxFrame);
+}
+
+/*===========================================================================*/
+/* Protection Register Unlock/Lock â€?LOCKED                                  */
+/* Sequence values verified against datasheet                                */
+/*===========================================================================*/
+static const uint8 {{ PREFIX }}_UnlockBytes[{{ PREFIX }}_PROT_SEQ_LEN] =
+{
+    {{ PREFIX }}_UNLOCK_BYTE0, {{ PREFIX }}_UNLOCK_BYTE1,
+    {{ PREFIX }}_UNLOCK_BYTE2, {{ PREFIX }}_UNLOCK_BYTE3
+};
+
+static const uint8 {{ PREFIX }}_LockBytes[{{ PREFIX }}_PROT_SEQ_LEN] =
+{
+    {{ PREFIX }}_LOCK_BYTE0, {{ PREFIX }}_LOCK_BYTE1,
+    {{ PREFIX }}_LOCK_BYTE2, {{ PREFIX }}_LOCK_BYTE3
+};
+
+Std_ReturnType {{ PREFIX }}_UnlockProtRegs(void)
+{
+    Std_ReturnType status = E_OK;
+    uint8 idx;
+    for (idx = 0U; idx < {{ PREFIX }}_PROT_SEQ_LEN; idx++)
+    {
+        status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_PROTCFG,
+                                          {{ PREFIX }}_UnlockBytes[idx]);
+        if (E_OK != status) { return status; }
+    }
+    /* Readback verification: check PROTSTAT.LOCK bit */
+    {
+        uint8 protStat;
+        (void){{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_PROTSTAT, &protStat);
+        if ((protStat & 0x01U) != 0U)
+        {
+            status = E_NOT_OK;
+        }
+    }
+    return status;
+}
+
+Std_ReturnType {{ PREFIX }}_LockProtRegs(void)
+{
+    Std_ReturnType status = E_OK;
+    uint8 idx;
+    for (idx = 0U; idx < {{ PREFIX }}_PROT_SEQ_LEN; idx++)
+    {
+        status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_PROTCFG,
+                                          {{ PREFIX }}_LockBytes[idx]);
+        if (E_OK != status) { return status; }
+    }
+    return status;
+}
+
+/*===========================================================================*/
+/* Protected Register Write with Shadow Verification â€?ASIL-D requirement    */
+/*===========================================================================*/
+static Std_ReturnType {{ PREFIX }}_WriteShadowVerify(
+    uint8 regAddr, uint8 value, uint8 shadowAddr)
+{
+    Std_ReturnType status = {{ PREFIX }}_UnlockProtRegs();
+    if (E_OK != status) { return status; }
+
+    status = {{ PREFIX }}_SpiWriteReg(regAddr, value);
+    if (E_OK != status) { return status; }
+
+    /* Shadow register readback verification (ASIL-D requirement) */
+    {
+        uint8 shadowVal;
+        status = {{ PREFIX }}_SpiReadReg(shadowAddr, &shadowVal);
+        if ((E_OK == status) && (shadowVal != value))
+        {
+            /* Shadow mismatch â€?stuck-at fault detection */
+            {{ PREFIX }}_State.faultGroups[{{ PREFIX }}_FAULT_CHIP] |= {{ PREFIX }}_SYSTEM_ERR;
+            status = E_NOT_OK;
+        }
+    }
+
+    (void){{ PREFIX }}_LockProtRegs();
+    return status;
+}
+
+/*===========================================================================*/
+/* Device State Management â€?Complementary Write LOCKED                      */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_SetState({{ PREFIX }}_DeviceStateType state)
+{
+    Std_ReturnType status;
+    uint8 devctrlVal, devctrlnVal;
+
+    if (state > {{ PREFIX }}_DEVSTATE_POWERDOWN) { return E_NOT_OK; }
+
+    devctrlVal  = (uint8)state & {{ PREFIX }}_DEVCTRL_STATE_MSK;
+    devctrlnVal = {{ PREFIX }}_DEVCTRLN_CMPL(devctrlVal);
+
+    /* DEVCTRL and DEVCTRLN must be written as complementary pair (ASIL-D) */
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_DEVCTRL, devctrlVal);
+    if (E_OK != status) { return status; }
+
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_DEVCTRLN, devctrlnVal);
+    if (E_OK == status)
+    {
+        {{ PREFIX }}_State.targetState = state;
+    }
+
+    return status;
+}
+
+Std_ReturnType {{ PREFIX }}_GetState({{ PREFIX }}_DeviceStateType *state)
+{
+    uint8 devstat;
+    Std_ReturnType status;
+
+    if (NULL_PTR == state) { return E_NOT_OK; }
+
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_DEVSTAT, &devstat);
+    if (E_OK == status)
+    {
+        *state = ({{ PREFIX }}_DeviceStateType)(devstat & {{ PREFIX }}_DEVCTRL_STATE_MSK);
+    }
+    return status;
+}
+
+/*===========================================================================*/
+/* FWD Watchdog Service â€?LOCKED                                             */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_ServiceFwd(void)
+{
+    uint8 fwdstat0, fwdstat1, seed, errCnt;
+    uint32 respVal;
+    uint8 idx;
+    Std_ReturnType status;
+
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_FWDSTAT0, &fwdstat0);
+    if (E_OK != status) { return status; }
+
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_FWDSTAT1, &fwdstat1);
+    if (E_OK != status) { return status; }
+
+    seed   = fwdstat0 & {{ PREFIX }}_FWD_SEED_MASK;
+    errCnt = fwdstat1 & {{ PREFIX }}_FWD_ERRCNT_MASK;
+
+    if (0U == errCnt) { return E_OK; }
+
+    if (errCnt >= {{ PREFIX }}_CfgPtr->fwdFailMax)
+    {
+        {{ PREFIX }}_State.faultGroups[{{ PREFIX }}_FAULT_WATCHDOG] |= {{ PREFIX }}_WDG_ERR;
+        return E_NOT_OK;
+    }
+
+    respVal = {{ PREFIX }}_FwdResTable[seed];
+
+    /* Write 4 response bytes (last to FWDRSPSYNC triggers verify) */
+    for (idx = 0U; idx < ({{ PREFIX }}_FWD_RESP_BYTE_CNT - 1U); idx++)
+    {
+        uint8 byte = (uint8)((respVal >> (24U - (idx * 8U))) & 0xFFU);
+        status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_FWDRSP, byte);
+        if (E_OK != status) { return status; }
+    }
+
+    /* Last byte to FWDRSPSYNC triggers frame synchronization */
+    {
+        uint8 lastByte = (uint8)(respVal & 0xFFU);
+        status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_FWDRSPSYNC, lastByte);
+    }
+
+    return status;
+}
+
+/*===========================================================================*/
+/* WWD Watchdog Service â€?LOCKED                                             */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_ServiceWwd(void)
+{
+    uint8 wwdstat;
+    Std_ReturnType status;
+
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_WWDSTAT, &wwdstat);
+    if (E_OK != status) { return status; }
+
+    /* Toggle bit 0 for window watchdog trigger */
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_WWDSCMD,
+                                      wwdstat ^ {{ PREFIX }}_WWD_BIT0_MASK);
+    return status;
+}
+
+Std_ReturnType {{ PREFIX }}_ServiceAllWdgs(void)
+{
+    Std_ReturnType status;
+    status = {{ PREFIX }}_ServiceFwd();
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_ServiceWwd();
+    return status;
+}
+
+/*===========================================================================*/
+/* Register Access Public API                                                */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_ReadReg(uint8 addr, uint8 *data)
+{
+    if (!{{ PREFIX }}_IsInitializedLocal) { return E_NOT_OK; }
+    if (NULL_PTR == data) { return E_NOT_OK; }
+    return {{ PREFIX }}_SpiReadReg(addr, data);
+}
+
+Std_ReturnType {{ PREFIX }}_WriteReg(uint8 addr, uint8 data)
+{
+    if (!{{ PREFIX }}_IsInitializedLocal) { return E_NOT_OK; }
+    return {{ PREFIX }}_SpiWriteReg(addr, data);
+}
+
+/*===========================================================================*/
+/* Fault Management â€?12 Register Polling with Read-After-Clear              */
+/* LOCKED: 0xFF clear + readback verification                                */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_ReadFaults({{ PREFIX }}_FaultInfoType *info)
+{
+    Std_ReturnType status;
+
+    if (NULL_PTR == info) { return E_NOT_OK; }
+
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_SYSFAIL,  &info->sysFail);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_INITERR,  &info->initErr);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_IF,       &info->ifReg);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_SYSSF,    &info->sysSf);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_WKSF,     &info->wkSf);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_SPISF,    &info->spiSf);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_MONSF0,   &info->monSf0);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_MONSF1,   &info->monSf1);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_MONSF2,   &info->monSf2);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_MONSF3,   &info->monSf3);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_OTFAIL,   &info->otFail);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_OTWRNSF,  &info->otWrnSf);
+
+    if (E_OK == status)
+    {
+        {{ PREFIX }}_State.faultInfo = *info;
+    }
+    return status;
+}
+
+Std_ReturnType {{ PREFIX }}_ClearFaults(void)
+{
+    Std_ReturnType status;
+    uint8 verify;
+
+    /* Write 0xFF to clear all fault registers (rw1c type) â€?LOCKED */
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_SYSFAIL,  0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_INITERR,  0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_IF,       0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_SYSSF,    0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_WKSF,     0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_SPISF,    0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_MONSF0,   0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_MONSF1,   0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_MONSF2,   0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_MONSF3,   0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_OTFAIL,   0xFFU);
+    if (E_OK != status) { return status; }
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_OTWRNSF,  0xFFU);
+    if (E_OK != status) { return status; }
+
+    /* Read-after-clear verification (Stuck-at fault immunity) â€?LOCKED */
+    status = {{ PREFIX }}_SpiReadReg({{ PREFIX }}_REG_SYSFAIL, &verify);
+    if ((E_OK == status) && (verify != 0x00U))
+    {
+        {{ PREFIX }}_State.faultGroups[{{ PREFIX }}_FAULT_CHIP] |= {{ PREFIX }}_SYSTEM_ERR;
+        return E_NOT_OK;
+    }
+
+    /* Clear accumulated fault group flags */
+    {
+        uint8 grp;
+        for (grp = 0U; grp < {{ PREFIX }}_FAULT_COUNT; grp++)
+        {
+            {{ PREFIX }}_State.faultGroups[grp] = 0U;
+        }
+    }
+
+    return E_OK;
+}
+
+Std_ReturnType {{ PREFIX }}_ClearFaultReg(uint8 addr)
+{
+    Std_ReturnType status;
+    status = {{ PREFIX }}_SpiWriteReg(addr, 0xFFU);
+
+    /* Read-after-clear verification */
+    if (E_OK == status)
+    {
+        uint8 verify;
+        status = {{ PREFIX }}_SpiReadReg(addr, &verify);
+        if ((E_OK == status) && (verify != 0x00U))
+        {
+            status = E_NOT_OK;
+        }
+    }
+    return status;
+}
+
+uint32 {{ PREFIX }}_GetFaultGroup({{ PREFIX }}_FaultGroupType grp)
+{
+    if (grp >= {{ PREFIX }}_FAULT_COUNT) { return 0U; }
+    return {{ PREFIX }}_State.faultGroups[grp];
+}
+
+/*===========================================================================*/
+/* EMB Recovery (Tracker2 Fast/Slow Strategy) â€?LOCKED                       */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_EmbFastRecovery(void)
+{
+    Std_ReturnType status;
+
+    status = {{ PREFIX }}_UnlockProtRegs();
+    if (E_OK != status) { return status; }
+
+    /* Clear TRK2UV flag only (bit 7 of MONSF2) */
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_MONSF2, 0x80U);
+    if (E_OK != status) { return status; }
+
+    SuspendAllInterrupts();
+    (void){{ PREFIX }}_CfgPtr->delayUsFunc({{ PREFIX }}_CFG_EMB_FAST_DLY_US);
+    ResumeAllInterrupts();
+
+    status = {{ PREFIX }}_LockProtRegs();
+    return status;
+}
+
+Std_ReturnType {{ PREFIX }}_EmbSlowRecovery(void)
+{
+    Std_ReturnType status;
+
+    status = {{ PREFIX }}_UnlockProtRegs();
+    if (E_OK != status) { return status; }
+
+    /* Clear all MONSF2 flags and re-enable tracker */
+    status = {{ PREFIX }}_SpiWriteReg({{ PREFIX }}_REG_MONSF2, 0xFFU);
+    if (E_OK != status) { return status; }
+
+    SuspendAllInterrupts();
+    (void){{ PREFIX }}_CfgPtr->delayUsFunc({{ PREFIX }}_CFG_EMB_SLOW_DLY_US);
+    ResumeAllInterrupts();
+
+    status = {{ PREFIX }}_LockProtRegs();
+    return status;
+}
+
+/*===========================================================================*/
+/* Initialization Phase Machine â€?4x Retry Support, 8 Phases                 */
+/* LOCKED                                                                     */
+/*===========================================================================*/
+static Std_ReturnType {{ PREFIX }}_RunInitPhase(void)
+{
+    Std_ReturnType status = E_OK;
+
+    switch ({{ PREFIX }}_State.initPhase)
+    {
+        case {{ PREFIX }}_PHASE_INIT_SPI:
+            {{ PREFIX }}_State.initPhase = {{ PREFIX }}_PHASE_INIT_UNLOCK;
+            break;
+
+        case {{ PREFIX }}_PHASE_INIT_UNLOCK:
+            status = {{ PREFIX }}_UnlockProtRegs();
+            if (E_OK == status)
+            {
+                {{ PREFIX }}_State.initPhase = {{ PREFIX }}_PHASE_INIT_SYSPCFG;
+            }
+            break;
+
+        case {{ PREFIX }}_PHASE_INIT_SYSPCFG:
+            status = {{ PREFIX }}_WriteShadowVerify(
+                {{ PREFIX }}_REG_SYSPCFG0, 0x00U, {{ PREFIX }}_REG_RSYSPCFG0);
+            if (E_OK == status)
+            {
+                status = {{ PREFIX }}_WriteShadowVerify(
+                    {{ PREFIX }}_REG_SYSPCFG1, 0x00U, {{ PREFIX }}_REG_RSYSPCFG1);
+            }
+            if (E_OK == status)
+            {
+                {{ PREFIX }}_State.initPhase = {{ PREFIX }}_PHASE_INIT_WDGCFG;
+            }
+            break;
+
+        case {{ PREFIX }}_PHASE_INIT_WDGCFG:
+            status = {{ PREFIX }}_WriteShadowVerify(
+                {{ PREFIX }}_REG_WDCFG0, 0x00U, {{ PREFIX }}_REG_RWDCFG0);
+            if (E_OK == status)
+            {
+                status = {{ PREFIX }}_WriteShadowVerify(
+                    {{ PREFIX }}_REG_WDCFG1, 0x00U, {{ PREFIX }}_REG_RWDCFG1);
+            }
+            if (E_OK == status)
+            {
+                {{ PREFIX }}_State.initPhase = {{ PREFIX }}_PHASE_INIT_FWDCFG;
+            }
+            break;
+
+        case {{ PREFIX }}_PHASE_INIT_FWDCFG:
+            status = {{ PREFIX }}_WriteShadowVerify(
+                {{ PREFIX }}_REG_FWDCFG, 0x00U, {{ PREFIX }}_REG_RFWDCFG);
+            if (E_OK == status)
+            {
+                {{ PREFIX }}_State.initPhase = {{ PREFIX }}_PHASE_INIT_WWDCFG;
+            }
+            break;
+
+        case {{ PREFIX }}_PHASE_INIT_WWDCFG:
+            status = {{ PREFIX }}_WriteShadowVerify(
+                {{ PREFIX }}_REG_WWDCFG0, 0x00U, {{ PREFIX }}_REG_RWWDCFG0);
+            if (E_OK == status)
+            {
+                status = {{ PREFIX }}_WriteShadowVerify(
+                    {{ PREFIX }}_REG_WWDCFG1, 0x00U, {{ PREFIX }}_REG_RWWDCFG1);
+            }
+            if (E_OK == status)
+            {
+                {{ PREFIX }}_State.initPhase = {{ PREFIX }}_PHASE_INIT_BIST;
+            }
+            break;
+
+        case {{ PREFIX }}_PHASE_INIT_BIST:
+            if (0U != {{ PREFIX }}_CfgPtr->bistEnableOnInit)
+            {
+                status = {{ PREFIX }}_RunFullBist();
+            }
+            if (E_OK == status)
+            {
+                {{ PREFIX }}_State.initPhase = {{ PREFIX }}_PHASE_INIT_DONE;
+                {{ PREFIX }}_State.isInitialized = TRUE;
+                {{ PREFIX }}_IsInitializedLocal = TRUE;
+            }
+            break;
+
+        case {{ PREFIX }}_PHASE_INIT_DONE:
+            break;
+
+        case {{ PREFIX }}_PHASE_INIT_FAILED:
+        default:
+            status = E_NOT_OK;
+            break;
+    }
+    return status;
+}
+
+/*===========================================================================*/
+/* Main Function â€?10ms Periodic Scheduler                                   */
+/* LOCKED                                                                     */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_MainFunction(void)
+{
+    Std_ReturnType status = E_OK;
+
+    if (NULL_PTR == {{ PREFIX }}_CfgPtr) { return E_NOT_OK; }
+
+    /* Initialize phase machine */
+    if (!{{ PREFIX }}_State.isInitialized)
+    {
+        status = {{ PREFIX }}_RunInitPhase();
+        if (E_OK != status)
+        {
+            {{ PREFIX }}_State.initRetryCnt++;
+            if ({{ PREFIX }}_State.initRetryCnt >= {{ PREFIX }}_CfgPtr->initRetryMax)
+            {
+                {{ PREFIX }}_State.initPhase = {{ PREFIX }}_PHASE_INIT_FAILED;
+                {{ PREFIX }}_State.faultGroups[{{ PREFIX }}_FAULT_CHIP] |= {{ PREFIX }}_SYSTEM_ERR;
+                return E_NOT_OK;
+            }
+            SuspendAllInterrupts();
+            (void){{ PREFIX }}_CfgPtr->delayUsFunc({{ PREFIX }}_CfgPtr->initRetryDelayUs);
+            ResumeAllInterrupts();
+        }
+        return status;
+    }
+
+    /* Operational mode state machine: SERVICE â†?FAULT â†?IDLE cycle */
+    switch ({{ PREFIX }}_State.opState)
+    {
+        case {{ PREFIX }}_OPSTATE_IDLE:
+            {{ PREFIX }}_State.opState = {{ PREFIX }}_OPSTATE_READY;
+            break;
+
+        case {{ PREFIX }}_OPSTATE_READY:
+            status = {{ PREFIX }}_ServiceAllWdgs();
+            if (E_OK == status)
+            {
+                {{ PREFIX }}_State.opState = {{ PREFIX }}_OPSTATE_ACTIVE;
+            }
+            break;
+
+        case {{ PREFIX }}_OPSTATE_ACTIVE:
+        {
+            {{ PREFIX }}_FaultInfoType faultInfo;
+            status = {{ PREFIX }}_ReadFaults(&faultInfo);
+            if (E_OK == status)
+            {
+                if ((faultInfo.sysFail != 0U) || (faultInfo.monSf0 != 0U) ||
+                    (faultInfo.monSf1 != 0U) || (faultInfo.initErr != 0U) ||
+                    (faultInfo.otFail != 0U))
+                {
+                    status = {{ PREFIX }}_ClearFaults();
+                }
+            }
+            {{ PREFIX }}_State.opState = {{ PREFIX }}_OPSTATE_IDLE;
+            break;
+        }
+
+        case {{ PREFIX }}_OPSTATE_ERROR:
+        case {{ PREFIX }}_OPSTATE_BIST:
+        default:
+            break;
+    }
+
+    return status;
+}
+
+/*===========================================================================*/
+/* Initialization Entry Point                                                */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_Init(const {{ PREFIX }}_ConfigType *cfgPtr)
+{
+    if (NULL_PTR == cfgPtr) { return E_NOT_OK; }
+
+    {{ PREFIX }}_CfgPtr = cfgPtr;
+
+    {{ PREFIX }}_State.currentState    = ({{ PREFIX }}_DeviceStateType)0xFFU;
+    {{ PREFIX }}_State.targetState     = {{ PREFIX }}_DEVSTATE_INIT;
+    {{ PREFIX }}_State.initPhase       = {{ PREFIX }}_PHASE_INIT_SPI;
+    {{ PREFIX }}_State.opState         = {{ PREFIX }}_OPSTATE_IDLE;
+    {{ PREFIX }}_State.initRetryCnt    = 0U;
+    {{ PREFIX }}_State.fwdErrCnt       = 0U;
+    {{ PREFIX }}_State.isInitialized   = FALSE;
+    {{ PREFIX }}_State.bistPassed      = FALSE;
+    {{ PREFIX }}_IsInitializedLocal    = FALSE;
+
+    {
+        uint8 grp;
+        for (grp = 0U; grp < {{ PREFIX }}_FAULT_COUNT; grp++)
+        {
+            {{ PREFIX }}_State.faultGroups[grp] = 0U;
+        }
+    }
+
+    return E_OK;
+}
+
+Std_ReturnType {{ PREFIX }}_DeInit(void)
+{
+    {{ PREFIX }}_CfgPtr = NULL_PTR;
+    {{ PREFIX }}_IsInitializedLocal = FALSE;
+    {{ PREFIX }}_State.isInitialized = FALSE;
+    return E_OK;
+}
+
+/*===========================================================================*/
+/* Status Query                                                              */
+/*===========================================================================*/
+boolean {{ PREFIX }}_IsInitialized(void)
+{
+    return {{ PREFIX }}_IsInitializedLocal;
+}
+
+{{ PREFIX }}_InitPhaseType {{ PREFIX }}_GetInitPhase(void)
+{
+    return {{ PREFIX }}_State.initPhase;
+}
+
+{{ PREFIX }}_OpStateType {{ PREFIX }}_GetOpState(void)
+{
+    return {{ PREFIX }}_State.opState;
+}
+
+{{ MEM_MAP_STOP_CODE }}

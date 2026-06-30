@@ -1,0 +1,79 @@
+/**
+ * @file           ZCU_TLF35584_Cfg.h
+ * @brief          TLF35584 PMIC Driver - User Configuration Header
+ * @version        {{ VERSION }}
+ * @asil           ASIL-D
+ * =============================================================================
+ * [TEMPLATE LOCKED] - User-configurable parameters only.
+ *                    See params/default_params.json for defaults.
+ * =============================================================================
+ */
+#ifndef ZCU_TLF35584_CFG_H
+#define ZCU_TLF35584_CFG_H
+
+#include "ZCU_TLF35584_Types.h"
+
+/*===========================================================================*/
+/* SPI Configuration                                                         */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_SPI_MAX_FREQ        ({{ SPI_MAX_FREQ }}U)
+#define {{ PREFIX }}_CFG_SPI_CPOL            ({{ SPI_CPOL }}U)
+#define {{ PREFIX }}_CFG_SPI_CPHA            ({{ SPI_CPHA }}U)
+#define {{ PREFIX }}_CFG_SPI_TIMEOUT_US      ({{ SPI_TIMEOUT_US }}U)
+#define {{ PREFIX }}_CFG_SPI_RETRY_MAX       ({{ SPI_RETRY_MAX }}U)
+
+/*===========================================================================*/
+/* Initialization Configuration                                              */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_INIT_RETRY_MAX      ({{ INIT_RETRY_MAX }}U)
+#define {{ PREFIX }}_CFG_INIT_RETRY_DLY_US   ({{ INIT_RETRY_DLY_US }}U)
+#define {{ PREFIX }}_CFG_STATE_CHG_DLY_US    ({{ STATE_CHG_DLY_US }}U)
+
+/*===========================================================================*/
+/* Watchdog Configuration                                                    */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_FWD_FAIL_MAX        ({{ FWD_FAIL_MAX }}U)
+#define {{ PREFIX }}_CFG_FWD_SERVICE_MS      ({{ FWD_SERVICE_MS }}U)
+#define {{ PREFIX }}_CFG_WWD_SERVICE_MS      ({{ WWD_SERVICE_MS }}U)
+
+/*===========================================================================*/
+/* BIST Configuration                                                        */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_BIST_ENABLE_INIT    ({{ BIST_ENABLE_INIT }}U)
+#define {{ PREFIX }}_CFG_BIST_TIMEOUT_US     ({{ BIST_TIMEOUT_US }}U)
+
+/*===========================================================================*/
+/* EMB Recovery Configuration                                                */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_EMB_FAST_DLY_US     ({{ EMB_FAST_DLY_US }}U)
+#define {{ PREFIX }}_CFG_EMB_SLOW_DLY_US     ({{ EMB_SLOW_DLY_US }}U)
+
+/*===========================================================================*/
+/* Fault Monitoring Configuration                                            */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_FAULT_POLL_MS       ({{ FAULT_POLL_MS }}U)
+#define {{ PREFIX }}_CFG_FAULT_SAMPLE_MAX    ({{ FAULT_SAMPLE_MAX }}U)
+
+/*===========================================================================*/
+/* Configuration Type                                                        */
+/*===========================================================================*/
+typedef struct
+{
+    uint16  spiMaxFreq;
+    uint8   spiCpol;
+    uint8   spiCpha;
+    uint32  spiTimeoutUs;
+    uint8   spiRetryMax;
+    uint8   initRetryMax;
+    uint32  initRetryDelayUs;
+    uint32  stateChangeDelayUs;
+    uint8   fwdFailMax;
+    uint8   bistEnableOnInit;
+    uint32  bistTimeoutUs;
+    uint32  embFastRecoveryUs;
+    uint32  embSlowRecoveryUs;
+} {{ PREFIX }}_ConfigType;
+
+extern const {{ PREFIX }}_ConfigType {{ PREFIX }}_ConfigDefault;
+
+#endif /* ZCU_TLF35584_CFG_H */
