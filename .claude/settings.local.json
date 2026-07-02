@@ -10,7 +10,13 @@
       "Bash(python tests/test_m3.py)",
       "Bash(unset DRIVER_HAL_ROOT)",
       "Bash(python *)",
-      "Bash(DRIVER_HAL_ROOT=/d/AI/myproject/car-ecu-dev-agent/driver-hal-develop python *)"
+      "Bash(DRIVER_HAL_ROOT=/d/AI/myproject/car-ecu-dev-agent/driver-hal-develop python *)",
+      "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\MEMORY.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')",
+      "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\multi_domain_fixes_log.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')",
+      "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\multi_domain_plan.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')",
+      "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\MEMORY.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')",
+      "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\multi_domain_fixes_log.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')",
+      "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\multi_domain_plan.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')"
     ]
   }
 }

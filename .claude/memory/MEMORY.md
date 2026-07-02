@@ -1,0 +1,5 @@
+- [Deep Learning Report - codebase architecture and data flow](deep_learning_report.md) — V-model agent engine, adapter layer, domain pipelines, GUI, test suite
+- [Optimization fixes log - 2026-07-02](optimization_fixes_log.md) — 7 fixes applied: DRIVER_HAL_ROOT, pyproject.toml, AmbiguousInputError, sys.path, G06 waiver, doc cleanup, pipeline alignment
+- [Multi-domain plan](multi_domain_plan.md) — Parse SKILL.md to enrich generic pipeline with domain-specific deliverables, APIs, types
+- [Multi-domain implementation fix log](multi_domain_fixes_log.md) — 10 bugs discovered and fixed during implementation (parsing, codegen, tests)
+- [Memory directory location](memory_config.md) — This project's persistent memory lives at `D:\AI\myproject\car-ecu-dev-agent\.claude\memory\`
