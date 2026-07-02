@@ -16,7 +16,18 @@
       "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\multi_domain_plan.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')",
       "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\MEMORY.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')",
       "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\multi_domain_fixes_log.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')",
-      "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\multi_domain_plan.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')"
+      "Bash(cp 'C:\\\\Users\\\\jiaruo\\\\.claude\\\\projects\\\\D--AI-myproject-car-ecu-dev-agent\\\\memory\\\\multi_domain_plan.md' 'D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\.claude\\\\memory\\\\')",
+      "Bash(curl -s http://localhost:5000/api/list_skills)",
+      "Bash(curl -s http://localhost:5000/api/list_tools)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "Bash(curl -s --max-time 5 http://localhost:5000/)",
+      "Bash(curl -s --max-time 5 http://localhost:5000/api/project_data)",
+      "Bash(curl *)",
+      "Bash(taskkill /F /FI \"WINDOWTITLE eq server.py\")",
+      "Bash(pkill -f \"python server.py\")",
+      "Bash(taskkill /F /IM python.exe /FI \"WINDOWTITLE eq server.py\")",
+      "Bash(taskkill //F //IM python.exe)",
+      "Bash(start *)"
     ]
   }
 }

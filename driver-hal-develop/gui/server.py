@@ -35,7 +35,7 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = "driver-hal-gui-2026"
 
 # 允许跨域（前端与后端同源，保留以备开发调试）
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 # driver-hal-develop 根目录（gui/ 的父目录）
 PROJECT_ROOT = Path(__file__).parent.parent

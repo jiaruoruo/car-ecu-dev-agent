@@ -1,0 +1,51 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]: ⚙️
+    - generic [ref=e4]: Driver HAL 路由可视化中心
+    - generic [ref=e5]: 正在连接服务器...
+  - banner [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e8]: 🚗
+      - generic [ref=e9]: Embedded Software Develop Agents Team
+    - button "🗃 开发资源池" [ref=e10] [cursor=pointer]
+    - button "🗂 项目管理" [ref=e11] [cursor=pointer]
+    - generic [ref=e15]: 连接中…
+    - button "🔄 刷新" [ref=e16] [cursor=pointer]
+  - generic [ref=e17]:
+    - generic [ref=e19]:
+      - button "🤖 Agents -" [ref=e20] [cursor=pointer]:
+        - text: 🤖 Agents
+        - generic [ref=e21]: "-"
+      - button "⚙️ Skills -" [ref=e22] [cursor=pointer]:
+        - text: ⚙️ Skills
+        - generic [ref=e23]: "-"
+      - button "📋 Rules -" [ref=e24] [cursor=pointer]:
+        - text: 📋 Rules
+        - generic [ref=e25]: "-"
+      - button "📚 Knowledge -" [ref=e26] [cursor=pointer]:
+        - text: 📚 Knowledge
+        - generic [ref=e27]: "-"
+      - button "🔧 Tools -" [ref=e28] [cursor=pointer]:
+        - text: 🔧 Tools
+        - generic [ref=e29]: "-"
+      - button "🧿 Soul 4" [ref=e30] [cursor=pointer]:
+        - text: 🧿 Soul
+        - generic [ref=e31]: "4"
+    - generic [ref=e33]:
+      - generic [ref=e34]:
+        - generic [ref=e35]: 路由关系
+        - generic [ref=e36]:
+          - textbox "输入开发指令，如：SPI DMA 驱动开发、CAN 总线初始化..." [ref=e37]
+          - button "▶ 路由" [ref=e38] [cursor=pointer]
+      - generic [ref=e40]:
+        - generic [ref=e41]: 🗺️
+        - generic [ref=e42]: 路由关系等待同步
+        - generic [ref=e43]:
+          - text: 在上方输入框键入开发指令后点击 ▶ 路由 即可查看路由关系。
+          - text: Siada 也可通过 API 实时推送：
+          - code [ref=e44]: curl -X POST http://localhost:5000/api/push_route \
+          - code [ref=e45]: "-d '{\"instruction\":\"开发SPI驱动\"}'"
+      - generic [ref=e46]:
+        - text: 💡 Siada 中输入指令后可调用：
+        - code [ref=e47]: "POST /api/push_route {\"instruction\":\"...\"}"
+        - text: 实时同步到此页面
