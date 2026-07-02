@@ -22,8 +22,9 @@ for _s in (sys.stdout, sys.stderr):
         pass
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "engine"))
+for _p in (ROOT, os.path.join(ROOT, "engine")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 from adapter.pipeline_factory import available_domains, build_orchestrator_for, load_profile  # noqa: E402
 from adapter.forward_trace import forward_traceability                                          # noqa: E402

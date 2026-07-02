@@ -41,6 +41,7 @@ class BaseStageAgent:
         self.planner = PlanManager(registry.names())
         self.execution = ExecutionEngine(registry, human_gate)
         self.feedback = FeedbackLoop(memory.experience)
+        self._ambiguous = False
 
     # ── 子类需实现 ────────────────────────────────────────────────
     def goal(self) -> str:
@@ -85,9 +86,10 @@ class BaseStageAgent:
             si = self.perception.perceive(raw, context={"stage": self.stage.value})
         except AmbiguousInputError as e:
             self.on_log(f"  ⚠ 感知置信度过低，请求澄清：{e.structured.missing_info}")
-            # 演示：注入默认澄清后继续（生产应阻塞等待人工）
+            # PoC：注入默认澄清后继续（生产应阻塞等待人工）
             si = e.structured
-            si.confidence = 1.0
+            # 保留原始低置信度，设置标记供 run() 记录到 notes
+            self._ambiguous = True
         self.on_log(f"  感知：intent={si.intent} 实体={list(si.entities)} "
                     f"约束={len(si.constraints)} 置信度={si.confidence:.2f}")
 
@@ -140,4 +142,6 @@ class BaseStageAgent:
         # 产出存入短期记忆（黑板），供下游阶段读取
         if result and result.artifact:
             self.memory.short_term.put(f"artifact:{self.stage.value}", result.artifact)
+        if result and self._ambiguous:
+            result.notes.append(f"low-confidence-perception: confidence={si.confidence:.2f}")
         return result  # type: ignore[return-value]

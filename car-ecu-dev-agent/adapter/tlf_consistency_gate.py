@@ -31,7 +31,10 @@ _GATE_FUNCS = [
 ]
 
 _DEPRECATED = re.compile(r"\bTLF35584_[A-Za-z0-9_]+")
-_MEMSECTION = re.compile(r"TLF35584_(?:START|STOP)_SEC_")
+# 已知合法 AUTOSAR 内存段宏模式（白名单）——
+# 这些由 MODULE_PREFIX 自动派生，非废弃前缀。
+# 示例：TLF35584_START_SEC_CODE, TLF35584_STOP_SEC_ASILD_PRIVATE_BSW_DATA
+_MEMSECTION = re.compile(r"TLF35584_(?:START|STOP|BEGIN|END)_SEC_\w+")
 SCORE_THRESHOLD = 85   # SKILL: B 级以上方可使用
 
 

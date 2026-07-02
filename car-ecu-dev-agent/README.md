@@ -17,9 +17,7 @@ python gui/server.py            # 浏览器打开 http://127.0.0.1:8765
 ```
 左侧选域 → 勾选「注入缺陷」可演示门禁驳回→自修复 → 「▶ 运行该域闭环」或「▦ 运行全域矩阵」。
 
-> 背景与总体方案见
-> [合并可行性分析报告](../my-first-agent/docs/车载域控Agent工程合并可行性分析报告.md)、
-> [PoC 实施方案](../my-first-agent/docs/PoC实施方案-TLF35584域贯通.md)。
+> 背景与总体方案见 [ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
 ## 这条 PoC 链证明了什么
 

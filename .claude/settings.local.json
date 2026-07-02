@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(export DRIVER_HAL_ROOT=\"D:/AI/driver-hal-develop\")",
+      "Bash(python tests/test_poc_p0_p3.py)",
+      "Read(//d/AI/driver-hal-develop/skills/tlf35584-enhanced/params/**)",
+      "Bash(export DRIVER_HAL_ROOT=\"D:/AI/myproject/car-ecu-dev-agent/driver-hal-develop\")",
+      "Bash(python tests/test_poc_p4_p6.py)",
+      "Bash(python tests/test_m2.py)",
+      "Bash(python tests/test_m3.py)",
+      "Bash(unset DRIVER_HAL_ROOT)"
+    ]
+  }
+}

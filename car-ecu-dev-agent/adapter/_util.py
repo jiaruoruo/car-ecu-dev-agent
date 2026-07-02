@@ -6,10 +6,30 @@ from __future__ import annotations
 
 import importlib.util
 import os
+import sys
 from types import ModuleType
 
-# driver-hal 工程根目录（可用环境变量覆盖，便于换机/CI）
-DRIVER_HAL_ROOT = os.environ.get("DRIVER_HAL_ROOT", r"D:\AI\driver-hal-develop")
+# driver-hal 工程根目录（优先环境变量，fallback 到本项目同级的 driver-hal-develop）
+_DRIVER_HAL_ROOT_ENV = os.environ.get("DRIVER_HAL_ROOT", "").strip()
+if _DRIVER_HAL_ROOT_ENV:
+    DRIVER_HAL_ROOT = _DRIVER_HAL_ROOT_ENV
+else:
+    # __file__ is adapter/_util.py → project root is parent, driver-hal is sibling
+    _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    DRIVER_HAL_ROOT = os.path.normpath(os.path.join(_PROJECT_ROOT, "..", "driver-hal-develop"))
+
+if not os.path.isdir(DRIVER_HAL_ROOT):
+    print(
+        f"ERROR: driver-hal-develop not found at {DRIVER_HAL_ROOT}.\n"
+        f"  Set DRIVER_HAL_ROOT environment variable or ensure driver-hal-develop "
+        f"exists as a sibling directory.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+# agent-spec markdown 目录（供 agent_spec_loader 使用）
+AGENTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "agents")
+
 SKILL_DIR = os.path.join(DRIVER_HAL_ROOT, "skills", "tlf35584-enhanced")
 TEMPLATE_DIR = os.path.join(SKILL_DIR, "templates")
 PARAMS_PATH = os.path.join(SKILL_DIR, "params", "default_params.json")
