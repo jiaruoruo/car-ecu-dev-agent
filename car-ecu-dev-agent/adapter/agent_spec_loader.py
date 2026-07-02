@@ -17,6 +17,7 @@ import yaml
 
 from adapter.domain_profile import DomainProfile
 from adapter._util import DRIVER_HAL_ROOT
+from adapter.skill_parser import find_skills_for_agent, SKILLS_DIR
 
 AGENTS_DIR = os.path.join(DRIVER_HAL_ROOT, "agents")
 
@@ -108,23 +109,60 @@ def load_agent_spec(key: str) -> DomainProfile:
     name = fm.get("name", key)
     domain_key = name[:-6] if name.endswith("-agent") else name
 
-    return DomainProfile(
-        key=domain_key,
-        feature=fm.get("role", domain_key)[:60],
-        asil=_parse_asil(ac.get("asil_range", "")),
-        role=fm.get("role", ""),
-        expertise=list(fm.get("expertise", []) or []),
-        responsibilities=list(fm.get("responsibilities", []) or []),
-        skills=[s for s in skills if s],
-        tools_required=tools_required,
-        standards=list(ac.get("standards_compliance", []) or []),
-        rules=[r for r in rules if r],
-        knowledges=[k for k in knowledges if k],
-        human_checks=human_checks,
-        source_path=path,
-        codegen_kind="stub",
-        code_gate_kind="misra",
-    )
+    # 关联 SKILL.md 信息（多域贯通）
+    parsed_skills = find_skills_for_agent([s for s in skills if s])
+    if parsed_skills:
+        # 合并所有 skill 信息，取第一个最匹配的作为主 skill
+        primary = parsed_skills[0]
+        all_deliverables = []
+        for sk in parsed_skills:
+            all_deliverables.extend(sk.get("deliverables", []))
+        all_apis = []
+        seen_apis = set()
+        for sk in parsed_skills:
+            for a in sk.get("api_names", []):
+                if a not in seen_apis:
+                    seen_apis.add(a)
+                    all_apis.append(a)
+        profile = DomainProfile(
+            key=domain_key,
+            feature=fm.get("role", domain_key)[:60],
+            asil=_parse_asil(ac.get("asil_range", "")),
+            role=fm.get("role", ""),
+            expertise=list(fm.get("expertise", []) or []),
+            responsibilities=list(fm.get("responsibilities", []) or []),
+            skills=[s for s in skills if s],
+            tools_required=tools_required,
+            standards=list(ac.get("standards_compliance", []) or []),
+            rules=[r for r in rules if r],
+            knowledges=[k for k in knowledges if k],
+            human_checks=human_checks,
+            source_path=path,
+            skill_info=primary,
+            api_prefix=primary.get("api_prefix", ""),
+            deliverable_files=all_deliverables,
+            codegen_kind="enriched_stub",
+            code_gate_kind="misra",
+        )
+    else:
+        profile = DomainProfile(
+            key=domain_key,
+            feature=fm.get("role", domain_key)[:60],
+            asil=_parse_asil(ac.get("asil_range", "")),
+            role=fm.get("role", ""),
+            expertise=list(fm.get("expertise", []) or []),
+            responsibilities=list(fm.get("responsibilities", []) or []),
+            skills=[s for s in skills if s],
+            tools_required=tools_required,
+            standards=list(ac.get("standards_compliance", []) or []),
+            rules=[r for r in rules if r],
+            knowledges=[k for k in knowledges if k],
+            human_checks=human_checks,
+            source_path=path,
+            codegen_kind="stub",
+            code_gate_kind="misra",
+        )
+    return profile
 
 
 def discover_generic_domains() -> list[str]:

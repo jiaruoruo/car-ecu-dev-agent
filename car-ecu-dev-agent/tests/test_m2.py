@@ -37,7 +37,7 @@ def test_spec_loader_parses_domains():
     assert "communication" in discover_generic_domains()
     p = load_agent_spec("communication")
     assert p.asil == "B" and len(p.responsibilities) >= 3
-    assert p.skills and p.codegen_kind == "stub" and p.code_gate_kind == "misra"
+    assert p.skills and p.codegen_kind in ("stub", "enriched_stub") and p.code_gate_kind == "misra"
 
 
 def test_generic_pipeline_green_and_forward_trace():

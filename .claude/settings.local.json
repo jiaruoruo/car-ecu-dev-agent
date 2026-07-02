@@ -8,7 +8,9 @@
       "Bash(python tests/test_poc_p4_p6.py)",
       "Bash(python tests/test_m2.py)",
       "Bash(python tests/test_m3.py)",
-      "Bash(unset DRIVER_HAL_ROOT)"
+      "Bash(unset DRIVER_HAL_ROOT)",
+      "Bash(python *)",
+      "Bash(DRIVER_HAL_ROOT=/d/AI/myproject/car-ecu-dev-agent/driver-hal-develop python *)"
     ]
   }
 }

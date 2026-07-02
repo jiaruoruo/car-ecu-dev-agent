@@ -43,6 +43,11 @@ class DomainProfile:
     knowledges: list[str] = field(default_factory=list)
     source_path: str = ""
 
+    # —— SKILL.md 解析注入（多域贯通）——
+    skill_info: dict = field(default_factory=dict)           # 完整 SkillInfo
+    api_prefix: str = ""                                     # AUTOSAR API 前缀 (Can, Spi...)
+    deliverable_files: list[dict] = field(default_factory=list)  # 交付文件模式
+
     # —— 流水线策略：决定编码阶段用模板渲染还是 LLM/stub，门禁用一致性还是 MISRA ——
-    codegen_kind: str = "stub"        # template（如 tlf35584）| stub（通用域）
+    codegen_kind: str = "stub"        # template | enriched_stub | stub
     code_gate_kind: str = "misra"     # consistency（G01-G13）| misra（通用）

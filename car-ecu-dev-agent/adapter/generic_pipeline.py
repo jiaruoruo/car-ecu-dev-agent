@@ -26,6 +26,8 @@ from vda_agent.tools import build_registry
 from adapter.domain_stage_agent import DomainStageAgent, StageSpec
 
 _SAFETY_HINT = re.compile(r"安全|诊断|故障|监控|看门狗|safety|fault|watchdog", re.I)
+_API_CANDIDATE = re.compile(
+    r"(?:^|[,\s(/])([A-Z][A-Za-z]*_[A-Za-z][A-Za-z0-9_]*?)(?:[,\s)]|$)")
 
 
 def _tag(key: str) -> str:
@@ -34,6 +36,21 @@ def _tag(key: str) -> str:
 
 def _mod(key: str) -> str:
     return "".join(p.capitalize() for p in re.split(r"[-_]", key) if p)
+
+
+def _derive_errortype(prefix: str) -> str:
+    """Derive an error-state enum from an API prefix."""
+    mapping = {
+        "Can": "CAN_ACTIVE, CAN_PASSIVE, CAN_BUSOFF",
+        "Spi": "SPI_MODE_0, SPI_MODE_1, SPI_MODE_2, SPI_MODE_3",
+        "I2c": "I2C_IDLE, I2C_MASTER_TX, I2C_MASTER_RX, I2C_SLAVE",
+        "Eth": "ETH_DOWN, ETH_INIT, ETH_UP, ETH_ERROR",
+        "Port": "PORT_OFF, PORT_OUTPUT, PORT_INPUT, PORT_ALT",
+        "SafetyPack": "SAFE_NORMAL, SAFE_DEGRADED, SAFE_STATE",
+        "Fs": "FS_IDLE, FS_READING, FS_WRITING, FS_ERASING",
+        "Sensor": "SENSOR_OFF, SENSOR_CAL, SENSOR_READY, SENSOR_FAULT",
+    }
+    return mapping.get(prefix, f"{prefix.upper()}_OK, {prefix.upper()}_FAULT")
 
 
 def _table(headers, rows):
@@ -71,28 +88,122 @@ def derive(profile):
     return reqs, arcs, dsns, uts, its
 
 
-# ── 代码 stub 生成（MISRA-clean）────────────────────────────────────
-def _stub_code(profile, inject_defect: bool) -> tuple[str, str]:
-    mod, MOD = _mod(profile.key), _tag(profile.key)
-    header = (f"/* {mod}Drv.h — {profile.feature} (ASIL-{profile.asil}) */\n"
-              f"#ifndef {MOD}DRV_H\n#define {MOD}DRV_H\n#include \"Std_Types.h\"\n\n"
-              f"void {mod}_Init(void);\nStd_ReturnType {mod}_MainFunction(void);\n\n"
-              f"#endif\n")
-    defect = (f"    if (s_state = {MOD}_READY) {{ /* 注入：条件中赋值，违反 MISRA 13.4 */ }}\n"
-              if inject_defect else "")
-    src = (f"/* {mod}Drv.c — {profile.feature} (ASIL-{profile.asil})\n"
-           f" * 通用流水线生成的代表性骨架（MISRA C:2012）；生产应替换为真实实现/codegen。\n */\n"
-           f"#include \"{mod}Drv.h\"\n\n"
-           f"typedef enum {{ {MOD}_UNINIT = 0u, {MOD}_READY = 1u }} {mod}StateType;\n\n"
-           f"static {mod}StateType s_state;\n\n"
-           f"void {mod}_Init(void)\n{{\n    s_state = {MOD}_READY;\n}}\n\n"
-           f"Std_ReturnType {mod}_MainFunction(void)\n{{\n    Std_ReturnType ret;\n"
-           f"{defect}"
-           f"    switch (s_state)\n    {{\n"
-           f"        case {MOD}_READY:\n            ret = E_OK;\n            break;\n"
-           f"        default:\n            ret = E_NOT_OK;\n            break;\n    }}\n"
-           f"    return ret;\n}}\n")
-    return header, src
+# ── 代码生成（支持 enriched_stub 多文件 + 领域相关 API）───────────
+def _generate_code(profile, inject_defect: bool) -> list[tuple[str, str]]:
+    """Generate domain-specific C code stubs.
+
+    Returns [(filename, content), ...]. Uses SkillInfo if available,
+    falls back to basic {Mod}Drv.h/.c stub.
+    """
+    MOD = _tag(profile.key)
+    prefix = profile.api_prefix or _mod(profile.key)
+
+    # Gather API names from skill_info
+    api_names = profile.skill_info.get("api_names", []) if profile.skill_info else []
+    # Deduplicate, keep Init and MainFunction
+    seen = set()
+    unique_apis = []
+    for a in api_names:
+        if a not in seen:
+            seen.add(a)
+            unique_apis.append(a)
+
+    # Ensure Init and MainFunction always present
+    has_init = any("_Init" in a or ".Init" in a for a in unique_apis)
+    has_main = any("MainFunction" in a or "Main" in a for a in unique_apis)
+    if not has_init:
+        unique_apis.insert(0, f"{prefix}_Init")
+    if not has_main:
+        unique_apis.append(f"{prefix}_MainFunction")
+
+    # Error state enum
+    err_states = _derive_errortype(prefix)
+
+    # Build header
+    header_lines = [f"/* {prefix}.h — {profile.feature} (ASIL-{profile.asil}) */",
+                    f"#ifndef {MOD}_H", f"#define {MOD}_H",
+                    '#include "Std_Types.h"', ""]
+    for api in unique_apis:
+        if "Init" in api:
+            header_lines.append(f"void {api}(void);")
+        elif "MainFunction" in api:
+            header_lines.append(f"void {api}(void);")
+        else:
+            header_lines.append(f"Std_ReturnType {api}(void);")
+    header_lines.extend(["", f"#endif"])
+    header_content = "\n".join(header_lines) + "\n"
+
+    # Build source
+    src_lines = [f"/* {prefix}.c — {profile.feature} (ASIL-{profile.asil})",
+                 f" * Enriched stub (MISRA C:2012); replace with real implementation.",
+                 f" */",
+                 f'#include "{prefix}.h"', ""]
+    src_lines.append(f"typedef enum {{ {err_states} }} {prefix}ErrorType;")
+    src_lines.append(f"typedef enum {{ {MOD}_UNINIT = 0u, {MOD}_READY = 1u }} {prefix}StateType;")
+    src_lines.append(f"\nstatic {prefix}StateType s_state;\n")
+    # Init
+    src_lines.append(f"void {unique_apis[0]}(void)")
+    src_lines.append("{")
+    src_lines.append(f"    s_state = {MOD}_READY;")
+    src_lines.append("}\n")
+    # Other APIs as stubs
+    defect_injected = False
+    for api in unique_apis[1:]:
+        src_lines.append(f"Std_ReturnType {api}(void)")
+        src_lines.append("{")
+        src_lines.append("    Std_ReturnType ret;")
+        if inject_defect and not defect_injected:
+            src_lines.append(f"    if (s_state = {MOD}_READY) {{ /* 注入：条件中赋值，违反 MISRA 13.4 */ ret = E_OK; }} else")
+            defect_injected = True
+        src_lines.append("    switch (s_state)")
+        src_lines.append("    {")
+        src_lines.append(f"        case {MOD}_READY:")
+        src_lines.append("            ret = E_OK;")
+        src_lines.append("            break;")
+        src_lines.append("        default:")
+        src_lines.append("            ret = E_NOT_OK;")
+        src_lines.append("            break;")
+        src_lines.append("    }")
+        src_lines.append("    return ret;")
+        src_lines.append("}\n")
+    src_content = "\n".join(src_lines)
+
+    files = [(f"{prefix}.h", header_content), (f"{prefix}.c", src_content)]
+
+    # Generate config stubs from deliverable_files
+    for dlv in profile.deliverable_files:
+        cfg_src = dlv.get("source", "")
+        if cfg_src and "<Platform>" not in cfg_src and cfg_src not in (f"{prefix}.c",):
+            # It's a config file like Can_PBCfg.c
+            cfg_content = (f"/* {cfg_src} — {profile.feature} configuration (auto-generated stub)\n"
+                           f" * ASIL-{profile.asil}; populate with platform-specific values.\n */\n"
+                           f'/* TODO: {profile.feature} configuration for {cfg_src} */\n')
+            files.append((cfg_src, cfg_content))
+
+    # Backward compat: if no skill_info, also generate old-style Drv files
+    if not profile.skill_info:
+        mod = _mod(profile.key)
+        old_header = (f"/* {mod}Drv.h — {profile.feature} (ASIL-{profile.asil}) */\n"
+                      f"#ifndef {MOD}DRV_H\n#define {MOD}DRV_H\n#include \"Std_Types.h\"\n\n"
+                      f"void {mod}_Init(void);\nStd_ReturnType {mod}_MainFunction(void);\n\n"
+                      f"#endif\n")
+        defect_line = (f"    if (s_state = {MOD}_READY) {{ /* 注入：条件中赋值，违反 MISRA 13.4 */ }}\n"
+                       if inject_defect else "")
+        old_src = (f"/* {mod}Drv.c — {profile.feature} (ASIL-{profile.asil})\n"
+                   f" * Generic stub (MISRA C:2012); replace with real implementation.\n */\n"
+                   f'#include "{mod}Drv.h"\n\n'
+                   f"typedef enum {{ {MOD}_UNINIT = 0u, {MOD}_READY = 1u }} {mod}StateType;\n\n"
+                   f"static {mod}StateType s_state;\n\n"
+                   f"void {mod}_Init(void)\n{{\n    s_state = {MOD}_READY;\n}}\n\n"
+                   f"Std_ReturnType {mod}_MainFunction(void)\n{{\n    Std_ReturnType ret;\n"
+                   f"{defect_line}"
+                   f"    switch (s_state)\n    {{\n"
+                   f"        case {MOD}_READY:\n            ret = E_OK;\n            break;\n"
+                   f"        default:\n            ret = E_NOT_OK;\n            break;\n    }}\n"
+                   f"    return ret;\n}}\n")
+        files = [(f"{mod}Drv.h", old_header), (f"{mod}Drv.c", old_src)]
+
+    return files
 
 
 # ── produce 函数 ───────────────────────────────────────────────────
@@ -125,14 +236,16 @@ def _mk_produce(profile):
 
     def p_code(agent, si, prev, up, attempt):
         inject = bool(agent.memory.short_term.get("inject_defect")) and attempt == 1
-        header, src = _stub_code(profile, inject)
+        files = _generate_code(profile, inject)
         os.makedirs(os.path.join(agent.code_dir), exist_ok=True)
-        mod = _mod(profile.key)
-        open(os.path.join(agent.code_dir, f"{mod}Drv.h"), "w", encoding="utf-8").write(header)
-        open(os.path.join(agent.code_dir, f"{mod}Drv.c"), "w", encoding="utf-8").write(src)
+        all_src = ""
+        all_links = []
+        for fname, content in files:
+            open(os.path.join(agent.code_dir, fname), "w", encoding="utf-8").write(content)
+            all_src += content + "\n"
+            all_links.extend(TraceLink(fname, d.id, "implements") for d in dsns)
         note = "（依据上轮 MISRA 反馈修复）" if attempt > 1 else ""
-        links = [TraceLink(f"{mod}Drv.c", d.id, "implements") for d in dsns]
-        return Artifact(Stage.CODING, "源码", src, [], links,
+        return Artifact(Stage.CODING, "源码", all_src, [], all_links,
                         {"feature": F, "out_dir": agent.code_dir, "inject_defect": inject, "note": note})
 
     def p_review(agent, si, prev, up, attempt):
