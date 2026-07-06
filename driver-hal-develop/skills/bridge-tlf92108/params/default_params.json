@@ -1,0 +1,115 @@
+{
+  "module_prefix": "TLF92108",
+  "prefix": "Gp_TLF92108",
+  "version": "1.0.0",
+
+  "spi": {
+    "max_freq_hz": 10000000,
+    "cpol": 0,
+    "cpha": 0,
+    "timeout_us": 1000,
+    "retry_max": 3
+  },
+
+  "init": {
+    "retry_max": 3,
+    "retry_delay_us": 1000,
+    "state_change_delay_us": 500
+  },
+
+  "device_states": {
+    "states": ["SLEEP", "STANDBY", "INITIALIZATION", "ACTIVE", "DIMMING", "FAULT", "POWERDOWN"],
+    "transitions": {
+      "SLEEP": ["STANDBY"],
+      "STANDBY": ["SLEEP", "INITIALIZATION"],
+      "INITIALIZATION": ["STANDBY", "ACTIVE", "FAULT"],
+      "ACTIVE": ["STANDBY", "DIMMING", "FAULT"],
+      "DIMMING": ["ACTIVE", "STANDBY", "FAULT"],
+      "FAULT": ["STANDBY"],
+      "POWERDOWN": ["STANDBY"]
+    }
+  },
+
+  "registers": [
+    {"name": "PART_ID", "addr": 0, "rw": "R", "desc": "Part identification"},
+    {"name": "REV_ID", "addr": 1, "rw": "R", "desc": "Revision identification"},
+    {"name": "STATUS", "addr": 2, "rw": "R", "desc": "Device status register"},
+    {"name": "FAULT_STATUS", "addr": 3, "rw": "RC", "desc": "Fault status (read-to-clear)"},
+    {"name": "CTRL_GEN", "addr": 4, "rw": "RW", "desc": "General control register"},
+    {"name": "CTRL_DIMMING", "addr": 5, "rw": "RW", "desc": "Dimming control register"},
+    {"name": "CTRL_HIGH_BEAM", "addr": 6, "rw": "RW", "desc": "High beam current control"},
+    {"name": "CTRL_LOW_BEAM", "addr": 7, "rw": "RW", "desc": "Low beam current control"},
+    {"name": "CTRL_AUX", "addr": 8, "rw": "RW", "desc": "Auxiliary channel control"},
+    {"name": "PWM_FREQ", "addr": 9, "rw": "RW", "desc": "PWM frequency configuration"},
+    {"name": "PWM_DUTY_HIGH", "addr": 10, "rw": "RW", "desc": "PWM duty cycle high beam"},
+    {"name": "PWM_DUTY_LOW", "addr": 11, "rw": "RW", "desc": "PWM duty cycle low beam"},
+    {"name": "FAUL_TH_CFG", "addr": 12, "rw": "RW", "desc": "Fault threshold configuration"},
+    {"name": "OVERTEMP_CFG", "addr": 13, "rw": "RW", "desc": "Over-temperature threshold"},
+    {"name": "LED_CONFIG", "addr": 14, "rw": "RW", "desc": "LED string configuration"},
+    {"name": "DYNAMIC_CTRL", "addr": 15, "rw": "RW", "desc": "Dynamic current ramp control"},
+    {"name": "DIAG_STATUS", "addr": 16, "rw": "R", "desc": "Diagnostic status"},
+    {"name": "EEPROM_CTRL", "addr": 17, "rw": "RW", "desc": "EEPROM control"},
+    {"name": "EEPROM_ADDR", "addr": 18, "rw": "RW", "desc": "EEPROM address pointer"},
+    {"name": "EEPROM_DATA", "addr": 19, "rw": "RW", "desc": "EEPROM data"}
+  ],
+
+  "fault_codes": {
+    "OC_FAULT": 1,
+    "OT_FAULT": 2,
+    "OPEN_LED": 4,
+    "SC_FAULT": 8,
+    "UVLO_FAULT": 16,
+    "OVP_FAULT": 32,
+    "SPI_ERR": 64,
+    "WATCHDOG_ERR": 128
+  },
+
+  "current_control": {
+    "min_current_ma": 10,
+    "max_current_ma": 2000,
+    "resolution_ma": 1,
+    "accuracy_pct": 3.0
+  },
+
+  "pwm": {
+    "min_freq_hz": 100,
+    "max_freq_hz": 50000,
+    "default_freq_hz": 1000,
+    "resolution_bits": 10,
+    "default_duty_pct": 100
+  },
+
+  "thermal": {
+    "warning_temp_c": 120,
+    "shutdown_temp_c": 175,
+    "recovery_temp_c": 150,
+    "throttling_start_c": 140
+  },
+
+  "fault_monitoring": {
+    "poll_interval_ms": 10,
+    "sample_max": 3,
+    "clear_value_hex": "0xFF"
+  },
+
+  "protection_sequence": {
+    "unlock": ["0xAB", "0xEF", "0x56", "0x12"],
+    "lock": ["0xDF", "0x34", "0xBE", "0xCA"]
+  },
+
+  "bist": {
+    "enable_on_init": true,
+    "timeout_us": 50000
+  },
+
+  "emb_recovery": {
+    "fast_delay_us": 100,
+    "slow_delay_us": 1000
+  },
+
+  "watchdog": {
+    "fwd_fail_max": 3,
+    "fwd_service_interval_ms": 100,
+    "wwd_service_interval_ms": 200
+  }
+}

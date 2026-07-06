@@ -12,8 +12,14 @@ def _tlf35584():
     return build_profile()
 
 
+def _bridge_tlf92108():
+    from domains.bridge_tlf92108.profile import build_profile
+    return build_profile()
+
+
 _BUILDERS = {
     "tlf35584": _tlf35584,
+    "bridge-tlf92108": _bridge_tlf92108,
 }
 
 

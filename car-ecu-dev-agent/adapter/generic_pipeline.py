@@ -354,7 +354,7 @@ def build_specs(profile) -> dict:
 
 
 def build_pipeline(profile, out_dir: str, on_log=print, inject_defect: bool = False) -> Orchestrator:
-    llm = LLMClient(mode="mock")
+    llm = LLMClient()
     memory = MemorySystem(knowledge_dir=KNOWLEDGE_DIR)
     memory.short_term.put("inject_defect", inject_defect)
     registry = build_registry()

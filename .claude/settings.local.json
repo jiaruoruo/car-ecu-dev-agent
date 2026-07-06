@@ -27,7 +27,30 @@
       "Bash(pkill -f \"python server.py\")",
       "Bash(taskkill /F /IM python.exe /FI \"WINDOWTITLE eq server.py\")",
       "Bash(taskkill //F //IM python.exe)",
-      "Bash(start *)"
+      "Bash(start *)",
+      "Bash(grep -n \"^</div>$\" \"D:/AI/myproject/car-ecu-dev-agent/driver-hal-develop/gui/index.html\")",
+      "Read(//c/Users/jiaruo/.claude/**)",
+      "Bash(cmd.exe /c \"type C:\\\\Users\\\\jiaruo\\\\.openclaw\\\\agents\\\\main\\\\agent\\\\auth-profiles.json | more\")",
+      "Bash(ruby *)",
+      "Bash(node *)",
+      "Bash(powershell *)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill *)",
+      "Bash(TaskOutput bhhe3e0z7 *)",
+      "Bash(curl -s http://localhost:5000)",
+      "Read(//tmp/**)",
+      "Bash(curl -s http://localhost:5000/)",
+      "Bash(]*)",
+      "Bash(sed -i 's|/tmp/gui_check.html|/c/temp/gui_check.html|' /d/AI/myproject/car-ecu-dev-agent/driver-hal-develop/gui/check_js.js)",
+      "Bash(ps -p 40832 -o cwd,cmd)",
+      "Bash(wmic process *)",
+      "Bash(mkdir -p \"D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\car-ecu-dev-agent\\\\domains\\\\bridge-tlf92108\")",
+      "Bash(mkdir -p \"D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\driver-hal-develop\\\\skills\\\\bridge-tlf92108\\\\templates\")",
+      "Bash(mkdir -p \"D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\driver-hal-develop\\\\skills\\\\bridge-tlf92108\\\\params\")",
+      "Bash(mkdir -p \"D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\driver-hal-develop\\\\skills\\\\bridge-tlf92108\\\\checker\")",
+      "Bash(python3 *)",
+      "Bash(awk '{print $5}')",
+      "Bash(xargs -I {} taskkill //PID {} //F)"
     ]
   }
 }

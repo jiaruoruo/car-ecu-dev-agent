@@ -7,7 +7,7 @@ from __future__ import annotations
 from adapter.agent_spec_loader import discover_generic_domains, load_agent_spec
 from adapter.domain_loader import load_profile as _load_tlf_profile
 
-RICH_DOMAINS = ["tlf35584"]   # 自带 codegen 模板 + 一致性门禁的富域
+RICH_DOMAINS = ["tlf35584", "bridge-tlf92108"]   # 自带 codegen 模板 + 一致性门禁的富域
 
 
 def available_domains() -> list[str]:
@@ -16,14 +16,19 @@ def available_domains() -> list[str]:
 
 def load_profile(key: str):
     if key in RICH_DOMAINS:
-        return _load_tlf_profile(key)
+        return _load_tlf_profile(key)  # domain_loader handles all registered rich domains
     return load_agent_spec(key)
 
 
 def build_orchestrator_for(key: str, out_dir: str, on_log=print, inject_defect: bool = False):
-    """返回某域的 7 阶段 Orchestrator（富域走 TLF 流水线，其余走通用流水线）。"""
+    """返回某域的 7 阶段 Orchestrator（富域走各自流水线，其余走通用流水线）。"""
     if key in RICH_DOMAINS:
-        from domains.tlf35584.pipeline import build_pipeline as build_rich
+        if key == "tlf35584":
+            from domains.tlf35584.pipeline import build_pipeline as build_rich
+        elif key == "bridge-tlf92108":
+            from domains.bridge_tlf92108.pipeline import build_pipeline as build_rich
+        else:
+            raise KeyError(f"富域 {key} 未注册流水线")
         return build_rich(_load_tlf_profile(key), out_dir, on_log, inject_defect)
     from adapter.generic_pipeline import build_pipeline as build_generic
     return build_generic(load_agent_spec(key), out_dir, on_log, inject_defect)

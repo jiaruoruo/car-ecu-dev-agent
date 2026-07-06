@@ -1,0 +1,91 @@
+/**
+ * @file           ZCU_TLF92108.h
+ * @brief          TLF92108 Smart Headlamp LED Driver - CDD API Header
+ * @version        {{ VERSION }}
+ * @asil           ASIL-B
+ * @standard       AUTOSAR Classic Platform R4.x
+ * @compliance     MISRA-C:2012
+ */
+#ifndef ZCU_TLF92108_H
+#define ZCU_TLF92108_H
+
+#include "ZCU_TLF92108_Types.h"
+#include "ZCU_TLF92108_Cfg.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/*===========================================================================*/
+/* Initialization / DeInitialization                                         */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_Init(const {{ PREFIX }}_ConfigType *cfgPtr);
+Std_ReturnType {{ PREFIX }}_DeInit(void);
+
+/*===========================================================================*/
+/* Main Function (Periodic)                                                  */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_MainFunction(void);
+
+/*===========================================================================*/
+/* SPI Register Access                                                       */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_ReadReg(uint8 addr, uint8 *data);
+Std_ReturnType {{ PREFIX }}_WriteReg(uint8 addr, uint8 data);
+
+/*===========================================================================*/
+/* Protection Register Access                                                */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_UnlockProtRegs(void);
+Std_ReturnType {{ PREFIX }}_LockProtRegs(void);
+
+/*===========================================================================*/
+/* Device State Management                                                   */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_SetState({{ PREFIX }}_DeviceStateType state);
+Std_ReturnType {{ PREFIX }}_GetState({{ PREFIX }}_DeviceStateType *state);
+
+/*===========================================================================*/
+/* LED Current Control                                                       */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_SetCurrentHighBeam(uint16 current_ma);
+Std_ReturnType {{ PREFIX }}_SetCurrentLowBeam(uint16 current_ma);
+
+/*===========================================================================*/
+/* PWM / Dimming Control                                                     */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_SetPwmFrequency(uint16 freq_hz);
+Std_ReturnType {{ PREFIX }}_SetPwmDuty(uint8 channel, uint16 duty_pct);
+Std_ReturnType {{ PREFIX }}_StartDimming(void);
+Std_ReturnType {{ PREFIX }}_StopDimming(void);
+
+/*===========================================================================*/
+/* Fault Management                                                          */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_ReadFaults({{ PREFIX }}_FaultInfoType *info);
+Std_ReturnType {{ PREFIX }}_ClearFaults(void);
+Std_ReturnType {{ PREFIX }}_GetFaultCode(uint8 *code);
+
+/*===========================================================================*/
+/* EEPROM Access                                                             */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_EepromRead(uint8 addr, uint8 *data);
+Std_ReturnType {{ PREFIX }}_EepromWrite(uint8 addr, uint8 data);
+
+/*===========================================================================*/
+/* Thermal Configuration                                                     */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_SetThermalConfig(uint16 warn_c, uint16 shutdown_c);
+
+/*===========================================================================*/
+/* Status Queries                                                            */
+/*===========================================================================*/
+boolean {{ PREFIX }}_IsChanneActive(uint8 channel);
+boolean {{ PREFIX }}_IsInitialized(void);
+{{ PREFIX }}_OpStateType {{ PREFIX }}_GetOpState(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* ZCU_TLF92108_H */

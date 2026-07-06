@@ -1,0 +1,54 @@
+/**
+ * @file           ZCU_TLF35584_Cfg.c
+ * @brief          TLF35584 PMIC Driver - Configuration Instance
+ * @version        2.0.0
+ * @asil           ASIL-D
+ * =============================================================================
+ * [TEMPLATE LOCKED] - FWD response table is LOCKED.
+ *                    DO NOT modify table values.
+ * =============================================================================
+ */
+#include "ZCU_TLF35584_Cfg.h"
+
+/*===========================================================================*/
+/* Memory Section: CONST_ASIL                                                */
+/*===========================================================================*/
+TLF35584_START_SEC_CONST_ASIL
+
+/*===========================================================================*/
+/* FWD Response Lookup Table - LOCKED 16 entries                             */
+/* Verified against Infineon TLF35584 chip internal algorithm                 */
+/*===========================================================================*/
+const uint32 Gp_TLF35584_FwdResTable[Gp_TLF35584_FWD_RES_TABLE_SIZE] =
+{
+    /*  0 */ 0xFF0FF000U,  /*  1 */ 0xB040BF4FU,
+    /*  2 */ 0xE919E616U,  /*  3 */ 0xA656A959U,
+    /*  4 */ 0x75857A8AU,  /*  5 */ 0x3ACA35C5U,
+    /*  6 */ 0x63936C9CU,  /*  7 */ 0x2CDC23D3U,
+    /*  8 */ 0xD222DD2DU,  /*  9 */ 0x9D6D9262U,
+    /* 10 */ 0xC434CB3BU,  /* 11 */ 0x8B7B8474U,
+    /* 12 */ 0x58A857A7U,  /* 13 */ 0x17E718E8U,
+    /* 14 */ 0x4EBE41B1U,  /* 15 */ 0x01F10EFEU
+};
+
+/*===========================================================================*/
+/* Default Configuration Instance                                            */
+/*===========================================================================*/
+const Gp_TLF35584_ConfigType Gp_TLF35584_ConfigDefault =
+{
+    .spiMaxFreq            = Gp_TLF35584_CFG_SPI_MAX_FREQ,
+    .spiCpol               = Gp_TLF35584_CFG_SPI_CPOL,
+    .spiCpha               = Gp_TLF35584_CFG_SPI_CPHA,
+    .spiTimeoutUs          = Gp_TLF35584_CFG_SPI_TIMEOUT_US,
+    .spiRetryMax           = Gp_TLF35584_CFG_SPI_RETRY_MAX,
+    .initRetryMax          = Gp_TLF35584_CFG_INIT_RETRY_MAX,
+    .initRetryDelayUs      = Gp_TLF35584_CFG_INIT_RETRY_DLY_US,
+    .stateChangeDelayUs    = Gp_TLF35584_CFG_STATE_CHG_DLY_US,
+    .fwdFailMax            = Gp_TLF35584_CFG_FWD_FAIL_MAX,
+    .bistEnableOnInit      = Gp_TLF35584_CFG_BIST_ENABLE_INIT,
+    .bistTimeoutUs         = Gp_TLF35584_CFG_BIST_TIMEOUT_US,
+    .embFastRecoveryUs     = Gp_TLF35584_CFG_EMB_FAST_DLY_US,
+    .embSlowRecoveryUs     = Gp_TLF35584_CFG_EMB_SLOW_DLY_US
+};
+
+TLF35584_STOP_SEC_CONST_ASIL

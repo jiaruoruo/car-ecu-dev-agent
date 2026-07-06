@@ -5,7 +5,7 @@
 自我反思 → 过质量门禁 → 产出工件 + 追溯。子类只需声明阶段差异：
   - goal()            阶段目标（给规划层）
   - step_blueprint()  步骤蓝图（给规划层，含要调用的工具）
-  - produce()         产出工件（mock=领域模板；anthropic=调用 Claude）
+  - produce()         产出工件（领域模板/工具生成）
   - quality_gate()    本阶段质量门禁实例
   - bind_params()     运行时把工件绑定进工具参数（可选覆盖）
 """

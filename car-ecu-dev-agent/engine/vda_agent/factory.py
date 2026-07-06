@@ -17,10 +17,9 @@ from .tools import build_registry
 KNOWLEDGE_DIR = Path(__file__).parent / "knowledge"
 
 
-def build_orchestrator(llm_mode: str = "mock", model: str | None = None,
-                       inject_defect: bool = False,
+def build_orchestrator(inject_defect: bool = False,
                        on_log: Callable[[str], None] = print) -> Orchestrator:
-    llm = LLMClient(mode=llm_mode, model=model)
+    llm = LLMClient()
     memory = MemorySystem(knowledge_dir=KNOWLEDGE_DIR)
     memory.short_term.put("inject_defect", inject_defect)
     registry = build_registry()

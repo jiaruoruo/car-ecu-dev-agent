@@ -59,7 +59,9 @@ class DomainStageAgent(BaseStageAgent):
             return {"profile": self.domain, "out_dir": self.code_dir,
                     "inject_defect": bool(artifact.metadata.get("inject_defect", False))}
         if t == "tlf_consistency":
-            return {"out_dir": self.code_dir}
+            return {"out_dir": self.code_dir,
+                    "checker_path": self.domain.checker_path,
+                    "domain": self.domain.key}
         if t in ("misra_checker", "compiler"):
             # 针对“被评审/被编译的源码”：评审阶段取上游编码工件，编码阶段取本阶段工件
             code = upstream.get(Stage.CODING)

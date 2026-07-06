@@ -1,0 +1,137 @@
+/**
+ * @file           ZCU_TLF92108_Types.h
+ * @brief          TLF92108 Smart Headlamp Driver - Type Definitions & Register Map
+ * @version        {{ VERSION }}
+ * @asil           ASIL-B
+ * @standard       AUTOSAR Classic Platform R4.x
+ * @compliance     MISRA-C:2012
+ */
+#ifndef ZCU_TLF92108_TYPES_H
+#define ZCU_TLF92108_TYPES_H
+
+#include "Std_Types.h"
+#include "ZCU_TLF92108_MemMap.h"
+
+/*===========================================================================*/
+/* Register Address Map - 20 registers                                       */
+/*===========================================================================*/
+{% for reg in REGISTERS %}
+#define {{ PREFIX }}_REG_{{ reg.NAME }}         ({{ reg.ADDR }}U)
+{% endfor %}
+
+/*===========================================================================*/
+/* Fault Code Definitions                                                    */
+/*===========================================================================*/
+#define {{ PREFIX }}_FAULT_OC            ((uint8)0x01U)
+#define {{ PREFIX }}_FAULT_OT            ((uint8)0x02U)
+#define {{ PREFIX }}_FAULT_OPEN_LED      ((uint8)0x04U)
+#define {{ PREFIX }}_FAULT_SC            ((uint8)0x08U)
+#define {{ PREFIX }}_FAULT_UVLO          ((uint8)0x10U)
+#define {{ PREFIX }}_FAULT_OVP           ((uint8)0x20U)
+#define {{ PREFIX }}_FAULT_SPI_ERR       ((uint8)0x40U)
+#define {{ PREFIX }}_FAULT_WDG_ERR       ((uint8)0x80U)
+
+/*===========================================================================*/
+/* Protection Sequence                                                       */
+/*===========================================================================*/
+#define {{ PREFIX }}_PROT_SEQ_LEN        (4U)
+#define {{ PREFIX }}_UNLOCK_BYTE0        (0xABU)
+#define {{ PREFIX }}_UNLOCK_BYTE1        (0xEFU)
+#define {{ PREFIX }}_UNLOCK_BYTE2        (0x56U)
+#define {{ PREFIX }}_UNLOCK_BYTE3        (0x12U)
+#define {{ PREFIX }}_LOCK_BYTE0          (0xDFU)
+#define {{ PREFIX }}_LOCK_BYTE1          (0x34U)
+#define {{ PREFIX }}_LOCK_BYTE2          (0xBEU)
+#define {{ PREFIX }}_LOCK_BYTE3          (0xCAU)
+
+/*===========================================================================*/
+/* PWM Channel Enumerations                                                  */
+/*===========================================================================*/
+typedef enum
+{
+    {{ PREFIX }}_PWM_CH_HIGH_BEAM = 0U,
+    {{ PREFIX }}_PWM_CH_LOW_BEAM  = 1U,
+    {{ PREFIX }}_PWM_CH_AUX       = 2U,
+    {{ PREFIX }}_PWM_CH_COUNT     = 3U
+} {{ PREFIX }}_PwmChannelType;
+
+/*===========================================================================*/
+/* Device State Enumerations - 7 states                                      */
+/*===========================================================================*/
+typedef enum
+{
+    {{ PREFIX }}_STATE_SLEEP          = 0x00U,
+    {{ PREFIX }}_STATE_STANDBY        = 0x01U,
+    {{ PREFIX }}_STATE_INITIALIZATION = 0x02U,
+    {{ PREFIX }}_STATE_ACTIVE         = 0x03U,
+    {{ PREFIX }}_STATE_DIMMING        = 0x04U,
+    {{ PREFIX }}_STATE_FAULT          = 0x05U,
+    {{ PREFIX }}_STATE_POWERDOWN      = 0x06U
+} {{ PREFIX }}_DeviceStateType;
+
+/*===========================================================================*/
+/* Init Phase Enumerations                                                   */
+/*===========================================================================*/
+typedef enum
+{
+    {{ PREFIX }}_PHASE_INIT_SPI      = 0U,
+    {{ PREFIX }}_PHASE_INIT_UNLOCK   = 1U,
+    {{ PREFIX }}_PHASE_INIT_CFG      = 2U,
+    {{ PREFIX }}_PHASE_INIT_CHANNELS = 3U,
+    {{ PREFIX }}_PHASE_INIT_DONE     = 4U,
+    {{ PREFIX }}_PHASE_INIT_FAILED   = 5U
+} {{ PREFIX }}_InitPhaseType;
+
+/*===========================================================================*/
+/* Operational State Enumerations                                            */
+/*===========================================================================*/
+typedef enum
+{
+    {{ PREFIX }}_OPSTATE_IDLE     = 0U,
+    {{ PREFIX }}_OPSTATE_READY    = 1U,
+    {{ PREFIX }}_OPSTATE_ACTIVE   = 2U,
+    {{ PREFIX }}_OPSTATE_DIMMING  = 3U,
+    {{ PREFIX }}_OPSTATE_FAULT    = 4U,
+    {{ PREFIX }}_OPSTATE_ERROR    = 5U
+} {{ PREFIX }}_OpStateType;
+
+/*===========================================================================*/
+/* Fault Info Structure                                                      */
+/*===========================================================================*/
+typedef struct
+{
+    uint8 faultCode;
+    uint8 faultStatusReg;
+    uint8 highBeamFault;
+    uint8 lowBeamFault;
+    uint8 auxFault;
+    uint8 thermalWarning;
+} {{ PREFIX }}_FaultInfoType;
+
+/*===========================================================================*/
+/* Global State Structure                                                    */
+/*===========================================================================*/
+typedef struct
+{
+    {{ PREFIX }}_DeviceStateType currentState;
+    {{ PREFIX }}_DeviceStateType targetState;
+    {{ PREFIX }}_InitPhaseType   initPhase;
+    {{ PREFIX }}_OpStateType     opState;
+    uint8                       initRetryCnt;
+    uint8                       faultSampleCnt;
+    boolean                     isInitialized;
+    boolean                     isLocking;
+    boolean                     dimmingActive;
+    uint16                      currentHighBeamMa;
+    uint16                      currentLowBeamMa;
+    uint16                      pwmDutyHigh;
+    uint16                      pwmDutyLow;
+    {{ PREFIX }}_FaultInfoType  faultInfo;
+} {{ PREFIX }}_DataType;
+
+/*===========================================================================*/
+/* External Declarations                                                     */
+/*===========================================================================*/
+extern {{ PREFIX }}_DataType {{ PREFIX }}_State;
+
+#endif /* ZCU_TLF92108_TYPES_H */

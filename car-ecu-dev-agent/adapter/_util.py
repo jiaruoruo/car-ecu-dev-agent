@@ -48,6 +48,20 @@ def load_module_from_path(path: str, name: str) -> ModuleType:
     return mod
 
 
-def load_checker():
-    """加载 driver-hal 的 consistency_checker 模块。"""
-    return load_module_from_path(CHECKER_PATH, "tlf35584_consistency_checker")
+def load_checker(checker_path: str | None = None, domain: str = "tlf35584"):
+    """加载 driver-hal 的 consistency_checker 模块。
+
+    checker_path 优先；若未传，则按 domain 选择默认路径。
+    """
+    if checker_path is not None:
+        return load_module_from_path(checker_path, f"{domain}_consistency_checker")
+
+    # Fallback: auto-resolve by domain
+    domain_dir = {
+        "tlf35584": "tlf35584-enhanced",
+        "bridge-tlf92108": "bridge-tlf92108",
+    }.get(domain, "tlf35584-enhanced")
+
+    path = os.path.join(DRIVER_HAL_ROOT, "skills", domain_dir,
+                        "checker", "consistency_checker.py")
+    return load_module_from_path(path, f"{domain}_consistency_checker")

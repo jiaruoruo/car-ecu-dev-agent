@@ -1,0 +1,26 @@
+/**
+ * @file           ZCU_TLF92108_Cfg.c
+ * @brief          TLF92108 Bridge Driver - Configuration Instance
+ * @version        {{ VERSION }}
+ * @asil           ASIL-B
+ */
+#include "ZCU_TLF92108_Cfg.h"
+
+/*===========================================================================*/
+/* Default Configuration                                                     */
+/*===========================================================================*/
+const {{ PREFIX }}_ConfigType {{ PREFIX }}_ConfigDefault =
+{
+    .spiMaxFreq          = {{ SPI_MAX_FREQ }}U,
+    .spiCpol             = {{ SPI_CPOL }}U,
+    .spiCpha             = {{ SPI_CPHA }}U,
+    .spiTimeoutUs        = {{ SPI_TIMEOUT_US }}U,
+    .spiRetryMax         = {{ SPI_RETRY_MAX }}U,
+    .initRetryMax        = {{ INIT_RETRY_MAX }}U,
+    .initRetryDelayUs    = {{ INIT_RETRY_DLY_US }}U,
+    .stateChangeDelayUs  = {{ STATE_CHG_DLY_US }}U,
+    .pwmDefaultFreqHz    = {{ PWM_FREQ_DEFAULT }}U,
+    .currentMaxMa        = 2000U,
+    .thermalWarnC        = 120U,
+    .thermalShutdownC    = 175U,
+};

@@ -45,11 +45,6 @@ class RequirementAgent(BaseStageAgent):
 
     def produce(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         content = _render(S.REQUIREMENTS)
-        if self.llm.mode == "anthropic":
-            content = self.llm.complete(
-                system="你是车载嵌入式需求分析师，遵循 ASPICE SWE.1。",
-                prompt=f"将以下需求结构化并补充验收准则：\n{self.memory.short_term.get('user_request','')}",
-            ).text or content
         return Artifact(stage=self.stage, name="软件需求规格 (SRS)", content=content,
                         items=list(S.REQUIREMENTS), trace_links=list(S.REQ_TRACE),
                         metadata={"feature": S.FEATURE, "asil": S.ASIL})

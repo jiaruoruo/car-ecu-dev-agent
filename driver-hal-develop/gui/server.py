@@ -15,6 +15,7 @@ Driver HAL Develop — Web GUI Backend Server
 import os
 import re
 import json
+import sys
 import time
 import threading
 import shutil
@@ -39,6 +40,14 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 # driver-hal-develop 根目录（gui/ 的父目录）
 PROJECT_ROOT = Path(__file__).parent.parent
+
+# car-ecu-dev-agent 引擎根目录（兄弟目录）→ 必须用绝对路径
+_AGENT_ROOT = (PROJECT_ROOT.parent / "car-ecu-dev-agent").resolve()
+_ENGINE_ROOT = (_AGENT_ROOT / "engine").resolve()
+for _p in (_AGENT_ROOT, _ENGINE_ROOT):
+    _ps = str(_p)
+    if _ps not in sys.path:
+        sys.path.insert(0, _ps)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 项目解析器
@@ -1151,7 +1160,12 @@ _last_routing_result: dict | None = None
 
 @app.route("/")
 def index():
-    return send_file(Path(__file__).parent / "index.html")
+    from flask import Response
+    html = (Path(__file__).parent / "index.html").read_bytes()
+    resp = Response(html, mimetype="text/html; charset=utf-8")
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
 
 
 @app.route("/api/components")
@@ -2909,11 +2923,112 @@ def api_copy_agent_files(project_id):
     return jsonify({"results": results})
 
 
+# ──────────────────────────────────────────────────────────────────────────────
+# 流水线执行 API（调用 car-ecu-dev-agent 引擎）
+# ──────────────────────────────────────────────────────────────────────────────
+
+@app.route("/api/agent/domains")
+def api_agent_domains():
+    """返回可用驱动域列表。"""
+    try:
+        from adapter.pipeline_factory import available_domains, load_profile
+        out = []
+        for key in available_domains():
+            try:
+                p = load_profile(key)
+                out.append({"key": key, "asil": p.asil, "feature": p.feature,
+                            "kind": "rich" if p.codegen_kind == "template" else "generic"})
+            except Exception as ex:
+                out.append({"key": key, "asil": "?", "feature": f"(装载失败: {ex})", "kind": "error"})
+        return jsonify({"domains": out})
+    except Exception as ex:
+        return jsonify({"error": str(ex), "domains": []}), 500
+
+
+@app.route("/api/agent/run", methods=["POST"])
+def api_agent_run():
+    """运行单个域七阶段闭环。"""
+    body = request.get_json(silent=True) or {}
+    domain = body.get("domain", "tlf35584")
+    inject = bool(body.get("inject_defect", False))
+    try:
+        from adapter.forward_trace import forward_traceability
+        from adapter.pipeline_factory import build_orchestrator_for, load_profile
+        from vda_agent.core.schemas import STAGE_ORDER
+        ABBR = {"requirement": "需求", "architecture": "架构", "detailed_design": "详设",
+                "coding": "编码", "code_review": "评审", "unit_test": "单测", "integration_test": "集成"}
+        logs: list = []
+        profile = load_profile(domain)
+        import os as _os
+        out_dir = _os.path.join(str(_AGENT_ROOT), "out", "_gui", domain)
+        orch = build_orchestrator_for(domain, out_dir=out_dir, on_log=logs.append,
+                                      inject_defect=inject)
+        results = orch.run(f"为 {domain} 域实现车规驱动并完成 ASPICE V 模型研发闭环。")
+        stages, matrix = [], []
+        for st in STAGE_ORDER:
+            r = results.get(st)
+            art = r.artifact if r else None
+            gate = r.gate if r else None
+            stages.append({
+                "stage": st.value, "label": ABBR[st.value],
+                "success": bool(r and r.success),
+                "attempts": r.attempts if r else 0,
+                "action": r.action.value if r else "",
+                "gate_name": gate.gate if gate else "",
+                "gate_summary": gate.summary if gate else "",
+                "checks": [{"name": c.name, "passed": c.passed, "detail": c.detail}
+                           for c in (gate.checks if gate else [])],
+                "artifact_name": art.name if art else "",
+                "artifact": art.content if art else "",
+                "items": len(art.items) if art else 0,
+            })
+            if art:
+                for l in art.trace_links:
+                    matrix.append({"source": l.source_id, "relation": l.relation,
+                                   "target": l.target_id, "stage": st.value})
+        ft = forward_traceability(results)
+        all_ok = all(r.success for r in results.values()) and ft["passed"]
+        return jsonify({"domain": domain, "asil": profile.asil,
+                        "kind": "rich" if profile.codegen_kind == "template" else "generic",
+                        "stages": stages, "forward_trace": ft, "matrix": matrix,
+                        "logs": logs, "all_ok": all_ok})
+    except Exception as ex:
+        return jsonify({"error": f"{type(ex).__name__}: {ex}"}), 500
+
+
+@app.route("/api/agent/matrix", methods=["POST"])
+def api_agent_matrix():
+    """运行全域矩阵。"""
+    body = request.get_json(silent=True) or {}
+    domains = body.get("domains")
+    inject = bool(body.get("inject_defect", False))
+    try:
+        from adapter.pipeline_factory import available_domains as _av
+        import api as _gui_api  # gui/api.py
+        domains_list = domains or _av()
+        rows = []
+        for key in domains_list:
+            try:
+                res = _gui_api.run_pipeline(key, inject_defect=inject)
+                rows.append({
+                    "domain": key, "asil": res["asil"], "kind": res["kind"],
+                    "stages": [{"label": s["label"], "success": s["success"],
+                                "attempts": s["attempts"]} for s in res["stages"]],
+                    "forward_trace": res["forward_trace"], "all_ok": res["all_ok"],
+                })
+            except Exception as ex:
+                rows.append({"domain": key, "error": f"{type(ex).__name__}: {ex}", "all_ok": False})
+        return jsonify({"rows": rows, "all_ok": all(r.get("all_ok") for r in rows)})
+    except Exception as ex:
+        return jsonify({"error": str(ex)}), 500
+
+
 if __name__ == "__main__":
     print("=" * 60)
     print("  [DRIVER HAL]  Agent Route Visualizer Web GUI")
     print("=" * 60)
     print(f"  [ROOT] {PROJECT_ROOT}")
+    print(f"  [AGENT] {_AGENT_ROOT}")
     print("  [URL]  http://localhost:5000")
     print("=" * 60)
 

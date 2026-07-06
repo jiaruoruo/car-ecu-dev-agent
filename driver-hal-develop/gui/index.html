@@ -1039,6 +1039,48 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx-p);
 }
 #project-config-view.visible{display:flex}
 
+/* ── Pipeline Execution View ───────────────────────────────────── */
+#pipeline-view{display:none;flex:1;flex-direction:row;overflow:hidden}
+#pipeline-view.visible{display:flex}
+.pl-sidebar{width:260px;border-right:1px solid var(--line);padding:14px;flex:none;overflow:auto;background:var(--bg-card)}
+.pl-main{flex:1;padding:18px 22px;overflow:auto}
+.pl-doms{margin-bottom:12px}
+.pl-dom{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer;background:var(--panel)}
+.pl-dom:hover{border-color:var(--acc)}
+.pl-dom.sel{border-color:var(--acc);background:var(--panel2)}
+.pl-dom .k{flex:1;font-weight:600}
+.pl-badge{font-size:11px;padding:1px 7px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+.pl-badge.asil{color:var(--warn);border-color:var(--warn)}
+.pl-badge.rich{color:var(--acc);border-color:var(--acc)}
+.pl-btn{width:100%;padding:9px;margin-top:8px;border:0;border-radius:8px;background:var(--acc);color:#fff;font-weight:600;cursor:pointer}
+.pl-btn:disabled{opacity:.5;cursor:wait}
+.pl-btn.sec{background:var(--panel2);color:var(--fg);border:1px solid var(--line)}
+.pl-chk{display:flex;align-items:center;gap:8px;margin:10px 0;color:var(--mut);cursor:pointer;font-size:13px}
+.pl-verdict{display:inline-flex;align-items:center;gap:8px;font-weight:700;padding:4px 12px;border-radius:8px;border:1px solid var(--line)}
+.pl-verdict.ok{color:var(--ok);border-color:var(--ok)}
+.pl-verdict.bad{color:var(--bad);border-color:var(--bad)}
+.pl-stages{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.pl-st{flex:1;min-width:118px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel);cursor:pointer;position:relative}
+.pl-st:hover{border-color:var(--acc)}
+.pl-st.sel{outline:2px solid var(--acc)}
+.pl-st.ok{border-left:3px solid var(--ok)}
+.pl-st.bad{border-left:3px solid var(--bad)}
+.pl-st .nm{font-weight:600;display:flex;justify-content:space-between}
+.pl-st .gs{color:var(--mut);font-size:12px;margin-top:4px;min-height:32px}
+.pl-st .att{position:absolute;top:8px;right:10px;font-size:11px;color:var(--warn)}
+.pl-tabs{display:flex;gap:6px;margin:16px 0 10px;border-bottom:1px solid var(--line)}
+.pl-tab{padding:7px 14px;cursor:pointer;color:var(--mut);border-bottom:2px solid transparent}
+.pl-tab.sel{color:var(--fg);border-bottom-color:var(--acc)}
+.pl-pre{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;overflow:auto;white-space:pre-wrap;font:12px/1.55 "Cascadia Code",Consolas,monospace;max-height:60vh}
+.pl-table{border-collapse:collapse;width:100%;font-size:12.5px}
+.pl-table th,.pl-table td{border:1px solid var(--line);padding:6px 9px;text-align:left}
+.pl-table th{background:var(--panel2);color:var(--mut)}
+.pl-pill{font-size:11px;padding:1px 7px;border-radius:6px}
+.pl-pill.ok{background:rgba(46,160,67,.15);color:var(--ok)}
+.pl-pill.bad{background:rgba(229,83,75,.15);color:var(--bad)}
+.pl-mut{color:var(--mut)}
+.pl-hint{color:var(--mut);margin-top:40px;text-align:center}
+
 /* ── 左侧边栏 ── */
 #pc-sidebar{
   width:280px;min-width:200px;max-width:400px;
@@ -1382,6 +1424,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx-p);
   <!-- 视图切换 -->
   <button class="btn-view active" id="btn-view-route" onclick="switchMainView('route')" title="开发资源池">🗃 开发资源池</button>
   <button class="btn-view" id="btn-view-project" onclick="switchMainView('project')" title="项目管理">🗂 项目管理</button>
+
+  <button class="btn-view" id="btn-view-pipeline" onclick="switchMainView('pipeline')" title="流水线执行">▶ 流水线执行</button>
   <div style="width:1px;height:18px;background:var(--border);margin:0 4px"></div>
   <div class="conn off" id="conn">
     <div class="dot"></div>
@@ -1646,6 +1690,27 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx-p);
 
   </div><!-- /project-config-view -->
 
+
+  <!-- ══════════════════════════════════════════════════════════
+       PIPELINE EXECUTION VIEW
+  ══════════════════════════════════════════════════════════ -->
+  <div id="pipeline-view">
+    <div class="pl-sidebar">
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:0 0 10px">驱动域</h3>
+      <div class="pl-doms" id="pl-domains"></div>
+      <label class="pl-chk"><input type="checkbox" id="pl-inject"> 注入缺陷（演示门禁驳回→自修复）</label>
+      <button class="pl-btn" id="pl-runBtn" disabled>▶ 运行该域闭环</button>
+      <button class="pl-btn sec" id="pl-mxBtn">▦ 运行全域矩阵</button>
+      <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);margin:18px 0 8px">说明</h3>
+      <div class="pl-mut" style="font-size:12px">
+        <b style="color:var(--acc)">rich</b> = 自带 codegen 模板 + G01-G13；<br>
+        <b>generic</b> = 由 agent-spec 解析 + MISRA 门禁。
+      </div>
+    </div>
+    <div class="pl-main" id="pl-main">
+      <div class="pl-hint">← 选择一个驱动域并运行，或点「运行全域矩阵」。</div>
+    </div>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════
@@ -7001,14 +7066,26 @@ let pcDelProjectId   = null;
 
 // ── 视图切换 ──────────────────────────────────────────────────
 function switchMainView(view) {
-  const isProject = view === 'project';
-  document.getElementById('dashboard').style.display = isProject ? 'none' : '';
-  document.getElementById('routing').style.display   = isProject ? 'none' : '';
-  const pcView = document.getElementById('project-config-view');
-  if (isProject) { pcView.classList.add('visible'); } else { pcView.classList.remove('visible'); }
-  document.getElementById('btn-view-route').classList.toggle('active', !isProject);
-  document.getElementById('btn-view-project').classList.toggle('active', isProject);
-  if (isProject) { pcLoadProjects(); }
+  var views = ['route','project','pipeline'];
+  var show = {route:false, project:false, pipeline:false};
+  show[view] = true;
+
+  document.getElementById('dashboard').style.display = show.route ? '' : 'none';
+  document.getElementById('routing').style.display   = show.route ? '' : 'none';
+
+  var pcView = document.getElementById('project-config-view');
+  if (show.project) pcView.classList.add('visible'); else pcView.classList.remove('visible');
+
+  var plView = document.getElementById('pipeline-view');
+  if (show.pipeline) plView.classList.add('visible'); else plView.classList.remove('visible');
+
+  ['route','project','pipeline'].forEach(function(v) {
+    var btn = document.getElementById('btn-view-' + v);
+    if (btn) btn.classList.toggle('active', v === view);
+  });
+
+  if (show.project) { pcLoadProjects(); }
+  if (show.pipeline){ plLoadDomains(); }
 }
 
 // ── Modal 辅助 ─────────────────────────────────────────────────
@@ -8358,6 +8435,161 @@ function pcConfirmCancel() {
   _pcConfirmCb = null;
   pcHideModal('pc-confirm-modal');
 }
+
+
+function formatNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(0) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(0) + 'K';
+  return n.toString();
+}
+
+function escHtml(s) {
+  var div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 流水线执行 (Pipeline Execution)
+// ──────────────────────────────────────────────────────────────────────────────
+var PL_DOMAINS = [], PL_SEL = null, PL_RESULT = null, PL_TAB = "artifact", PL_STAGE = 0;
+var plMatrixResult = null;
+
+function pl$ (s) { return document.querySelector(s); }
+function plEsc(s){ return (s||"").replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];}); }
+
+function plLoadDomains() {
+  if (PL_DOMAINS.length) return; // 已加载
+  fetch('/api/agent/domains')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      PL_DOMAINS = d.domains || [];
+      var el = document.getElementById('pl-domains');
+      el.innerHTML = PL_DOMAINS.map(function(x){
+        return '<div class="pl-dom" data-k="'+x.key+'"><span class="k">'+x.key+'</span>'
+          +'<span class="pl-badge asil">ASIL-'+x.asil+'</span>'
+          +'<span class="pl-badge '+(x.kind==='rich'?'rich':'')+'">'+x.kind+'</span></div>';
+      }).join("");
+      el.querySelectorAll('.pl-dom').forEach(function(e){ e.onclick = function(){ plSelect(e.dataset.k); }; });
+    })
+    .catch(function(e){ document.getElementById('pl-domains').innerHTML = '<div class="pl-mut">加载失败: '+plEsc(e.message)+'</div>'; });
+}
+
+function plSelect(k) {
+  PL_SEL = k;
+  document.querySelectorAll('.pl-dom').forEach(function(e){ e.classList.toggle('sel', e.dataset.k === k); });
+  document.getElementById('pl-runBtn').disabled = false;
+}
+
+// Run single domain
+document.getElementById('pl-runBtn').onclick = function() {
+  if (!PL_SEL) return;
+  var btn = document.getElementById('pl-runBtn');
+  btn.disabled = true; btn.textContent = '运行中…';
+  fetch('/api/agent/run', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({domain:PL_SEL, inject_defect:document.getElementById('pl-inject').checked})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(r){
+    if (r.error) { document.getElementById('pl-main').innerHTML = '<div class="pl-verdict bad">运行出错: '+plEsc(r.error)+'</div>'; return; }
+    PL_RESULT = r; PL_STAGE = 0; PL_TAB = "artifact"; plRenderResult();
+  })
+  .catch(function(e){ document.getElementById('pl-main').innerHTML = '<div class="pl-verdict bad">请求失败: '+plEsc(e.message)+'</div>'; })
+  .finally(function(){ btn.disabled = false; btn.textContent = '▶ 运行该域闭环'; });
+};
+
+// Run matrix
+document.getElementById('pl-mxBtn').onclick = function() {
+  var btn = document.getElementById('pl-mxBtn');
+  btn.disabled = true; btn.textContent = '运行矩阵中…';
+  fetch('/api/agent/matrix', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({inject_defect:document.getElementById('pl-inject').checked})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(r){
+    if (r.error) { document.getElementById('pl-main').innerHTML = '<div class="pl-verdict bad">'+plEsc(r.error)+'</div>'; return; }
+    plRenderMatrix(r);
+  })
+  .catch(function(e){ document.getElementById('pl-main').innerHTML = '<div class="pl-verdict bad">'+plEsc(e.message)+'</div>'; })
+  .finally(function(){ btn.disabled = false; btn.textContent = '▦ 运行全域矩阵'; });
+};
+
+function plTabBtn(t, label) {
+  return '<div class="pl-tab '+(PL_TAB===t?'sel':'')+'" data-t="'+t+'" onclick="PL_TAB=this.dataset.t;plRenderTab()">'+label+'</div>';
+}
+
+function plRenderResult() {
+  var r = PL_RESULT;
+  var ft = r.forward_trace;
+  var board = r.stages.map(function(s, i){
+    return '<div class="pl-st '+(s.success?'ok':'bad')+' '+(i===PL_STAGE?'sel':'')+'" data-i="'+i+'">'
+      +'<div class="nm"><span>'+s.label+'</span><span>'+(s.success?'✅':'❌')+'</span></div>'
+      +(s.attempts>1?'<div class="att">尝试 '+s.attempts+' 次</div>':'')
+      +'<div class="gs">'+plEsc(s.gate_summary)+'</div></div>';
+  }).join('<span style="align-self:center;color:var(--mut)">›</span>');
+
+  document.getElementById('pl-main').innerHTML =
+    '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">'
+      +'<h2 style="margin:0">'+r.domain+' <span class="pl-badge asil">ASIL-'+r.asil+'</span>'
+      +'<span class="pl-badge '+(r.kind==='rich'?'rich':'')+'">'+r.kind+'</span></h2>'
+      +'<span class="pl-verdict '+(r.all_ok?'ok':'bad')+'">'+(r.all_ok?'✅ 闭环通过':'❌ 闭环未过')+'</span>'
+      +'<span class="pl-verdict '+(ft.passed?'ok':'bad')+'">前向追溯 '+ft.verified+'/'+ft.total_reqs+(ft.passed?'':' ❗'+ft.missing.join(','))+'</span>'
+    +'</div>'
+    +'<div class="pl-stages">'+board+'</div>'
+    +'<div class="pl-tabs">'+plTabBtn('artifact','工件')+plTabBtn('checks','门禁明细')
+      +plTabBtn('trace','追溯矩阵 ('+r.matrix.length+')')+plTabBtn('logs','六层日志')+'</div>'
+    +'<div id="pl-tabbody"></div>';
+  document.querySelectorAll('.pl-st').forEach(function(e){ e.onclick = function(){ PL_STAGE = +this.dataset.i; plRenderResult(); }; });
+  plRenderTab();
+}
+
+function plRenderTab() {
+  var r = PL_RESULT, s = r.stages[PL_STAGE], b = document.getElementById('pl-tabbody');
+  if (PL_TAB === "artifact") {
+    b.innerHTML = '<div class="pl-mut" style="margin-bottom:6px">'+s.label+' · '+plEsc(s.artifact_name)+' · '+s.items+' 条目</div>'
+      +'<div class="pl-pre">'+plEsc(s.artifact) || '(无文本工件)'+'</div>';
+  } else if (PL_TAB === "checks") {
+    b.innerHTML = '<div class="pl-mut" style="margin-bottom:6px">'+s.label+' 门禁: '+plEsc(s.gate_name)+'</div>'
+      +(s.checks.map(function(c){
+        return '<div class="chkrow"><span class="pl-pill '+(c.passed?'ok':'bad')+'">'+(c.passed?'PASS':'FAIL')+'</span>'
+          +'<b>'+plEsc(c.name)+'</b><span class="pl-mut">'+plEsc(c.detail)+'</span></div>';
+      }).join('') || '<div class="pl-mut">无门禁项</div>');
+  } else if (PL_TAB === "trace") {
+    b.innerHTML = '<table class="pl-table"><tr><th>source</th><th>relation</th><th>target</th><th>stage</th></tr>'
+      +r.matrix.map(function(m){
+        return '<tr><td>'+plEsc(m.source)+'</td><td class="pl-mut">'+plEsc(m.relation)+'</td>'
+          +'<td>'+plEsc(m.target)+'</td><td class="pl-mut">'+plEsc(m.stage)+'</td></tr>';
+      }).join('')+'</table>';
+  } else {
+    b.innerHTML = '<div class="pl-mut" style="font:12px/1.5 monospace;white-space:pre-wrap">'+plEsc(r.logs.join('\n'))+'</div>';
+  }
+}
+
+function plRenderMatrix(r) {
+  if (r.error) { document.getElementById('pl-main').innerHTML = '<div class="pl-verdict bad">'+plEsc(r.error)+'</div>'; return; }
+  var labels = (r.rows.find(function(x){return x.stages;})||{stages:[]}).stages.map(function(s){return s.label;});
+  var head = '<tr><th>域</th><th>ASIL</th><th>kind</th>'+labels.map(function(l){return '<th>'+l+'</th>';}).join('')
+    +'<th>前向追溯</th><th>结果</th></tr>';
+  var body = r.rows.map(function(row){
+    if (row.error) return '<tr><td>'+row.domain+'</td><td colspan="11" style="color:var(--bad)">'+plEsc(row.error)+'</td></tr>';
+    var cells = row.stages.map(function(s){
+      return '<td style="text-align:center;color:'+(s.success?'var(--ok)':'var(--bad)')+'">'+(s.success?'✅':'❌')
+        +(s.attempts>1?'<sup>'+s.attempts+'</sup>':'')+'</td>';
+    }).join('');
+    var ft = row.forward_trace;
+    return '<tr><td><b>'+row.domain+'</b></td><td>'+row.asil+'</td><td class="pl-mut">'+row.kind+'</td>'+cells
+      +'<td style="text-align:center">'+ft.verified+'/'+ft.total_reqs+'</td>'
+      +'<td style="text-align:center;color:'+(row.all_ok?'var(--ok)':'var(--bad)')+'">'+(row.all_ok?'✅':'❌')+'</td></tr>';
+  }).join('');
+  document.getElementById('pl-main').innerHTML =
+    '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">'
+      +'<h2 style="margin:0">域 × 流程矩阵</h2>'
+      +'<span class="pl-verdict '+(r.all_ok?'ok':'bad')+'">'+(r.all_ok?'✅ 全域全绿':'❌ 存在未过域')+'</span></div>'
+    +'<table class="pl-table">'+head+body+'</table>'
+    +'<div class="pl-mut" style="margin-top:10px">上标数字 = 该阶段尝试次数（>1 表示触发自修复 REPLAN）。</div>';
+}
 </script>
 
 
@@ -8446,6 +8678,6 @@ function pcConfirmCancel() {
       <button class="pc-btn-danger" id="pc-confirm-ok-btn" onclick="pcConfirmOK()">确认删除</button>
     </div>
   </div>
-</div>
+
 </body>
 </html>

@@ -1,0 +1,77 @@
+/**
+ * @file           ZCU_TLF92108_Dim.c
+ * @brief          TLF92108 Smart Headlamp Driver - PWM/Dimming Implementation
+ * @version        {{ VERSION }}
+ * @asil           ASIL-B
+ */
+#include "ZCU_TLF92108.h"
+
+/*===========================================================================*/
+/* PWM / Dimming Control                                                     */
+/*===========================================================================*/
+Std_ReturnType {{ PREFIX }}_SetPwmFrequency(uint16 freq_hz)
+{
+    if (freq_hz < 100U) {
+        freq_hz = 100U;
+    }
+    if (freq_hz > 50000U) {
+        freq_hz = 50000U;
+    }
+    return {{ PREFIX }}_WriteReg({{ PREFIX }}_REG_PWM_FREQ, (uint8)(freq_hz & 0xFFU));
+}
+
+Std_ReturnType {{ PREFIX }}_SetPwmDuty(uint8 channel, uint16 duty_pct)
+{
+    uint16 duty_raw;
+    Std_ReturnType ret;
+    uint8 reg_addr;
+
+    if (duty_pct > 100U) {
+        duty_pct = 100U;
+    }
+
+    /* Convert percentage to 10-bit duty value (0-1023) */
+    duty_raw = (uint16)((uint32)duty_pct * 1023U / 100U);
+
+    switch (channel) {
+        case {{ PREFIX }}_PWM_CH_HIGH_BEAM:
+            reg_addr = {{ PREFIX }}_REG_PWM_DUTY_HIGH;
+            {{ PREFIX }}_State.pwmDutyHigh = duty_raw;
+            break;
+        case {{ PREFIX }}_PWM_CH_LOW_BEAM:
+            reg_addr = {{ PREFIX }}_REG_PWM_DUTY_LOW;
+            {{ PREFIX }}_State.pwmDutyLow = duty_raw;
+            break;
+        default:
+            return E_NOT_OK;
+    }
+
+    ret = {{ PREFIX }}_WriteReg(reg_addr, (uint8)(duty_raw & 0xFFU));
+    return ret;
+}
+
+Std_ReturnType {{ PREFIX }}_StartDimming(void)
+{
+    if (!{{ PREFIX }}_State.isInitialized) {
+        return E_NOT_OK;
+    }
+
+    {{ PREFIX }}_State.dimmingActive = TRUE;
+    {{ PREFIX }}_State.targetState   = {{ PREFIX }}_STATE_DIMMING;
+    {{ PREFIX }}_State.opState       = {{ PREFIX }}_OPSTATE_DIMMING;
+
+    return {{ PREFIX }}_WriteReg({{ PREFIX }}_REG_CTRL_DIMMING, 0x01U);
+}
+
+Std_ReturnType {{ PREFIX }}_StopDimming(void)
+{
+    if (!{{ PREFIX }}_State.isInitialized) {
+        return E_NOT_OK;
+    }
+
+    {{ PREFIX }}_State.dimmingActive = FALSE;
+    {{ PREFIX }}_State.targetState   = {{ PREFIX }}_STATE_ACTIVE;
+    {{ PREFIX }}_State.opState       = {{ PREFIX }}_OPSTATE_ACTIVE;
+
+    return {{ PREFIX }}_WriteReg({{ PREFIX }}_REG_CTRL_DIMMING, 0x00U);
+}

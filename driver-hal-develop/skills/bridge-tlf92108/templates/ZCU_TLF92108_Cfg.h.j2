@@ -1,0 +1,75 @@
+/**
+ * @file           ZCU_TLF92108_Cfg.h
+ * @brief          TLF92108 Bridge Driver - User Configuration Header
+ * @version        {{ VERSION }}
+ * @asil           ASIL-B
+ */
+#ifndef ZCU_TLF92108_CFG_H
+#define ZCU_TLF92108_CFG_H
+
+#include "ZCU_TLF92108_Types.h"
+
+/*===========================================================================*/
+/* SPI Configuration                                                         */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_SPI_MAX_FREQ        ({{ SPI_MAX_FREQ }}U)
+#define {{ PREFIX }}_CFG_SPI_CPOL            ({{ SPI_CPOL }}U)
+#define {{ PREFIX }}_CFG_SPI_CPHA            ({{ SPI_CPHA }}U)
+#define {{ PREFIX }}_CFG_SPI_TIMEOUT_US      ({{ SPI_TIMEOUT_US }}U)
+#define {{ PREFIX }}_CFG_SPI_RETRY_MAX       ({{ SPI_RETRY_MAX }}U)
+
+/*===========================================================================*/
+/* Initialization Configuration                                              */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_INIT_RETRY_MAX      ({{ INIT_RETRY_MAX }}U)
+#define {{ PREFIX }}_CFG_INIT_RETRY_DLY_US   ({{ INIT_RETRY_DLY_US }}U)
+#define {{ PREFIX }}_CFG_STATE_CHG_DLY_US    ({{ STATE_CHG_DLY_US }}U)
+
+/*===========================================================================*/
+/* PWM Configuration                                                         */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_PWM_FREQ_MIN        (100U)
+#define {{ PREFIX }}_CFG_PWM_FREQ_MAX        (50000U)
+#define {{ PREFIX }}_CFG_PWM_FREQ_DEFAULT    ({{ PWM_FREQ_DEFAULT }}U)
+#define {{ PREFIX }}_CFG_PWM_DUTY_MAX        (1023U)
+
+/*===========================================================================*/
+/* Current Control Configuration                                             */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_CURRENT_MIN_MA      (10U)
+#define {{ PREFIX }}_CFG_CURRENT_MAX_MA      (2000U)
+
+/*===========================================================================*/
+/* Thermal Configuration                                                     */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_THERMAL_WARN_C      (120U)
+#define {{ PREFIX }}_CFG_THERMAL_SHUTDOWN_C  (175U)
+
+/*===========================================================================*/
+/* Fault Monitoring Configuration                                            */
+/*===========================================================================*/
+#define {{ PREFIX }}_CFG_FAULT_POLL_MS       ({{ FAULT_POLL_MS }}U)
+#define {{ PREFIX }}_CFG_FAULT_SAMPLE_MAX    ({{ FAULT_SAMPLE_MAX }}U)
+
+/*===========================================================================*/
+/* Configuration Type                                                        */
+/*===========================================================================*/
+typedef struct
+{
+    uint16  spiMaxFreq;
+    uint8   spiCpol;
+    uint8   spiCpha;
+    uint32  spiTimeoutUs;
+    uint8   spiRetryMax;
+    uint8   initRetryMax;
+    uint32  initRetryDelayUs;
+    uint32  stateChangeDelayUs;
+    uint16  pwmDefaultFreqHz;
+    uint16  currentMaxMa;
+    uint16  thermalWarnC;
+    uint16  thermalShutdownC;
+} {{ PREFIX }}_ConfigType;
+
+extern const {{ PREFIX }}_ConfigType {{ PREFIX }}_ConfigDefault;
+
+#endif /* ZCU_TLF92108_CFG_H */
