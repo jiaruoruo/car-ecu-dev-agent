@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from ..core.base_agent import BaseStageAgent
 from ..core.feedback import QualityGate
-from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput
+from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput, TraceLink, Requirement
+from ..core.llm_parse import extract_json
 from . import scenario as S
 
 
@@ -43,11 +44,20 @@ class RequirementAgent(BaseStageAgent):
             Step(2, "追溯校验（需求→系统需求）", tool="traceability"),
         ]
 
-    def produce(self, si, prev_tool_results, upstream, attempt) -> Artifact:
+    def produce_fallback(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         content = _render(S.REQUIREMENTS)
         return Artifact(stage=self.stage, name="软件需求规格 (SRS)", content=content,
                         items=list(S.REQUIREMENTS), trace_links=list(S.REQ_TRACE),
                         metadata={"feature": S.FEATURE, "asil": S.ASIL})
+
+    def as_fewshot(self) -> str:
+        return S.as_fewshot(self.stage)
+
+    def parse_llm(self, text, upstream):
+        data = extract_json(text)
+        reqs = [Requirement(**r) for r in data.get("requirements", [])]
+        tls = [TraceLink(**t) for t in data.get("trace_links", [])]
+        return _render(reqs), list(reqs), tls, {"feature": S.FEATURE}
 
     def quality_gate(self) -> QualityGate:
         return _ReqGate()

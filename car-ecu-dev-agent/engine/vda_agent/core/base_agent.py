@@ -53,7 +53,87 @@ class BaseStageAgent:
 
     def produce(self, si: StructuredInput, prev_tool_results: dict,
                 upstream: dict, attempt: int) -> Artifact:
+        """产出工件（Phase 1 编排）：真实 LLM 可用则走 LLM 生成路径，
+        否则/失败时回退 produce_fallback（确定性兜底，门禁不受影响）。"""
+        if self.llm.is_real():
+            try:
+                return self._produce_via_llm(si, prev_tool_results, upstream, attempt)
+            except Exception as e:  # LLM 不可用 / 解析失败 → 兜底保门禁确定性
+                self.on_log(f"  ⚠ LLM 生成失败，回退领域兜底模板：{e}")
+                return self.produce_fallback(si, prev_tool_results, upstream, attempt)
+        return self.produce_fallback(si, prev_tool_results, upstream, attempt)
+
+    # ── LLM 真实化路径（Phase 1） ──────────────────────────────────
+    def _produce_via_llm(self, si, prev_tool_results, upstream, attempt) -> Artifact:
+        """真实 LLM 生成：拼 prompt → 调 LLM → 解析为 Artifact。"""
+        system, user = self._build_llm_prompt(si, upstream)
+        resp = self.llm.generate(system, user, structured=True, role=self.llm_role())
+        content, items, trace_links, metadata = self._normalize_parse(
+            self.parse_llm(resp.text, upstream))
+        meta = {"feature": self._feature_name(), "generated_by": "llm", "model": resp.model}
+        meta.update(metadata or {})
+        return Artifact(stage=self.stage, name=self._artifact_name(),
+                        content=content, items=items, trace_links=trace_links,
+                        metadata=meta)
+
+    def _build_llm_prompt(self, si, upstream) -> tuple[str, str]:
+        fewshot = self.as_fewshot() or ""
+        recalled = self.memory.long_term.recall(
+            f"{self.stage.value} {si.intent}", top_k=2)
+        mem = "\n".join(f"- [{m.source}] {m.content[:240]}" for m in recalled) or "（无召回）"
+        upstream_text = "\n\n".join(
+            a.content for s in (self.upstream_stages or [])
+            if (a := upstream.get(s)) is not None)
+        system = (
+            "你是车载域控研发 Agent，遵循 ASPICE / V 模型执行本阶段任务。\n"
+            "产出必须结构清晰、可被质量门禁自动校验，并与上下游工件双向追溯。\n\n"
+            f"## 领域 few-shot 参考\n{fewshot}\n\n"
+            f"## 召回的领域知识\n{mem}\n"
+        )
+        user = (
+            f"任务意图：{si.intent}\n约束：{si.constraints}\n\n"
+            f"## 上游阶段工件\n{upstream_text or '（无，本阶段为起点）'}\n\n"
+            f"{self._output_spec()}"
+        )
+        return system, user
+
+    # ── 子类需实现（Phase 1 LLM 路径） ─────────────────────────────
+    def produce_fallback(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         raise NotImplementedError
+
+    def parse_llm(self, text: str, upstream: dict):
+        raise NotImplementedError
+
+    def llm_role(self) -> str:
+        """多 provider 路由角色：reasoning（需求/设计）或 coding（代码/评审）。"""
+        return "reasoning"
+
+    def as_fewshot(self) -> str:
+        """返回该阶段的领域 few-shot 上下文（默认空，子类应覆盖为 S.as_fewshot）。"""
+        return ""
+
+    def _feature_name(self) -> str:
+        return "车载域控"
+
+    def _artifact_name(self) -> str:
+        return f"{self.stage.value} 工件（LLM 生成）"
+
+    def _output_spec(self) -> str:
+        return "请产出本阶段工件，结构化呈现。"
+
+    @staticmethod
+    def _normalize_parse(parsed) -> tuple:
+        if isinstance(parsed, dict):
+            return (parsed.get("content", ""), parsed.get("items", []),
+                    parsed.get("trace_links", []), parsed.get("metadata", {}) or {})
+        if isinstance(parsed, (list, tuple)):
+            items = list(parsed)
+            while len(items) < 3:
+                items.append([])
+            if len(items) < 4:
+                items.append({})
+            return (items[0], items[1] or [], items[2] or [], items[3] or {})
+        raise TypeError(f"parse_llm 返回类型非法：{type(parsed)}")
 
     def quality_gate(self) -> QualityGate:
         raise NotImplementedError

@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from ..core.base_agent import BaseStageAgent
 from ..core.feedback import QualityGate
-from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput
+from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput, DesignUnit, TraceLink
+from ..core.llm_parse import extract_json
 from . import scenario as S
 
 
@@ -45,10 +46,19 @@ class DetailedDesignAgent(BaseStageAgent):
             Step(3, "详设→架构追溯校验", tool="traceability"),
         ]
 
-    def produce(self, si, prev_tool_results, upstream, attempt) -> Artifact:
+    def produce_fallback(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         return Artifact(stage=self.stage, name="软件详细设计 (SDD)", content=_render(S.DESIGN_UNITS),
                         items=list(S.DESIGN_UNITS), trace_links=list(S.DESIGN_TRACE),
                         metadata={"feature": S.FEATURE})
+
+    def as_fewshot(self) -> str:
+        return S.as_fewshot(self.stage)
+
+    def parse_llm(self, text, upstream):
+        data = extract_json(text)
+        units = [DesignUnit(**d) for d in data.get("units", [])]
+        tls = [TraceLink(**t) for t in data.get("trace_links", [])]
+        return _render(units), list(units), tls, {"feature": S.FEATURE}
 
     def quality_gate(self) -> QualityGate:
         return _DesignGate()

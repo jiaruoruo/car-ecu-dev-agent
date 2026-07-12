@@ -9,7 +9,8 @@ from __future__ import annotations
 
 from ..core.base_agent import BaseStageAgent
 from ..core.feedback import QualityGate
-from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput
+from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput, ReviewFinding, TraceLink
+from ..core.llm_parse import extract_json
 from . import scenario as S
 
 
@@ -53,10 +54,25 @@ class CodeReviewAgent(BaseStageAgent):
             return {"artifact": code}
         return super().bind_params(step, artifact, upstream)
 
-    def produce(self, si, prev_tool_results, upstream, attempt) -> Artifact:
+    def produce_fallback(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         return Artifact(stage=self.stage, name="代码评审报告", content=_render(S.REVIEW_FINDINGS_CLEAN),
                         items=list(S.REVIEW_FINDINGS_CLEAN), trace_links=list(S.DESIGN_TRACE),
                         metadata={"feature": S.FEATURE})
+
+    def llm_role(self) -> str:
+        return "coding"
+
+    def _artifact_name(self) -> str:
+        return "代码评审报告"
+
+    def as_fewshot(self) -> str:
+        return S.as_fewshot(self.stage)
+
+    def parse_llm(self, text, upstream):
+        data = extract_json(text)
+        findings = [ReviewFinding(**f) for f in data.get("findings", [])]
+        tls = [TraceLink(**t) for t in data.get("trace_links", [])]
+        return _render(findings), list(findings), tls, {"feature": S.FEATURE}
 
     def quality_gate(self) -> QualityGate:
         return _ReviewGate()

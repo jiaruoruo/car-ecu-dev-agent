@@ -10,7 +10,8 @@ from __future__ import annotations
 
 from ..core.base_agent import BaseStageAgent
 from ..core.feedback import QualityGate
-from ..core.schemas import Artifact, GateCheck, RiskLevel, Stage, Step, StructuredInput
+from ..core.schemas import Artifact, GateCheck, RiskLevel, Stage, Step, StructuredInput, TraceLink
+from ..core.llm_parse import extract_code
 from . import scenario as S
 
 MISRA_DENSITY_LIMIT = 5.0  # 违规/千行 上限
@@ -47,7 +48,7 @@ class CodingAgent(BaseStageAgent):
             Step(3, "交叉编译", tool="compiler"),
         ]
 
-    def produce(self, si, prev_tool_results, upstream, attempt) -> Artifact:
+    def produce_fallback(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         inject = self.memory.short_term.get("inject_defect", False)
         if inject and attempt == 1:
             code = S.ANTIPINCH_C_DEFECT  # 故意含一条 MISRA 违规
@@ -60,6 +61,19 @@ class CodingAgent(BaseStageAgent):
                         items=[], metadata={"feature": S.FEATURE, "header": S.ANTIPINCH_H,
                                             "note": note},
                         trace_links=list(S.DESIGN_TRACE))
+
+    def llm_role(self) -> str:
+        return "coding"
+
+    def _artifact_name(self) -> str:
+        return "单元源码 AntiPinch.c"
+
+    def as_fewshot(self) -> str:
+        return S.as_fewshot(self.stage)
+
+    def parse_llm(self, text, upstream):
+        code = extract_code(text) or text
+        return code, [], list(S.DESIGN_TRACE), {"feature": S.FEATURE, "header": S.ANTIPINCH_H}
 
     def quality_gate(self) -> QualityGate:
         return _CodingGate()

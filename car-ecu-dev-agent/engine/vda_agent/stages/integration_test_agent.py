@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from ..core.base_agent import BaseStageAgent
 from ..core.feedback import QualityGate
-from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput, TraceLink
+from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput, TraceLink, TestCase
+from ..core.llm_parse import extract_json
 from . import scenario as S
 
 REACT_LIMIT_MS = 100  # REQ-APW-004
@@ -45,11 +46,21 @@ class IntegrationTestAgent(BaseStageAgent):
             Step(3, "用例→需求追溯校验", tool="traceability"),
         ]
 
-    def produce(self, si, prev_tool_results, upstream, attempt) -> Artifact:
+    def produce_fallback(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         trace = [TraceLink(tc.id, req, "verifies") for tc in S.INTEGRATION_TESTS for req in tc.trace]
         return Artifact(stage=self.stage, name="集成测试报告", content=_render(S.INTEGRATION_TESTS),
                         items=list(S.INTEGRATION_TESTS), trace_links=trace,
                         metadata={"feature": S.FEATURE})
+
+    def as_fewshot(self) -> str:
+        return S.as_fewshot(self.stage)
+
+    def parse_llm(self, text, upstream):
+        data = extract_json(text)
+        tests = data.get("tests", [])
+        cases = [TestCase(**t) for t in tests]
+        tls = [TraceLink(t["id"], req, "verifies") for t in tests for req in t.get("trace", [])]
+        return _render(cases), list(cases), tls, {"feature": S.FEATURE}
 
     def quality_gate(self) -> QualityGate:
         return _IntegrationGate()

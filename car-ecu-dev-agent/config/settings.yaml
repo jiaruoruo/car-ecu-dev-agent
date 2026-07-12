@@ -39,6 +39,9 @@ profiles:
     llm:
       mode: anthropic
       model: claude-3-5-sonnet-latest
+      models:
+        reasoning: claude-3-5-sonnet-latest   # 强模型：需求/架构/设计/测试
+        coding: claude-3-5-sonnet-latest     # 代码模型：C 实现/代码评审
     human_gate:
       auto_approve: false  # 生产必须人工审批高风险操作
     orchestrator:

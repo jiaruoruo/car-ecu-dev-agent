@@ -15,6 +15,7 @@ from typing import Optional
 class LLMConfig:
     mode: str = "mock"          # mock | anthropic | openai
     model: str = "mock"
+    models: dict = field(default_factory=dict)  # role->model 路由（reasoning/coding）
 
 
 @dataclass
@@ -108,7 +109,8 @@ def load_settings(profile: Optional[str] = None) -> Settings:
 
 def build_llm(settings: Settings):
     from .llm_client import LLMClient
-    return LLMClient(mode=settings.llm.mode, model=settings.llm.model)
+    return LLMClient(mode=settings.llm.mode, model=settings.llm.model,
+                     models=settings.llm.models)
 
 
 def build_human_gate(settings: Settings):

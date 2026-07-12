@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from ..core.base_agent import BaseStageAgent
 from ..core.feedback import QualityGate
-from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput
+from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput, ArchElement, TraceLink
+from ..core.llm_parse import extract_json
 from . import scenario as S
 
 
@@ -42,11 +43,20 @@ class ArchitectureAgent(BaseStageAgent):
             Step(3, "架构→需求追溯校验", tool="traceability"),
         ]
 
-    def produce(self, si, prev_tool_results, upstream, attempt) -> Artifact:
+    def produce_fallback(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         content = _render(S.ARCH_ELEMENTS)
         return Artifact(stage=self.stage, name="软件架构设计 (SAD)", content=content,
                         items=list(S.ARCH_ELEMENTS), trace_links=list(S.ARCH_TRACE),
                         metadata={"feature": S.FEATURE})
+
+    def as_fewshot(self) -> str:
+        return S.as_fewshot(self.stage)
+
+    def parse_llm(self, text, upstream):
+        data = extract_json(text)
+        elems = [ArchElement(**e) for e in data.get("elements", [])]
+        tls = [TraceLink(**t) for t in data.get("trace_links", [])]
+        return _render(elems), list(elems), tls, {"feature": S.FEATURE}
 
     def quality_gate(self) -> QualityGate:
         return _ArchGate()

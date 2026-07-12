@@ -8,7 +8,8 @@ from __future__ import annotations
 
 from ..core.base_agent import BaseStageAgent
 from ..core.feedback import QualityGate
-from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput
+from ..core.schemas import Artifact, GateCheck, Stage, Step, StructuredInput, TestCase, TraceLink
+from ..core.llm_parse import extract_json
 from . import scenario as S
 
 BRANCH_TARGET = 90   # ASIL B：分支覆盖目标
@@ -48,11 +49,21 @@ class UnitTestAgent(BaseStageAgent):
             Step(3, "用例→需求追溯校验", tool="traceability"),
         ]
 
-    def produce(self, si, prev_tool_results, upstream, attempt) -> Artifact:
+    def produce_fallback(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         trace = [self._link(tc) for tc in S.UNIT_TESTS]
         trace = [l for sub in trace for l in sub]
         return Artifact(stage=self.stage, name="单元测试规格与结果", content=_render(S.UNIT_TESTS),
                         items=list(S.UNIT_TESTS), trace_links=trace, metadata={"feature": S.FEATURE})
+
+    def as_fewshot(self) -> str:
+        return S.as_fewshot(self.stage)
+
+    def parse_llm(self, text, upstream):
+        data = extract_json(text)
+        tests = data.get("tests", [])
+        cases = [TestCase(**t) for t in tests]
+        tls = [TraceLink(t["id"], req, "verifies") for t in tests for req in t.get("trace", [])]
+        return _render(cases), list(cases), tls, {"feature": S.FEATURE}
 
     @staticmethod
     def _link(tc):

@@ -1,14 +1,17 @@
 """贯穿示例的领域知识 —— 电动车窗防夹（Anti-Pinch Power Window）。
 
-这是 mock 模式下各阶段 Agent 生成工件所依据的“确定性领域知识”（单一数据源），
-保证需求↔架构↔设计↔代码↔测试的 ID 全程一致、可双向追溯。
-anthropic 模式下，各阶段会改用 Claude 生成 content，但结构化骨架（items / trace）
-仍以本文件为准，以维持门禁与追溯的确定性。
+Phase 1 反转角色：本文件**不再是唯一数据源**，而是承担两个职责：
+  1) 领域 few-shot / 检索上下文（DOMAIN_CONTEXT + as_fewshot(stage)），喂给 LLM prompt；
+  2) LLM 调用失败时的确定性兜底模板——各阶段 produce_fallback 直接引用下方常量，
+     保证即使 LLM 不可用，门禁与追溯的确定性仍成立。
+
+下方常量（REQUIREMENTS / ARCH_ELEMENTS / ... / ANTIPINCH_*）提供"标准答案"参考，
+使需求↔架构↔设计↔代码↔测试的 ID 全程一致、可双向追溯。
 """
 from __future__ import annotations
 
 from ..core.schemas import (
-    ArchElement, DesignUnit, Requirement, ReviewFinding, TestCase, TraceLink,
+    ArchElement, DesignUnit, Requirement, ReviewFinding, TestCase, TraceLink, Stage,
 )
 
 FEATURE = "电动车窗防夹（Anti-Pinch Power Window）"
@@ -329,3 +332,54 @@ INTEGRATION_TESTS = [
     TestCase("TC-IT-003", "堵转保护", "integration", "模拟机械堵转",
              ["全闭后持续上升命令"], "进入 BLOCKED 并停止 PWM", trace=["REQ-APW-006"]),
 ]
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Phase 1 反转：本文件不再是"唯一数据源"
+# 角色转变为：(1) 领域 few-shot / 检索上下文（喂给 LLM prompt）；
+#            (2) LLM 失败时的确定性兜底模板（produce_fallback 直接引用上述常量）。
+# 这样 LLM 真实化后仍保有"门禁确定性安全网"。
+
+DOMAIN_CONTEXT = f"""\
+领域：{FEATURE}（ASIL {ASIL}，ISO 26262）。
+研发遵循 ASPICE / V 模型：需求→架构→详设→编码→评审→单测→集成测试，
+各阶段产物需相互双向追溯。关键安全约束：防夹反转≤100ms、夹持力≤100N、控制周期10ms。
+编码遵循 MISRA C:2012：无 goto / 无动态内存 / switch 含 default / 定长类型。
+"""
+
+
+def as_fewshot(stage) -> str:
+    """为该阶段返回领域 few-shot 参考（LLM 真实化时的检索上下文）。"""
+    lines = [f"# 领域背景：{FEATURE}（ASIL {ASIL}）", ""]
+    if stage == Stage.REQUIREMENT:
+        lines.append("产出：软件需求列表（功能/安全/时序/接口），每条含验收准则与系统需求追溯。")
+        for r in REQUIREMENTS:
+            lines.append(f"- {r.id} [{r.type}/{r.asil}] {r.text}（验收：{r.acceptance}）")
+    elif stage == Stage.ARCHITECTURE:
+        lines.append("产出：AUTOSAR SWC 架构（组件/端口/接口/Runnable）+ 到需求的追溯。")
+        for e in ARCH_ELEMENTS:
+            lines.append(f"- {e.id} {e.name} ({e.kind})：{e.description} → 满足 {','.join(e.trace)}")
+    elif stage == Stage.DETAILED_DESIGN:
+        lines.append("产出：单元级详细设计（状态机、防夹算法、时序）+ 到架构/需求的追溯。")
+        for d in DESIGN_UNITS:
+            lines.append(f"- {d.id} {d.name}：{d.description}（trace={','.join(d.trace)}）")
+    elif stage == Stage.CODING:
+        lines.append("产出：符合 MISRA C 的 AntiPinch.c/.h 源码。")
+        lines.append(f"- 头文件接口：ApwState_t/ApwCmd_t/ApwInputs_t/ApwOutputs_t；"
+                     f"函数 ApwCtrl_Init/ApwCtrl_Step/ApwCtrl_GetState。")
+        lines.append(f"- 状态机状态：{', '.join(DESIGN_UNITS[0].states)}")
+        lines.append(f"- 防夹算法：{DESIGN_UNITS[1].algorithm}")
+    elif stage == Stage.CODE_REVIEW:
+        lines.append("产出：评审项列表（severity∈blocker/major/minor/info；"
+                     "category∈misra/defect/traceability/style）。")
+        for f in REVIEW_FINDINGS_CLEAN:
+            lines.append(f"- {f.id} [{f.severity}/{f.category}] {f.location}：{f.description}")
+    elif stage == Stage.UNIT_TEST:
+        lines.append("产出：单元测试用例（unit 级），每条 verifies 一条需求。")
+        for t in UNIT_TESTS:
+            lines.append(f"- {t.id} {t.name}：{t.objective}，预期 {t.expected}（verify {','.join(t.trace)}）")
+    elif stage == Stage.INTEGRATION_TEST:
+        lines.append("产出：集成测试用例（integration 级），每条 verifies 一条需求。")
+        for t in INTEGRATION_TESTS:
+            lines.append(f"- {t.id} {t.name}：{t.objective}（verify {','.join(t.trace)}）")
+    return "\n".join(lines) + "\n"
