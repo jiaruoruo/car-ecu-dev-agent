@@ -2,9 +2,15 @@
 #
 # 选择 profile：环境变量 VDA_PROFILE（dev / ci / prod），缺省取 default_profile。
 # 关键项也可被环境变量覆盖：VDA_LLM_MODE / VDA_HUMAN_GATE_AUTO_APPROVE / VDA_MAX_BACKTRACK。
+# 工具后端选择（Phase 2）：VDA_TOOL_BACKEND = auto | real | heuristic（auto=探测真实工具链，缺失则降级）。
 # 读取本文件需安装 pyyaml（pip install -e ".[yaml]"）；缺失时回退内置默认值（见 core/config.py）。
 
 default_profile: dev
+
+# 工具真实化（Phase 2）：统一后端选择。各真实工具（compiler/misra_checker）按此探测
+# tricore-gcc/gcc/cppcheck 等；未安装则自动降级到确定性启发式，门禁确定性不受影响。
+tools:
+  backend: auto        # auto | real | heuristic
 
 # 顶层日志配置（可被各 profile 覆盖）；format: text=本地可读 / json=生产接入日志采集
 logging:
@@ -44,6 +50,7 @@ profiles:
         coding: claude-3-5-sonnet-latest     # 代码模型：C 实现/代码评审
     human_gate:
       auto_approve: false  # 生产必须人工审批高风险操作
+      mode: interactive    # 生产走交互式审批（无 TTY/无 approver 则拒绝，需 VDA_HUMAN_APPROVE=1 逃生）
     orchestrator:
       max_backtrack: 1
     logging:

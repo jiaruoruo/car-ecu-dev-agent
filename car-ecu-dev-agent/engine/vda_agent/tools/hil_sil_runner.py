@@ -13,7 +13,7 @@ class HilSilRunner(Tool):
     name = "hil_sil_runner"
     description = "在 HIL/SIL（CAN 在环）执行集成测试场景，校验信号交互与实时时序。"
     schema = {"artifact": {"required": True}}
-    risk = RiskLevel.MODIFY   # 操作在环设备，记录日志
+    risk = RiskLevel.IRREVERSIBLE   # 操作在环设备（刷写/在环），属不可逆，需人审
 
     def run(self, **params) -> ToolResult:
         artifact = params["artifact"]

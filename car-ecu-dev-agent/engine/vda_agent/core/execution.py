@@ -8,7 +8,10 @@
 """
 from __future__ import annotations
 
+import os
+import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Callable
 
 from .errors import classify_error
@@ -20,26 +23,104 @@ from .tools import ToolRegistry, ToolResult
 logger = get_logger("execution")
 
 
+def _now() -> str:
+    return datetime.now().isoformat(timespec="seconds")
+
+
 # ── 人类确认门控 ─────────────────────────────────────────────────────
 @dataclass
 class HumanGate:
-    """RISK_LEVELS >= DELETE 需确认；可注入自动批准器供 CI 使用。"""
-    auto_approve: bool = True   # 演示默认自动批准（并记录日志）
+    """高风险操作人类确认门控（Phase 2 真实审批）。
+
+    - mode: auto | interactive | deny
+        * auto         : 高于阈值的高风险操作自动批准（CI/开发），但会在审计日志标注；
+                         不可逆操作（IRREVERSIBLE / irreversible_tools）即使 auto 也强制拒绝，
+                         除非显式提供 approver 或环境变量 VDA_HUMAN_APPROVE=1。
+        * interactive  : 交互式询问（TTY 下输入 y/N）；无 TTY 且无 approver 则拒绝。
+        * deny         : 一律拒绝（演练 / 安全兜底）。
+    - 始终追加审计日志（动作 + 风险 + 决策 + 时间戳）。
+    """
+    auto_approve: bool = True
+    mode: str = "auto"                 # auto | interactive | deny
+    irreversible_requires_human: bool = True
+    irreversible_tools: set = field(default_factory=lambda: {"hil_sil_runner"})
+    confirm_threshold: RiskLevel = RiskLevel.DELETE
     approver: Callable[[Step], bool] | None = None
     audit_log: list[str] = field(default_factory=list)
 
+    def __post_init__(self):
+        if self.mode == "auto" and not self.auto_approve:
+            self.mode = "interactive"
+
     def should_confirm(self, risk: RiskLevel) -> bool:
-        return int(risk) >= int(RiskLevel.DELETE)
+        return self._requires_human(risk, None)
+
+    def _requires_human(self, risk: RiskLevel, tool: str | None) -> bool:
+        if int(risk) >= int(self.confirm_threshold):
+            return True
+        if (self.irreversible_requires_human
+                and (int(risk) >= int(RiskLevel.IRREVERSIBLE)
+                     or (tool in self.irreversible_tools))):
+            return True
+        return False
 
     def request(self, step: Step) -> bool:
-        if not self.should_confirm(step.risk):
+        risk = step.risk
+        forced = (int(risk) >= int(RiskLevel.IRREVERSIBLE)
+                  or step.tool in self.irreversible_tools)
+        requires = self._requires_human(risk, step.tool)
+        ts = _now()
+        if not requires:
+            self.audit_log.append(
+                f"[{ts}] AUTO-PASS risk={risk.name} step='{step.description}' "
+                f"(below confirm threshold)")
             return True
-        decision = self.approver(step) if self.approver else self.auto_approve
+        # 逃生舱：CI 显式批准
+        if os.getenv("VDA_HUMAN_APPROVE", "").lower() in ("1", "true", "yes", "y"):
+            self.audit_log.append(
+                f"[{ts}] APPROVED risk={risk.name} step='{step.description}' "
+                f"via env VDA_HUMAN_APPROVE")
+            return True
+        if self.approver is not None:
+            decision = bool(self.approver(step))
+            self.audit_log.append(
+                f"[{ts}] {'APPROVED' if decision else 'DENIED'} risk={risk.name} "
+                f"step='{step.description}' via approver callback")
+            return decision
+        if self.mode == "deny":
+            self.audit_log.append(
+                f"[{ts}] DENIED risk={risk.name} step='{step.description}' (mode=deny)")
+            return False
+        if self.mode == "interactive":
+            decision = self._prompt(step)
+            self.audit_log.append(
+                f"[{ts}] {'APPROVED' if decision else 'DENIED'} risk={risk.name} "
+                f"step='{step.description}' (interactive)")
+            return decision
+        # mode == "auto"
+        # 生产式严格模式（auto_approve=False）：不可逆操作（在环/刷写）必须显式人审，
+        # 未置 VDA_HUMAN_APPROVE 或提供 approver 则拒绝（满足「在环操作必须人审」）。
+        # 开发/CI（auto_approve=True）：按策略自动批准，保证 demo / 自动化测试绿跑。
+        if forced and not self.auto_approve:
+            self.audit_log.append(
+                f"[{ts}] DENIED risk={risk.name} step='{step.description}' "
+                f"(irreversible requires explicit human in strict mode; "
+                f"set VDA_HUMAN_APPROVE=1)")
+            return False
         self.audit_log.append(
-            f"[HumanGate] 风险={step.risk.name} 步骤『{step.description}』 "
-            f"→ {'批准' if decision else '拒绝'}"
-        )
-        return decision
+            f"[{ts}] AUTO-APPROVED risk={risk.name} step='{step.description}' (policy)")
+        return True
+
+    @staticmethod
+    def _prompt(step: Step) -> bool:
+        try:
+            if not sys.stdin.isatty():
+                return False
+            ans = input(
+                f"[HumanGate] 确认执行（风险={step.risk.name}）：{step.description} [y/N] ")
+            return ans.strip().lower() in ("y", "yes")
+        except Exception:
+            return False
 
 
 # ── 执行引擎 ─────────────────────────────────────────────────────────

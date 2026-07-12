@@ -6,6 +6,7 @@ run_demo.py 与冒烟测试都通过本工厂构建系统，避免重复装配�
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Callable, Optional
 
@@ -23,6 +24,8 @@ def build_orchestrator(inject_defect: bool = False,
                        on_log: Callable[[str], None] | None = None,
                        profile: Optional[str] = None) -> Orchestrator:
     settings = load_settings(profile)
+    # 让 settings.yaml 的 tools.backend 成为工具真实化后端选择的默认值
+    os.environ.setdefault("VDA_TOOL_BACKEND", settings.tools.backend)
     llm = build_llm(settings)
     memory = MemorySystem(knowledge_dir=KNOWLEDGE_DIR)
     memory.short_term.put("inject_defect", inject_defect)

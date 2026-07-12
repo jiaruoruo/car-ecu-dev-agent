@@ -21,6 +21,8 @@ class LLMConfig:
 @dataclass
 class HumanGateConfig:
     auto_approve: bool = True   # 生产应设为 False，高风险操作需人工确认
+    mode: str | None = None     # auto | interactive | deny（None=按 auto_approve 推断）
+    irreversible_requires_human: bool = True
 
 
 @dataclass
@@ -34,23 +36,30 @@ class LoggingConfig:
 
 
 @dataclass
+class ToolsConfig:
+    backend: str = "auto"  # auto | real | heuristic（Phase 2 工具真实化后端选择）
+
+
+@dataclass
 class Settings:
     profile: str
     llm: LLMConfig = field(default_factory=LLMConfig)
     human_gate: HumanGateConfig = field(default_factory=HumanGateConfig)
     orchestrator: OrchestratorConfig = field(default_factory=OrchestratorConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    tools: ToolsConfig = field(default_factory=ToolsConfig)
     knowledge_dir: Optional[str] = None
 
 
 # 内置默认（与 settings.yaml 的 dev profile 对齐；无 yaml / 无文件时也能运行）
 _DEFAULTS: dict[str, Settings] = {
     "dev": Settings("dev", LLMConfig("mock", "mock"), HumanGateConfig(True),
-                    OrchestratorConfig(2), LoggingConfig("text")),
+                    OrchestratorConfig(2), LoggingConfig("text"), ToolsConfig("auto")),
     "ci": Settings("ci", LLMConfig("mock", "mock"), HumanGateConfig(True),
-                   OrchestratorConfig(2), LoggingConfig("text")),
+                   OrchestratorConfig(2), LoggingConfig("text"), ToolsConfig("auto")),
     "prod": Settings("prod", LLMConfig("anthropic", "claude-3-5-sonnet-latest"),
-                     HumanGateConfig(False), OrchestratorConfig(1), LoggingConfig("json")),
+                     HumanGateConfig(False), OrchestratorConfig(1), LoggingConfig("json"),
+                     ToolsConfig("auto")),
 }
 
 _CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "settings.yaml"
@@ -88,6 +97,8 @@ def load_settings(profile: Optional[str] = None) -> Settings:
                 if "logging" in p:
                     settings.logging = LoggingConfig(
                         **{**settings.logging.__dict__, **p["logging"]})
+                if "tools" in p:
+                    settings.tools = ToolsConfig(**{**settings.tools.__dict__, **p["tools"]})
                 if p.get("knowledge_dir") is not None:
                     settings.knowledge_dir = p["knowledge_dir"]
         except ImportError:
@@ -115,4 +126,9 @@ def build_llm(settings: Settings):
 
 def build_human_gate(settings: Settings):
     from .execution import HumanGate
-    return HumanGate(auto_approve=settings.human_gate.auto_approve)
+    hg = settings.human_gate
+    return HumanGate(
+        auto_approve=hg.auto_approve,
+        mode=hg.mode or ("auto" if hg.auto_approve else "interactive"),
+        irreversible_requires_human=hg.irreversible_requires_human,
+    )
