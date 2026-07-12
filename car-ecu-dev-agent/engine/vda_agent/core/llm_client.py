@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .metrics import estimate_cost_usd, get_metrics
+from .secrets import resolve_secret
 
 
 @dataclass
@@ -89,7 +90,7 @@ class LLMClient:
             import anthropic
         except ImportError as e:
             raise LLMError("anthropic SDK 未安装（pip install anthropic）") from e
-        key = os.getenv("ANTHROPIC_API_KEY")
+        key = resolve_secret("ANTHROPIC_API_KEY")
         if not key:
             raise LLMError("环境变量 ANTHROPIC_API_KEY 未设置")
         try:
@@ -111,7 +112,7 @@ class LLMClient:
             import openai
         except ImportError as e:
             raise LLMError("openai SDK 未安装（pip install openai）") from e
-        key = os.getenv("OPENAI_API_KEY")
+        key = resolve_secret("OPENAI_API_KEY")
         if not key:
             raise LLMError("环境变量 OPENAI_API_KEY 未设置")
         try:

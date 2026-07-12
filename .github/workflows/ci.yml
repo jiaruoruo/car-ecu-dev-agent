@@ -39,8 +39,9 @@ jobs:
             --cov-report=term-missing
 
       - name: Gate regression (7-stage pipeline must pass end-to-end)
-        # 真正阻断劣质 PR 的硬门禁：门禁回归 + 全量组件/工具集成测试必须全绿。
+        # 真正阻断劣质 PR 的硬门禁：门禁回归 + 全量组件/工具集成 + Phase5 安全合规部署测试必须全绿。
         working-directory: car-ecu-dev-agent
         run: |
           python -m pytest tests/test_phase1_eval.py tests/test_phase4_eval.py \
-                         tests/test_phase4_components.py tests/test_phase4_tools_integration.py -q
+                         tests/test_phase4_components.py tests/test_phase4_tools_integration.py \
+                         tests/test_phase5_security_compliance_deploy.py -q

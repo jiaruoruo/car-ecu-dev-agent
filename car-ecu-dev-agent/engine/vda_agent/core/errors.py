@@ -46,6 +46,12 @@ class NeedsHumanInput(AgentError):
     retryable = False
 
 
+class SecurityError(AgentError):
+    """安全 / 合规违规（注入攻击 / 凭证泄露 / 越权）。立即中止，不重试。"""
+    category = "security"
+    retryable = False
+
+
 # 关键词 → 错误类别 的启发式分类（与 ToolRegistry.call 的错误字符串约定对齐）
 _TRANSIENT_HINTS = (
     "超时", "timeout", "熔断", "circuit", "网络", "network",

@@ -19,8 +19,8 @@ yaml = ["pyyaml>=6.0"]
 [tool.setuptools]
 # vda_agent 物理位于 engine/ 下，通过 package-dir 映射为顶层可导入包
 package-dir = {vda_agent = "engine/vda_agent"}
-# 根目录下的演示脚本作为顶层模块安装，使 `run-pipeline` / `gui-server` 与 `python -m` 可用
-py-modules = ["run_poc_pipeline", "run_matrix", "run_codegen_gate"]
+# 根目录下的演示脚本作为顶层模块安装，使 `run-pipeline` / `gui-server` / `vda` 与 `python -m` 可用
+py-modules = ["run_poc_pipeline", "run_matrix", "run_codegen_gate", "cli"]
 
 [tool.setuptools.packages.find]
 # 同时扫描项目根与 engine/，才能发现物理位于 engine/vda_agent 的包
@@ -30,6 +30,7 @@ include = ["adapter*", "domains*", "gui*", "vda_agent*"]
 [project.scripts]
 run-pipeline = "run_poc_pipeline:main"
 gui-server = "gui.server:main"
+vda = "cli:main"
 
 [tool.ruff]
 line-length = 100
