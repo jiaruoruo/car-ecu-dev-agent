@@ -21,11 +21,12 @@ for _s in (sys.stdout, sys.stderr):
     except Exception:
         pass
 
-import _bootstrap  # 开发态：确保包导入路径（生产用 pip install -e .）
-
+# 包导入依赖 pyproject 打包：开发态先 `pip install -e .`，再 `python run_matrix.py` 或 `python -m run_matrix`
 from adapter.pipeline_factory import available_domains, build_orchestrator_for, load_profile  # noqa: E402
 from adapter.forward_trace import forward_traceability                                          # noqa: E402
 from vda_agent.core.schemas import STAGE_ORDER                                                  # noqa: E402
+
+ROOT = os.path.dirname(os.path.abspath(__file__))  # 项目根（脚本位于根目录）
 
 _ABBR = {"requirement": "需求", "architecture": "架构", "detailed_design": "详设",
          "coding": "编码", "code_review": "评审", "unit_test": "单测", "integration_test": "集成"}

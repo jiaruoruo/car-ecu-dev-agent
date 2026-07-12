@@ -19,11 +19,12 @@ for _s in (sys.stdout, sys.stderr):
     except Exception:
         pass
 
-import _bootstrap  # 开发态：确保包导入路径（生产用 pip install -e .）
-
+# 包导入依赖 pyproject 打包：开发态先 `pip install -e .`，再 `python run_poc_pipeline.py` 或 `run-pipeline`
 from adapter.domain_loader import load_profile        # noqa: E402
 from domains.tlf35584.pipeline import build_pipeline   # noqa: E402
 from vda_agent.core.schemas import STAGE_ORDER         # noqa: E402
+
+ROOT = os.path.dirname(os.path.abspath(__file__))  # 项目根（脚本位于根目录）
 
 _FILENAMES = {
     "requirement": "01_requirements.md", "architecture": "02_architecture.md",

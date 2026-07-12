@@ -1,0 +1,11 @@
+# 虚拟环境（Phase 0 收敛 sys.path 后，开发态走 pip install -e . 的隔离 venv）
+.venv/
+
+# Python 缓存与打包产物
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# 流水线生成物（演示脚本输出）
+out/
