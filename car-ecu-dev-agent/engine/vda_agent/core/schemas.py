@@ -9,10 +9,10 @@ from __future__ import annotations
 
 from dataclasses import field
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 
 
 # ── 枚举 ─────────────────────────────────────────────────────────────
@@ -73,19 +73,20 @@ class NextAction(str, Enum):
 class StructuredInput:
     """感知层输出：把上游工件 / 指令归一化为结构化表示。"""
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    intent: str
+    intent: str = Field(min_length=1, description="归一化后的用户/系统意图，不可为空")
     entities: dict = field(default_factory=dict)
     constraints: List[str] = field(default_factory=list)
     context: dict = field(default_factory=dict)
     missing_info: List[str] = field(default_factory=list)
-    confidence: float = 1.0
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0,
+                              description="感知置信度，取值 [0,1]")
 
 
 # ── 规划层 ───────────────────────────────────────────────────────────
 @pydantic_dataclass
 class Step:
-    index: int
-    description: str
+    index: int = Field(ge=0, description="步骤序号，从 0 起且非负")
+    description: str = Field(min_length=1, description="步骤描述，不可为空")
     tool: str = ""                       # 需调用的工具名（空=纯生成步骤）
     params: dict = field(default_factory=dict)
     risk: RiskLevel = RiskLevel.CREATE
@@ -94,7 +95,7 @@ class Step:
 @pydantic_dataclass
 class Plan:
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    goal: str
+    goal: str = Field(min_length=1, description="规划目标，不可为空")
     steps: List[Step] = field(default_factory=list)
 
     def check_tool_refs(self, available_tools: set[str]) -> List[str]:
@@ -110,17 +111,20 @@ class Plan:
 @pydantic_dataclass
 class TraceLink:
     """双向追溯链：source 派生/满足/验证 target。"""
-    source_id: str
-    target_id: str
-    relation: str  # derives | satisfies | verifies
+    source_id: str = Field(min_length=1, description="源工件 id，不可为空")
+    target_id: str = Field(min_length=1, description="目标工件 id，不可为空")
+    relation: Literal["derives", "satisfies", "verifies", "implements"] = Field(
+        description="追溯关系：派生 / 满足 / 验证 / 实现")
 
 
 @pydantic_dataclass
 class Requirement:
-    id: str
-    text: str
-    type: str = "functional"   # functional | safety | timing | interface
-    asil: str = "QM"
+    id: str = Field(min_length=1, description="需求 id，不可为空")
+    text: str = Field(min_length=1, description="需求正文，不可为空")
+    type: Literal["functional", "safety", "timing", "interface"] = Field(
+        default="functional", description="需求类型")
+    asil: Literal["QM", "A", "B", "C", "D"] = Field(
+        default="QM", description="ISO 26262 安全等级")
     rationale: str = ""
     acceptance: str = ""
     source: str = ""           # 上游来源（用户 / 系统需求）
@@ -128,9 +132,10 @@ class Requirement:
 
 @pydantic_dataclass
 class ArchElement:
-    id: str
-    name: str
-    kind: str                  # component | interface | port | runnable
+    id: str = Field(min_length=1, description="架构元素 id，不可为空")
+    name: str = Field(min_length=1, description="架构元素名称，不可为空")
+    kind: Literal["component", "interface", "port", "runnable"] = Field(
+        description="架构元素种类")
     description: str = ""
     interfaces: List[str] = field(default_factory=list)
     trace: List[str] = field(default_factory=list)  # 满足的需求 id
@@ -138,8 +143,8 @@ class ArchElement:
 
 @pydantic_dataclass
 class DesignUnit:
-    id: str
-    name: str
+    id: str = Field(min_length=1, description="设计单元 id，不可为空")
+    name: str = Field(min_length=1, description="设计单元名称，不可为空")
     description: str = ""
     states: List[str] = field(default_factory=list)   # 状态机状态
     algorithm: str = ""
@@ -148,24 +153,27 @@ class DesignUnit:
 
 @pydantic_dataclass
 class ReviewFinding:
-    id: str
-    severity: str              # blocker | major | minor | info
-    category: str              # misra | defect | traceability | style
-    location: str
-    description: str
+    id: str = Field(min_length=1, description="评审项 id，不可为空")
+    severity: Literal["blocker", "major", "minor", "info"] = Field(
+        description="严重级别")
+    category: Literal["misra", "defect", "traceability", "style"] = Field(
+        description="评审类别")
+    location: str = Field(min_length=1, description="问题定位，不可为空")
+    description: str = Field(min_length=1, description="问题描述，不可为空")
     rule: str = ""
 
 
 @pydantic_dataclass
 class TestCase:
-    id: str
-    name: str
-    level: str                 # unit | integration
+    id: str = Field(min_length=1, description="测试用例 id，不可为空")
+    name: str = Field(min_length=1, description="测试用例名称，不可为空")
+    level: Literal["unit", "integration"] = Field(description="测试层级")
     objective: str = ""
     steps: List[str] = field(default_factory=list)
     expected: str = ""
     trace: List[str] = field(default_factory=list)
-    result: str = "not_run"    # pass | fail | not_run
+    result: Literal["pass", "fail", "not_run"] = Field(
+        default="not_run", description="执行结果")
 
 
 @pydantic_dataclass
@@ -173,7 +181,7 @@ class Artifact:
     """阶段的统一产出物。content 为可落盘文本，items 为结构化条目。"""
     model_config = ConfigDict(arbitrary_types_allowed=True)
     stage: Stage
-    name: str
+    name: str = Field(min_length=1, description="工件名称，不可为空")
     content: str = ""
     items: List[Any] = field(default_factory=list)
     trace_links: List[TraceLink] = field(default_factory=list)
@@ -183,8 +191,8 @@ class Artifact:
 # ── 反馈层 ───────────────────────────────────────────────────────────
 @pydantic_dataclass
 class GateCheck:
-    name: str
-    passed: bool
+    name: str = Field(min_length=1, description="门禁检查项名称，不可为空")
+    passed: bool = Field(description="是否通过")
     detail: str = ""
 
 
@@ -205,7 +213,8 @@ class GateResult:
 class Reflection:
     model_config = ConfigDict(arbitrary_types_allowed=True)
     is_valid: bool
-    goal_progress: float          # >0 前进，<0 方向错
+    goal_progress: float = Field(ge=-1.0, le=1.0,
+                                 description="目标进展度，取值 [-1,1]：>0 前进，<0 方向错")
     anomalies: List[str] = field(default_factory=list)
     action: NextAction = NextAction.CONTINUE
     summary: str = ""
@@ -219,7 +228,7 @@ class StageResult:
     artifact: Optional[Artifact] = None
     gate: Optional[GateResult] = None
     action: NextAction = NextAction.CONTINUE
-    attempts: int = 1
+    attempts: int = Field(default=1, ge=1, description="已尝试次数，至少为 1")
     notes: List[str] = field(default_factory=list)
 
 
