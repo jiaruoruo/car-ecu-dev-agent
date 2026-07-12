@@ -6,6 +6,10 @@
 
 default_profile: dev
 
+# 顶层日志配置（可被各 profile 覆盖）；format: text=本地可读 / json=生产接入日志采集
+logging:
+  format: text
+
 profiles:
   dev:
     llm:
@@ -15,6 +19,8 @@ profiles:
       auto_approve: true  # 开发态自动放行
     orchestrator:
       max_backtrack: 2
+    logging:
+      format: text
     knowledge_dir: null   # null = 使用引擎默认 knowledge 目录
 
   ci:
@@ -25,6 +31,8 @@ profiles:
       auto_approve: true
     orchestrator:
       max_backtrack: 2
+    logging:
+      format: text
     knowledge_dir: null
 
   prod:
@@ -35,4 +43,6 @@ profiles:
       auto_approve: false  # 生产必须人工审批高风险操作
     orchestrator:
       max_backtrack: 1
+    logging:
+      format: json        # 生产输出结构化 JSON 日志，带 trace_id
     knowledge_dir: null

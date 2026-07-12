@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from .core.config import build_human_gate, build_llm, load_settings
+from .core.logging_utils import get_structured_on_log
 from .core.memory import MemorySystem
 from .core.orchestrator import Orchestrator
 from .stages import build_agents
@@ -19,7 +20,7 @@ KNOWLEDGE_DIR = Path(__file__).parent / "knowledge"
 
 
 def build_orchestrator(inject_defect: bool = False,
-                       on_log: Callable[[str], None] = print,
+                       on_log: Callable[[str], None] | None = None,
                        profile: Optional[str] = None) -> Orchestrator:
     settings = load_settings(profile)
     llm = build_llm(settings)
@@ -27,6 +28,7 @@ def build_orchestrator(inject_defect: bool = False,
     memory.short_term.put("inject_defect", inject_defect)
     registry = build_registry()
     human_gate = build_human_gate(settings)
-    agents = build_agents(llm, memory, registry, human_gate, on_log)
-    return Orchestrator(agents, memory, registry, on_log=on_log,
+    _on_log = on_log or get_structured_on_log("orchestrator")
+    agents = build_agents(llm, memory, registry, human_gate, _on_log)
+    return Orchestrator(agents, memory, registry, on_log=_on_log,
                         max_backtrack=settings.orchestrator.max_backtrack)

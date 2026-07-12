@@ -20,7 +20,7 @@ class PlanManager:
     def create_plan(self, goal: str, blueprint: list[Step]) -> Plan:
         """根据阶段蓝图生成计划并做可行性校验。"""
         plan = Plan(goal=goal, steps=list(blueprint))
-        errs = plan.validate(self.available_tools)
+        errs = plan.check_tool_refs(self.available_tools)
         if errs:
             # 规划幻觉：直接剔除非法工具步骤的工具绑定，降级为人工占位
             for s in plan.steps:

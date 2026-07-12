@@ -28,20 +28,28 @@ class OrchestratorConfig:
 
 
 @dataclass
+class LoggingConfig:
+    format: str = "text"   # text（本地演示可读）| json（生产接入日志采集）
+
+
+@dataclass
 class Settings:
     profile: str
     llm: LLMConfig = field(default_factory=LLMConfig)
     human_gate: HumanGateConfig = field(default_factory=HumanGateConfig)
     orchestrator: OrchestratorConfig = field(default_factory=OrchestratorConfig)
+    logging: LoggingConfig = field(default_factory=LoggingConfig)
     knowledge_dir: Optional[str] = None
 
 
 # 内置默认（与 settings.yaml 的 dev profile 对齐；无 yaml / 无文件时也能运行）
 _DEFAULTS: dict[str, Settings] = {
-    "dev": Settings("dev", LLMConfig("mock", "mock"), HumanGateConfig(True), OrchestratorConfig(2)),
-    "ci": Settings("ci", LLMConfig("mock", "mock"), HumanGateConfig(True), OrchestratorConfig(2)),
+    "dev": Settings("dev", LLMConfig("mock", "mock"), HumanGateConfig(True),
+                    OrchestratorConfig(2), LoggingConfig("text")),
+    "ci": Settings("ci", LLMConfig("mock", "mock"), HumanGateConfig(True),
+                   OrchestratorConfig(2), LoggingConfig("text")),
     "prod": Settings("prod", LLMConfig("anthropic", "claude-3-5-sonnet-latest"),
-                     HumanGateConfig(False), OrchestratorConfig(1)),
+                     HumanGateConfig(False), OrchestratorConfig(1), LoggingConfig("json")),
 }
 
 _CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "settings.yaml"
@@ -63,6 +71,9 @@ def load_settings(profile: Optional[str] = None) -> Settings:
                 doc = yaml.safe_load(f) or {}
             prof = profile or os.getenv("VDA_PROFILE") or doc.get("default_profile", "dev")
             settings = _DEFAULTS.get(prof, _DEFAULTS["dev"])
+            # 顶层 logging 作为基础，profile 内可覆盖
+            if doc.get("logging"):
+                settings.logging = LoggingConfig(**{**settings.logging.__dict__, **doc["logging"]})
             p = (doc.get("profiles") or {}).get(prof)
             if p:
                 if "llm" in p:
@@ -73,6 +84,9 @@ def load_settings(profile: Optional[str] = None) -> Settings:
                 if "orchestrator" in p:
                     settings.orchestrator = OrchestratorConfig(
                         **{**settings.orchestrator.__dict__, **p["orchestrator"]})
+                if "logging" in p:
+                    settings.logging = LoggingConfig(
+                        **{**settings.logging.__dict__, **p["logging"]})
                 if p.get("knowledge_dir") is not None:
                     settings.knowledge_dir = p["knowledge_dir"]
         except ImportError:

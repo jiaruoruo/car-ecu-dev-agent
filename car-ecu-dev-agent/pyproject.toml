@@ -9,6 +9,7 @@ description = "V-Model SDLC agent pipeline for automotive ECU driver development
 requires-python = ">=3.10"
 dependencies = [
     "jinja2>=3.1",
+    "pydantic>=2.5",
 ]
 
 [project.optional-dependencies]

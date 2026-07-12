@@ -12,12 +12,14 @@ L0 战略层：完成一个功能的 V 模型研发闭环
 """
 from __future__ import annotations
 
+import uuid
 from pathlib import Path
 from typing import Callable
 
 from .base_agent import BaseStageAgent
 from .execution import HumanGate
 from .llm_client import LLMClient
+from .logging_utils import get_logger, get_structured_on_log, with_trace_id
 from .memory import MemorySystem
 from .schemas import (
     Artifact, NextAction, Stage, STAGE_ORDER, StageResult, to_jsonable,
@@ -28,46 +30,55 @@ from .tools import ToolRegistry
 class Orchestrator:
     def __init__(self, agents: dict[Stage, BaseStageAgent],
                  memory: MemorySystem, registry: ToolRegistry,
-                 on_log: Callable[[str], None] = print,
+                 on_log: Callable[[str], None] | None = None,
                  max_backtrack: int = 2) -> None:
         self.agents = agents
         self.memory = memory
         self.registry = registry
-        self.on_log = on_log
+        self.on_log = on_log or get_structured_on_log("orchestrator")
         self.max_backtrack = max_backtrack
         self.results: dict[Stage, StageResult] = {}
+        self._logger = get_logger("orchestrator")
 
     def run(self, user_request: str) -> dict[Stage, StageResult]:
-        self.memory.short_term.put("user_request", user_request)
-        self.on_log("══════════ 车载域控研发闭环启动 ══════════")
-        self.on_log(f"用户需求：{user_request.strip().splitlines()[0]}")
+        run_id = uuid.uuid4().hex[:12]
+        with with_trace_id(run_id):
+            self._logger.info(f"pipeline_start run_id={run_id} "
+                               f"request={user_request.strip().splitlines()[0]!r}")
+            self.memory.short_term.put("user_request", user_request)
+            self.on_log("══════════ 车载域控研发闭环启动 ══════════")
+            self.on_log(f"用户需求：{user_request.strip().splitlines()[0]}")
 
-        upstream: dict[Stage, Artifact] = {}
-        backtracks = 0
-        i = 0
-        while i < len(STAGE_ORDER):
-            stage = STAGE_ORDER[i]
-            agent = self.agents[stage]
-            result = agent.run(upstream)
-            self.results[stage] = result
+            upstream: dict[Stage, Artifact] = {}
+            backtracks = 0
+            i = 0
+            while i < len(STAGE_ORDER):
+                stage = STAGE_ORDER[i]
+                agent = self.agents[stage]
+                result = agent.run(upstream)
+                self.results[stage] = result
 
-            if result.action == NextAction.REJECT_UPSTREAM and i > 0 and backtracks < self.max_backtrack:
-                backtracks += 1
-                prev = STAGE_ORDER[i - 1]
-                self.on_log(f"⤺ V 模型反向流：{stage.value} 驳回上游 {prev.value}，回退重做")
-                i -= 1
-                continue
+                if result.action == NextAction.REJECT_UPSTREAM and i > 0 and backtracks < self.max_backtrack:
+                    backtracks += 1
+                    prev = STAGE_ORDER[i - 1]
+                    self.on_log(f"⤺ V 模型反向流：{stage.value} 驳回上游 {prev.value}，回退重做")
+                    i -= 1
+                    continue
 
-            if not result.success and result.action in (NextAction.ESCALATE, NextAction.ABORT):
-                self.on_log(f"✗ 阶段 {stage.value} 失败且需 {result.action.value}，闭环中止")
-                break
+                if not result.success and result.action in (NextAction.ESCALATE, NextAction.ABORT):
+                    self.on_log(f"✗ 阶段 {stage.value} 失败且需 {result.action.value}，闭环中止")
+                    self._logger.warning(
+                        f"pipeline_abort run_id={run_id} stage={stage.value} "
+                        f"action={result.action.value}")
+                    break
 
-            if result.artifact:
-                upstream[stage] = result.artifact
-            i += 1
+                if result.artifact:
+                    upstream[stage] = result.artifact
+                i += 1
 
-        self.on_log("══════════ 闭环结束 ══════════")
-        self._summary()
+            self.on_log("══════════ 闭环结束 ══════════")
+            self._summary()
+            self._logger.info(f"pipeline_end run_id={run_id}")
         return self.results
 
     # ── 汇总 ──────────────────────────────────────────────────────

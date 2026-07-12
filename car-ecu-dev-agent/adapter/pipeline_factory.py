@@ -20,7 +20,7 @@ def load_profile(key: str):
     return load_agent_spec(key)
 
 
-def build_orchestrator_for(key: str, out_dir: str, on_log=print, inject_defect: bool = False,
+def build_orchestrator_for(key: str, out_dir: str, on_log=None, inject_defect: bool = False,
                            llm=None, human_gate=None):
     """返回某域的 7 阶段 Orchestrator（富域走各自流水线，其余走通用流水线）。
 
@@ -31,6 +31,9 @@ def build_orchestrator_for(key: str, out_dir: str, on_log=print, inject_defect: 
         _s = load_settings()
         llm = llm or build_llm(_s)
         human_gate = human_gate or build_human_gate(_s)
+    if on_log is None:
+        from vda_agent.core.logging_utils import get_structured_on_log
+        on_log = get_structured_on_log()
     if key in RICH_DOMAINS:
         if key == "tlf35584":
             from domains.tlf35584.pipeline import build_pipeline as build_rich

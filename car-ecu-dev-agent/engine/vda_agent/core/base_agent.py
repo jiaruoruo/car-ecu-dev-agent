@@ -16,6 +16,7 @@ from typing import Callable
 from .execution import ExecutionEngine, HumanGate
 from .feedback import FeedbackLoop, QualityGate
 from .llm_client import LLMClient
+from .logging_utils import get_logger, with_trace_id
 from .memory import MemorySystem
 from .perception import AmbiguousInputError, PerceptionPipeline
 from .planning import PlanManager
@@ -78,70 +79,75 @@ class BaseStageAgent:
 
     # ── 统一闭环 ──────────────────────────────────────────────────
     def run(self, upstream: dict) -> StageResult:
-        self.on_log(f"[{self.stage.value}] ── 进入阶段 ──")
+        logger = get_logger(f"stage.{self.stage.value}")
+        with with_trace_id(f"stage:{self.stage.value}"):  # 嵌套于编排器 run_id 之下
+            self.on_log(f"[{self.stage.value}] ── 进入阶段 ──")
 
-        # 1) 感知层
-        raw = self.gather_input(upstream)
-        try:
-            si = self.perception.perceive(raw, context={"stage": self.stage.value})
-        except AmbiguousInputError as e:
-            self.on_log(f"  ⚠ 感知置信度过低，请求澄清：{e.structured.missing_info}")
-            # PoC：注入默认澄清后继续（生产应阻塞等待人工）
-            si = e.structured
-            # 保留原始低置信度，设置标记供 run() 记录到 notes
-            self._ambiguous = True
-        self.on_log(f"  感知：intent={si.intent} 实体={list(si.entities)} "
-                    f"约束={len(si.constraints)} 置信度={si.confidence:.2f}")
+            # 1) 感知层
+            raw = self.gather_input(upstream)
+            try:
+                si = self.perception.perceive(raw, context={"stage": self.stage.value})
+            except AmbiguousInputError as e:
+                self.on_log(f"  ⚠ 感知置信度过低，请求澄清：{e.structured.missing_info}")
+                # PoC：注入默认澄清后继续（生产应阻塞等待人工）
+                si = e.structured
+                # 保留原始低置信度，设置标记供 run() 记录到 notes
+                self._ambiguous = True
+            self.on_log(f"  感知：intent={si.intent} 实体={list(si.entities)} "
+                        f"约束={len(si.constraints)} 置信度={si.confidence:.2f}")
 
-        # 召回相关领域知识 + 同阶段历史经验
-        recalled = self.memory.long_term.recall(self.stage.value + " " + raw, top_k=2)
-        if recalled:
-            self.on_log(f"  记忆：召回知识 {[m.source for m in recalled]}")
+            # 召回相关领域知识 + 同阶段历史经验
+            recalled = self.memory.long_term.recall(self.stage.value + " " + raw, top_k=2)
+            if recalled:
+                self.on_log(f"  记忆：召回知识 {[m.source for m in recalled]}")
 
-        # 2) 规划层
-        plan = self.planner.create_plan(self.goal(), self.step_blueprint(si))
-        self.on_log(f"  规划：{len(plan.steps)} 步 → "
-                    f"{[ (s.tool or '生成') for s in plan.steps]}")
+            # 2) 规划层
+            plan = self.planner.create_plan(self.goal(), self.step_blueprint(si))
+            self.on_log(f"  规划：{len(plan.steps)} 步 → "
+                        f"{[ (s.tool or '生成') for s in plan.steps]}")
 
-        # 3~6) 执行 + 产出 + 反馈，含渐进式 replan
-        signature = f"{self.stage.value}:{hash(raw) & 0xffff:04x}"
-        last_tool_results: dict = {}
-        result: StageResult | None = None
-        for attempt in range(1, self.max_attempts + 1):
-            artifact = self.produce(si, last_tool_results, upstream, attempt)
+            # 3~6) 执行 + 产出 + 反馈，含渐进式 replan
+            signature = f"{self.stage.value}:{hash(raw) & 0xffff:04x}"
+            last_tool_results: dict = {}
+            result: StageResult | None = None
+            for attempt in range(1, self.max_attempts + 1):
+                artifact = self.produce(si, last_tool_results, upstream, attempt)
 
-            # 执行层：把工件绑定进工具步骤并执行（沙箱式工具桩）
-            tool_results: dict = {}
-            for step in plan.steps:
-                if not step.tool:
+                # 执行层：把工件绑定进工具步骤并执行（沙箱式工具桩）
+                tool_results: dict = {}
+                for step in plan.steps:
+                    if not step.tool:
+                        continue
+                    step.params = self.bind_params(step, artifact, upstream)
+                    sr = self.execution.execute_step(step, self.on_log)
+                    tool_results[step.tool] = sr.result.data if (sr.result and sr.success) else None
+                    flag = "✓" if sr.success else "✗"
+                    self.on_log(f"  执行：{step.tool} {flag}")
+
+                # 反馈层：质量门禁 + 自反思 + 经验记录
+                gate = self.quality_gate().evaluate(artifact, tool_results)
+                result = self.feedback.process(self.stage, signature, artifact, gate, attempt)
+                self.on_log(f"  门禁[{gate.gate}]：{gate.summary}")
+
+                last_tool_results = tool_results
+                if result.success or result.action == NextAction.CONTINUE:
+                    # 在线学习：把通过经验写回工作记忆
+                    self.memory.working.add("system", f"[{self.stage.value}] 门禁通过", "high")
+                    break
+                if result.action == NextAction.REPLAN and attempt < self.max_attempts:
+                    self.planner.replan(plan.steps[-1], reason=gate.summary)
+                    self.on_log(f"  反馈：门禁未过 → 渐进式重做（第 {attempt + 1} 次）")
                     continue
-                step.params = self.bind_params(step, artifact, upstream)
-                sr = self.execution.execute_step(step, self.on_log)
-                tool_results[step.tool] = sr.result.data if (sr.result and sr.success) else None
-                flag = "✓" if sr.success else "✗"
-                self.on_log(f"  执行：{step.tool} {flag}")
-
-            # 反馈层：质量门禁 + 自反思 + 经验记录
-            gate = self.quality_gate().evaluate(artifact, tool_results)
-            result = self.feedback.process(self.stage, signature, artifact, gate, attempt)
-            self.on_log(f"  门禁[{gate.gate}]：{gate.summary}")
-
-            last_tool_results = tool_results
-            if result.success or result.action == NextAction.CONTINUE:
-                # 在线学习：把通过经验写回工作记忆
-                self.memory.working.add("system", f"[{self.stage.value}] 门禁通过", "high")
+                # 驳回上游 / 升级 / 用尽次数
+                self.on_log(f"  反馈：裁决={result.action.value}")
                 break
-            if result.action == NextAction.REPLAN and attempt < self.max_attempts:
-                self.planner.replan(plan.steps[-1], reason=gate.summary)
-                self.on_log(f"  反馈：门禁未过 → 渐进式重做（第 {attempt + 1} 次）")
-                continue
-            # 驳回上游 / 升级 / 用尽次数
-            self.on_log(f"  反馈：裁决={result.action.value}")
-            break
 
-        # 产出存入短期记忆（黑板），供下游阶段读取
-        if result and result.artifact:
-            self.memory.short_term.put(f"artifact:{self.stage.value}", result.artifact)
-        if result and self._ambiguous:
-            result.notes.append(f"low-confidence-perception: confidence={si.confidence:.2f}")
+            # 产出存入短期记忆（黑板），供下游阶段读取
+            if result and result.artifact:
+                self.memory.short_term.put(f"artifact:{self.stage.value}", result.artifact)
+            if result and self._ambiguous:
+                result.notes.append(f"low-confidence-perception: confidence={si.confidence:.2f}")
+            logger.info(f"stage_done stage={self.stage.value} "
+                        f"success={result.success if result else None} "
+                        f"action={result.action.value if result else None}")
         return result  # type: ignore[return-value]

@@ -1,13 +1,18 @@
 """统一数据结构 —— 各层与各阶段之间传递的工件 / 计划 / 反馈契约。
 
-为保证“零依赖即可运行”，这里用标准库 dataclass，而非 pydantic。
-（生产环境可平替为 pydantic 以获得校验能力，接口保持不变。）
+Phase 0 改造：由标准库 dataclass 升级为 ``pydantic.dataclasses.dataclass``。
+相比纯 dataclass，新增构造期类型校验（脏数据不会流入六层闭环）；相比 BaseModel，
+仍保留位置参数 + 字段默认值的可读构造方式（原代码大量位置构造无需改动）。
+接口（构造签名 / 字段名）保持不变，调用方无需改动。
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, List, Optional
+
+from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic import ConfigDict
 
 
 # ── 枚举 ─────────────────────────────────────────────────────────────
@@ -64,19 +69,20 @@ class NextAction(str, Enum):
 
 
 # ── 感知层 ───────────────────────────────────────────────────────────
-@dataclass
+@pydantic_dataclass
 class StructuredInput:
     """感知层输出：把上游工件 / 指令归一化为结构化表示。"""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     intent: str
     entities: dict = field(default_factory=dict)
-    constraints: list[str] = field(default_factory=list)
+    constraints: List[str] = field(default_factory=list)
     context: dict = field(default_factory=dict)
-    missing_info: list[str] = field(default_factory=list)
+    missing_info: List[str] = field(default_factory=list)
     confidence: float = 1.0
 
 
 # ── 规划层 ───────────────────────────────────────────────────────────
-@dataclass
+@pydantic_dataclass
 class Step:
     index: int
     description: str
@@ -85,14 +91,15 @@ class Step:
     risk: RiskLevel = RiskLevel.CREATE
 
 
-@dataclass
+@pydantic_dataclass
 class Plan:
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     goal: str
-    steps: list[Step] = field(default_factory=list)
+    steps: List[Step] = field(default_factory=list)
 
-    def validate(self, available_tools: set[str]) -> list[str]:
+    def check_tool_refs(self, available_tools: set[str]) -> List[str]:
         """计划可行性校验：检测规划幻觉（引用了不存在的工具）。"""
-        errs = []
+        errs: List[str] = []
         for s in self.steps:
             if s.tool and s.tool not in available_tools:
                 errs.append(f"步骤 {s.index} 引用了不存在的工具：{s.tool}")
@@ -100,7 +107,7 @@ class Plan:
 
 
 # ── 工件与结构化条目 ─────────────────────────────────────────────────
-@dataclass
+@pydantic_dataclass
 class TraceLink:
     """双向追溯链：source 派生/满足/验证 target。"""
     source_id: str
@@ -108,7 +115,7 @@ class TraceLink:
     relation: str  # derives | satisfies | verifies
 
 
-@dataclass
+@pydantic_dataclass
 class Requirement:
     id: str
     text: str
@@ -119,27 +126,27 @@ class Requirement:
     source: str = ""           # 上游来源（用户 / 系统需求）
 
 
-@dataclass
+@pydantic_dataclass
 class ArchElement:
     id: str
     name: str
     kind: str                  # component | interface | port | runnable
     description: str = ""
-    interfaces: list[str] = field(default_factory=list)
-    trace: list[str] = field(default_factory=list)  # 满足的需求 id
+    interfaces: List[str] = field(default_factory=list)
+    trace: List[str] = field(default_factory=list)  # 满足的需求 id
 
 
-@dataclass
+@pydantic_dataclass
 class DesignUnit:
     id: str
     name: str
     description: str = ""
-    states: list[str] = field(default_factory=list)   # 状态机状态
+    states: List[str] = field(default_factory=list)   # 状态机状态
     algorithm: str = ""
-    trace: list[str] = field(default_factory=list)
+    trace: List[str] = field(default_factory=list)
 
 
-@dataclass
+@pydantic_dataclass
 class ReviewFinding:
     id: str
     severity: str              # blocker | major | minor | info
@@ -149,75 +156,79 @@ class ReviewFinding:
     rule: str = ""
 
 
-@dataclass
+@pydantic_dataclass
 class TestCase:
     id: str
     name: str
     level: str                 # unit | integration
     objective: str = ""
-    steps: list[str] = field(default_factory=list)
+    steps: List[str] = field(default_factory=list)
     expected: str = ""
-    trace: list[str] = field(default_factory=list)
+    trace: List[str] = field(default_factory=list)
     result: str = "not_run"    # pass | fail | not_run
 
 
-@dataclass
+@pydantic_dataclass
 class Artifact:
     """阶段的统一产出物。content 为可落盘文本，items 为结构化条目。"""
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     stage: Stage
     name: str
     content: str = ""
-    items: list[Any] = field(default_factory=list)
-    trace_links: list[TraceLink] = field(default_factory=list)
+    items: List[Any] = field(default_factory=list)
+    trace_links: List[TraceLink] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
 
 
 # ── 反馈层 ───────────────────────────────────────────────────────────
-@dataclass
+@pydantic_dataclass
 class GateCheck:
     name: str
     passed: bool
     detail: str = ""
 
 
-@dataclass
+@pydantic_dataclass
 class GateResult:
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     gate: str
     passed: bool
-    checks: list[GateCheck] = field(default_factory=list)
+    checks: List[GateCheck] = field(default_factory=list)
     summary: str = ""
 
     @property
-    def blockers(self) -> list[GateCheck]:
+    def blockers(self) -> List[GateCheck]:
         return [c for c in self.checks if not c.passed]
 
 
-@dataclass
+@pydantic_dataclass
 class Reflection:
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     is_valid: bool
     goal_progress: float          # >0 前进，<0 方向错
-    anomalies: list[str] = field(default_factory=list)
+    anomalies: List[str] = field(default_factory=list)
     action: NextAction = NextAction.CONTINUE
     summary: str = ""
 
 
-@dataclass
+@pydantic_dataclass
 class StageResult:
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     stage: Stage
     success: bool
     artifact: Optional[Artifact] = None
     gate: Optional[GateResult] = None
     action: NextAction = NextAction.CONTINUE
     attempts: int = 1
-    notes: list[str] = field(default_factory=list)
+    notes: List[str] = field(default_factory=list)
 
 
 def to_jsonable(obj: Any) -> Any:
-    """把 dataclass / Enum 递归转为可 JSON 序列化的结构。"""
+    """把 pydantic 模型 / Enum 递归转为可 JSON 序列化的结构。"""
     if isinstance(obj, Enum):
         return obj.value
-    if hasattr(obj, "__dataclass_fields__"):
-        return {k: to_jsonable(v) for k, v in asdict(obj).items()}
+    if hasattr(obj, "model_dump"):
+        return {k: to_jsonable(v) for k, v in obj.model_dump().items()}
     if isinstance(obj, dict):
         return {k: to_jsonable(v) for k, v in obj.items()}
     if isinstance(obj, (list, tuple)):
