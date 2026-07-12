@@ -253,14 +253,14 @@ def build_specs() -> dict:
 
 # ── 装配 ─────────────────────────────────────────────────────────
 def build_pipeline(profile, out_dir: str, on_log=None, inject_defect: bool = False,
-                   llm=None, human_gate=None) -> Orchestrator:
+                   llm=None, human_gate=None, project: str | None = None) -> Orchestrator:
     if llm is None or human_gate is None:
         from vda_agent.core.config import load_settings, build_llm, build_human_gate
         _s = load_settings()
         llm = llm or build_llm(_s)
         human_gate = human_gate or build_human_gate(_s)
     on_log = on_log or get_structured_on_log()
-    memory = MemorySystem(knowledge_dir=KNOWLEDGE_DIR)
+    memory = MemorySystem(knowledge_dir=KNOWLEDGE_DIR, project=project or FEATURE)
     memory.short_term.put("inject_defect", inject_defect)
     registry = build_registry()                 # 引擎工具：traceability/unit_test_runner/hil_sil_runner…
     registry.register(TlfCodegenTool())          # + TLF codegen

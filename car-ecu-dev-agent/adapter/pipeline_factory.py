@@ -21,10 +21,11 @@ def load_profile(key: str):
 
 
 def build_orchestrator_for(key: str, out_dir: str, on_log=None, inject_defect: bool = False,
-                           llm=None, human_gate=None):
+                           llm=None, human_gate=None, project: str | None = None):
     """返回某域的 7 阶段 Orchestrator（富域走各自流水线，其余走通用流水线）。
 
     llm / human_gate 缺省时由 config/settings.yaml 构建，实现配置驱动。
+    project 用于记忆隔离（缺省取域 key，保证不同域/车型记忆空间独立）。
     """
     if llm is None or human_gate is None:
         from vda_agent.core.config import load_settings, build_llm, build_human_gate
@@ -34,6 +35,7 @@ def build_orchestrator_for(key: str, out_dir: str, on_log=None, inject_defect: b
     if on_log is None:
         from vda_agent.core.logging_utils import get_structured_on_log
         on_log = get_structured_on_log()
+    proj = project or key
     if key in RICH_DOMAINS:
         if key == "tlf35584":
             from domains.tlf35584.pipeline import build_pipeline as build_rich
@@ -41,6 +43,8 @@ def build_orchestrator_for(key: str, out_dir: str, on_log=None, inject_defect: b
             from domains.bridge_tlf92108.pipeline import build_pipeline as build_rich
         else:
             raise KeyError(f"富域 {key} 未注册流水线")
-        return build_rich(_load_tlf_profile(key), out_dir, on_log, inject_defect, llm, human_gate)
+        return build_rich(_load_tlf_profile(key), out_dir, on_log, inject_defect, llm, human_gate,
+                          project=proj)
     from adapter.generic_pipeline import build_pipeline as build_generic
-    return build_generic(load_agent_spec(key), out_dir, on_log, inject_defect, llm, human_gate)
+    return build_generic(load_agent_spec(key), out_dir, on_log, inject_defect, llm, human_gate,
+                         project=proj)

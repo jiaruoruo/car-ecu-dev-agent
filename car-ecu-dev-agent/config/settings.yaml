@@ -12,6 +12,15 @@ default_profile: dev
 tools:
   backend: auto        # auto | real | heuristic
 
+# 记忆与知识真实化（Phase 3）：长期记忆检索后端 + 项目知识灌库。
+# backend: auto=向量优先(装了 chromadb 才生效)否则 BM25 关键字；keyword=永远零依赖；chroma=强制向量。
+# bootstrap_dir: 可选，指向真实项目规格目录（SYS-*.md / *.arxml / *.txt / *.csv），
+#   启动时灌入长期记忆，取代 scenario.py 硬编码知识；留空则不灌库。
+memory:
+  backend: auto        # auto | keyword | chroma
+  vector_dir: null     # chroma 持久化目录（null=内存态）
+  bootstrap_dir: null  # 例：knowledge/specs/antipinch
+
 # 顶层日志配置（可被各 profile 覆盖）；format: text=本地可读 / json=生产接入日志采集
 logging:
   format: text
@@ -28,6 +37,8 @@ profiles:
     logging:
       format: text
     knowledge_dir: null   # null = 使用引擎默认 knowledge 目录
+    memory:
+      backend: auto       # 零依赖关键字检索（本机未装 chromadb）
 
   ci:
     llm:
@@ -40,6 +51,8 @@ profiles:
     logging:
       format: text
     knowledge_dir: null
+    memory:
+      backend: auto
 
   prod:
     llm:
@@ -56,3 +69,5 @@ profiles:
     logging:
       format: json        # 生产输出结构化 JSON 日志，带 trace_id
     knowledge_dir: null
+    memory:
+      backend: chroma     # 生产启用语义向量检索（需 pip install chromadb）
