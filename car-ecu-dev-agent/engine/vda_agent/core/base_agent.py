@@ -18,6 +18,7 @@ from .feedback import FeedbackLoop, QualityGate
 from .llm_client import LLMClient
 from .logging_utils import get_logger, with_trace_id
 from .memory import MemorySystem
+from .metrics import get_metrics, timed
 from .perception import AmbiguousInputError, PerceptionPipeline
 from .planning import PlanManager
 from .schemas import (
@@ -161,6 +162,7 @@ class BaseStageAgent:
     def run(self, upstream: dict) -> StageResult:
         logger = get_logger(f"stage.{self.stage.value}")
         with with_trace_id(f"stage:{self.stage.value}"):  # 嵌套于编排器 run_id 之下
+            elapsed = timed()
             self.on_log(f"[{self.stage.value}] ── 进入阶段 ──")
 
             # 1) 感知层
@@ -216,6 +218,7 @@ class BaseStageAgent:
                     break
                 if result.action == NextAction.REPLAN and attempt < self.max_attempts:
                     self.planner.replan(plan.steps[-1], reason=gate.summary)
+                    get_metrics().record_replan()   # Phase 4：记录渐进式重做次数
                     self.on_log(f"  反馈：门禁未过 → 渐进式重做（第 {attempt + 1} 次）")
                     continue
                 # 驳回上游 / 升级 / 用尽次数
@@ -230,4 +233,12 @@ class BaseStageAgent:
             logger.info(f"stage_done stage={self.stage.value} "
                         f"success={result.success if result else None} "
                         f"action={result.action.value if result else None}")
+            # Phase 4：记录阶段级指标（门禁通过 / 裁决 / 尝试次数 / 耗时）
+            get_metrics().record_stage(
+                stage=self.stage.value,
+                passed=bool(result.success) if result else False,
+                action=result.action.value if result else "none",
+                attempts=result.attempts if result else 0,
+                duration_ms=round(elapsed(), 2),
+                gate_name=result.gate.gate if (result and result.gate) else "")
         return result  # type: ignore[return-value]

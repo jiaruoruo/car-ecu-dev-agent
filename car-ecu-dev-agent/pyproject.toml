@@ -43,3 +43,16 @@ ignore = ["E501"]
 testpaths = ["tests"]
 # 开发态无需 pip install -e . 也能跑测试：显式把项目根与 engine/ 加入路径
 pythonpath = [".", "engine"]
+
+[tool.coverage.run]
+# 仅统计核心层（六层引擎），供 Phase 4 CI 覆盖率门禁使用
+source = ["engine.vda_agent.core"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

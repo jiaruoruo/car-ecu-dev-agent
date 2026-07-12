@@ -11,8 +11,11 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
 from typing import Optional
+
+from .metrics import estimate_cost_usd, get_metrics
 
 
 @dataclass
@@ -48,15 +51,31 @@ class LLMClient:
                  role: Optional[str] = None, max_tokens: int = 4096,
                  temperature: float = 0.2) -> LLMResponse:
         model = self.models.get(role, self.model) if role else self.model
-        if self.mode == "mock":
-            return self._mock_generate(system, prompt, model)
-        if self.mode == "anthropic":
-            return self._anthropic_generate(system, prompt, model,
-                                            max_tokens, temperature)
-        if self.mode == "openai":
-            return self._openai_generate(system, prompt, model,
-                                         max_tokens, temperature)
-        raise LLMError(f"未知 LLM mode: {self.mode}")
+        start = time.monotonic()
+        resp: LLMResponse | None = None
+        try:
+            if self.mode == "mock":
+                resp = self._mock_generate(system, prompt, model)
+            elif self.mode == "anthropic":
+                resp = self._anthropic_generate(system, prompt, model,
+                                                max_tokens, temperature)
+            elif self.mode == "openai":
+                resp = self._openai_generate(system, prompt, model,
+                                             max_tokens, temperature)
+            else:
+                raise LLMError(f"未知 LLM mode: {self.mode}")
+            return resp
+        finally:
+            # Phase 4：记录 LLM 耗时与粗粒度成本（无作用域时为 no-op）
+            if resp is not None:
+                dur_ms = (time.monotonic() - start) * 1000.0
+                cost = estimate_cost_usd(model, len(system) + len(prompt),
+                                         len(resp.text))
+                get_metrics().record_llm(
+                    model=model, role=role or "default",
+                    duration_ms=round(dur_ms, 2),
+                    prompt_chars=len(system) + len(prompt),
+                    response_chars=len(resp.text), cost_usd=cost)
 
     # ── mock ────────────────────────────────────────────────────────
     def _mock_generate(self, system, prompt, model) -> LLMResponse:

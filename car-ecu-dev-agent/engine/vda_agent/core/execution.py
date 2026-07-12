@@ -16,6 +16,7 @@ from typing import Callable
 
 from .errors import classify_error
 from .logging_utils import get_logger
+from .metrics import get_metrics, timed
 from .schemas import RiskLevel, Step
 from .tools import ToolRegistry, ToolResult
 
@@ -149,6 +150,7 @@ class ExecutionEngine:
         if not step.tool:
             return StepResult(step, True)
 
+        elapsed = timed()
         last_err = ""
         last_cat = "fatal"
         for attempt in range(self.max_retries + 1):
@@ -157,6 +159,9 @@ class ExecutionEngine:
             except Exception as e:  # 极端兜底：registry.call 应已吞异常转 ToolResult
                 res = ToolResult(False, error=f"{type(e).__name__}: {e}")
             if res.success:
+                get_metrics().record_tool(
+                    tool=step.tool, success=True,
+                    duration_ms=round(elapsed(), 2))
                 return StepResult(step, True, result=res)
             last_err = res.error or "未知错误"
             # 错误分类：瞬时错误才值得重试，致命/人工类立即中止，避免浪费重试预算
@@ -168,6 +173,9 @@ class ExecutionEngine:
             f"step_failed tool={step.tool} category={last_cat} "
             f"attempts={self.max_retries + 1}"
         )
+        get_metrics().record_tool(
+            tool=step.tool, success=False,
+            duration_ms=round(elapsed(), 2), error_category=last_cat)
         return StepResult(step, False, error=last_err, error_category=last_cat)
 
     def execute_plan(self, steps: list[Step], on_log=lambda m: None) -> list[StepResult]:

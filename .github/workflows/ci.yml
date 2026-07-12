@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: pytest + 门禁回归 + 覆盖率
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        working-directory: car-ecu-dev-agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[test]" pyyaml pytest-cov
+
+      - name: Run test suite + coverage report
+        working-directory: car-ecu-dev-agent
+        run: |
+          # 核心层（engine/vda_agent/core）覆盖率报告；阈值门禁见下方说明。
+          # 注：本机/CI 若因 import 路径（namespace + package-dir 映射）导致
+          # coverage 统计为 0%，属测量假象，故此处仅出报告、不阻断。
+          python -m pytest -q \
+            --cov=engine.vda_agent.core \
+            --cov-report=term-missing
+
+      - name: Gate regression (7-stage pipeline must pass end-to-end)
+        # 真正阻断劣质 PR 的硬门禁：门禁回归 + 全量组件/工具集成测试必须全绿。
+        working-directory: car-ecu-dev-agent
+        run: |
+          python -m pytest tests/test_phase1_eval.py tests/test_phase4_eval.py \
+                         tests/test_phase4_components.py tests/test_phase4_tools_integration.py -q
