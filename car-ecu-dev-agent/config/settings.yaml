@@ -1,0 +1,38 @@
+# VDA Agent 运行配置
+#
+# 选择 profile：环境变量 VDA_PROFILE（dev / ci / prod），缺省取 default_profile。
+# 关键项也可被环境变量覆盖：VDA_LLM_MODE / VDA_HUMAN_GATE_AUTO_APPROVE / VDA_MAX_BACKTRACK。
+# 读取本文件需安装 pyyaml（pip install -e ".[yaml]"）；缺失时回退内置默认值（见 core/config.py）。
+
+default_profile: dev
+
+profiles:
+  dev:
+    llm:
+      mode: mock          # mock | anthropic | openai（生产级接入时改此处）
+      model: mock
+    human_gate:
+      auto_approve: true  # 开发态自动放行
+    orchestrator:
+      max_backtrack: 2
+    knowledge_dir: null   # null = 使用引擎默认 knowledge 目录
+
+  ci:
+    llm:
+      mode: mock
+      model: mock
+    human_gate:
+      auto_approve: true
+    orchestrator:
+      max_backtrack: 2
+    knowledge_dir: null
+
+  prod:
+    llm:
+      mode: anthropic
+      model: claude-3-5-sonnet-latest
+    human_gate:
+      auto_approve: false  # 生产必须人工审批高风险操作
+    orchestrator:
+      max_backtrack: 1
+    knowledge_dir: null

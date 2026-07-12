@@ -21,10 +21,7 @@ for _s in (sys.stdout, sys.stderr):
     except Exception:
         pass
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-for _p in (ROOT, os.path.join(ROOT, "engine")):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
+import _bootstrap  # 开发态：确保包导入路径（生产用 pip install -e .）
 
 from adapter.pipeline_factory import available_domains, build_orchestrator_for, load_profile  # noqa: E402
 from adapter.forward_trace import forward_traceability                                          # noqa: E402

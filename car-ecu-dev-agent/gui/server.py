@@ -15,16 +15,21 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-_HERE = os.path.dirname(os.path.abspath(__file__))
-if _HERE not in sys.path:
-    sys.path.insert(0, _HERE)
+# 开发态引导：安装态（pip install -e .）下可省略；直接运行脚本时确保项目根在路径中
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 
-import api  # noqa: E402  (gui/api.py)
+try:
+    from gui import api  # 安装态 / pytest / python -m gui.server
+except ImportError:
+    import api  # 兜底：直接 python gui/server.py（gui 目录已在 sys.path[0]）
 
-_INDEX = os.path.join(_HERE, "index.html")
+_INDEX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "index.html")
 
 
 class Handler(BaseHTTPRequestHandler):

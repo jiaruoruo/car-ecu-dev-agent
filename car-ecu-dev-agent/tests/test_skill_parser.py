@@ -18,9 +18,6 @@ for _s in (sys.stdout, sys.stderr):
     except Exception:
         pass
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-
 from adapter.skill_parser import (  # noqa: E402
     parse_skill,
     extract_deliverables,

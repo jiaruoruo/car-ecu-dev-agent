@@ -17,13 +17,8 @@ for _s in (sys.stdout, sys.stderr):
     except Exception:
         pass
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "engine"))
-sys.path.insert(0, os.path.join(ROOT, "gui"))
-
 from gui import api          # noqa: E402
-import server as guiserver   # noqa: E402  (gui/server.py)
+from gui import server as guiserver   # noqa: E402  (gui/server.py)
 
 
 def test_api_list_domains_marks_rich():

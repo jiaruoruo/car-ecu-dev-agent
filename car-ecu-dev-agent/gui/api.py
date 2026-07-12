@@ -5,12 +5,8 @@
 from __future__ import annotations
 
 import os
-import sys
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-for _p in (_ROOT, os.path.join(_ROOT, "engine")):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
 
 from adapter.forward_trace import forward_traceability                                   # noqa: E402
 from adapter.pipeline_factory import available_domains, build_orchestrator_for, load_profile  # noqa: E402

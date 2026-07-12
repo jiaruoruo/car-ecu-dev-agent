@@ -13,6 +13,14 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=7.0"]
+yaml = ["pyyaml>=6.0"]
+
+[tool.setuptools]
+# vda_agent 物理位于 engine/ 下，通过 package-dir 映射为顶层可导入包
+packages = ["adapter", "adapter.*", "domains", "domains.*", "gui", "gui.*", "vda_agent", "vda_agent.*"]
+
+[tool.setuptools.package-dir]
+vda_agent = "engine/vda_agent"
 
 [project.scripts]
 run-pipeline = "run_poc_pipeline:main"

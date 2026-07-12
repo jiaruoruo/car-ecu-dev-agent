@@ -11,9 +11,7 @@ from __future__ import annotations
 import os
 import re
 
-from vda_agent.core.execution import HumanGate
 from vda_agent.core.feedback import QualityGate
-from vda_agent.core.llm_client import LLMClient
 from vda_agent.core.memory import MemorySystem
 from vda_agent.core.orchestrator import Orchestrator
 from vda_agent.core.schemas import (
@@ -353,12 +351,16 @@ def build_specs(profile) -> dict:
     }
 
 
-def build_pipeline(profile, out_dir: str, on_log=print, inject_defect: bool = False) -> Orchestrator:
-    llm = LLMClient()
+def build_pipeline(profile, out_dir: str, on_log=print, inject_defect: bool = False,
+                   llm=None, human_gate=None) -> Orchestrator:
+    if llm is None or human_gate is None:
+        from vda_agent.core.config import load_settings, build_llm, build_human_gate
+        _s = load_settings()
+        llm = llm or build_llm(_s)
+        human_gate = human_gate or build_human_gate(_s)
     memory = MemorySystem(knowledge_dir=KNOWLEDGE_DIR)
     memory.short_term.put("inject_defect", inject_defect)
     registry = build_registry()
-    human_gate = HumanGate(auto_approve=True)
     code_dir = os.path.join(out_dir, "src")
     specs = build_specs(profile)
     agents = {st: DomainStageAgent(sp, profile, code_dir, llm, memory, registry, human_gate, on_log)

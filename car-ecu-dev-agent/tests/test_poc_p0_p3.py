@@ -14,8 +14,6 @@ for _s in (sys.stdout, sys.stderr):
         pass
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
-sys.path.insert(0, os.path.join(ROOT, "engine"))
 
 from adapter.domain_loader import load_profile               # noqa: E402
 from adapter.tlf_codegen_tool import TlfCodegenTool           # noqa: E402
