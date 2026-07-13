@@ -58,7 +58,8 @@ class MisraChecker(Tool, ExternalBackendMixin):
 
     # ── 真实后端：cppcheck --addon=misra ────────────────────────────
     def _run_real(self, backend: str, code: str) -> ToolResult:
-        import tempfile, os
+        import tempfile
+        import os
         with tempfile.NamedTemporaryFile("w", suffix=".c", delete=False, encoding="utf-8") as f:
             f.write(code)
             path = f.name

@@ -43,8 +43,8 @@ def test_p5_traceability_every_req_verified():
     res = orch.run(REQ)
     verified = set()
     for stage in (Stage.UNIT_TEST, Stage.INTEGRATION_TEST):
-        for l in res[stage].artifact.trace_links:
-            verified.add(l.target_id)
+        for link in res[stage].artifact.trace_links:
+            verified.add(link.target_id)
     missing = {r.id for r in REQUIREMENTS} - verified
     assert not missing, f"未被测试验证的需求：{missing}"
 

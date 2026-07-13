@@ -25,7 +25,6 @@ if ROOT not in sys.path:
 from engine.vda_agent.core.audit import AuditRecorder                       # noqa: E402
 from engine.vda_agent.core.guard import InputGuard                          # noqa: E402
 from engine.vda_agent.core.impact import ImpactAnalyzer                     # noqa: E402
-from engine.vda_agent.core.orchestrator import Orchestrator                # noqa: E402
 from engine.vda_agent.core.schemas import Stage, TraceLink                  # noqa: E402
 from engine.vda_agent.core.secrets import SecretString, redact, resolve_secret  # noqa: E402
 from engine.vda_agent.factory import build_orchestrator                    # noqa: E402

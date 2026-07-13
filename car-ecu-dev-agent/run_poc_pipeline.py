@@ -56,8 +56,8 @@ def main() -> int:
             continue
         with open(os.path.join(pdir, _FILENAMES[stage.value]), "w", encoding="utf-8") as f:
             f.write(r.artifact.content)
-        for l in r.artifact.trace_links:
-            rows.append(f"{l.source_id},{l.relation},{l.target_id},{stage.value}")
+        for link in r.artifact.trace_links:
+            rows.append(f"{link.source_id},{link.relation},{link.target_id},{stage.value}")
     with open(os.path.join(pdir, "traceability_matrix.csv"), "w", encoding="utf-8") as f:
         f.write("\n".join(rows) + "\n")
 

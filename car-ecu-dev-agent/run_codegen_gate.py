@@ -48,7 +48,7 @@ def main() -> int:
                               inject_defect=args.inject_defect)
     flag = "✅" if cg.success else "❌"
     print(f"[codegen] {flag} 渲染 {cg.data['count']}/7 文件 → {args.out}"
-          + (f"  注入缺陷=ON" if args.inject_defect else ""))
+          + ("  注入缺陷=ON" if args.inject_defect else ""))
     if cg.data["errors"]:
         for e in cg.data["errors"]:
             print("   渲染错误:", e)

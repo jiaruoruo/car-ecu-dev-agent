@@ -22,7 +22,7 @@ from engine.vda_agent.core.errors import (                           # noqa: E40
     FatalError, TransientError, classify_error,
 )
 from engine.vda_agent.core.execution import ExecutionEngine, HumanGate  # noqa: E402
-from engine.vda_agent.core.feedback import QualityGate, SelfReflection  # noqa: E402
+from engine.vda_agent.core.feedback import SelfReflection  # noqa: E402
 from engine.vda_agent.stages.coding_agent import _CodingGate              # noqa: E402
 from engine.vda_agent.core.metrics import PipelineMetrics, metrics_scope  # noqa: E402
 from engine.vda_agent.core.memory import MemorySystem               # noqa: E402

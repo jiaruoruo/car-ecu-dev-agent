@@ -50,7 +50,12 @@
       "Bash(mkdir -p \"D:\\\\AI\\\\myproject\\\\car-ecu-dev-agent\\\\driver-hal-develop\\\\skills\\\\bridge-tlf92108\\\\checker\")",
       "Bash(python3 *)",
       "Bash(awk '{print $5}')",
-      "Bash(xargs -I {} taskkill //PID {} //F)"
+      "Bash(xargs -I {} taskkill //PID {} //F)",
+      "Bash(grep -E '\\(\\\\$null|\\\\.stackdump|\\\\.bak_github|\\\\.log$|temp_skill|123test|C:Users|__pycache__|\\\\.pyc$|\\\\.pyo$|\\\\.DS_Store\\)')",
+      "Bash(xargs rm *)",
+      "Bash(awk '{print $2}')",
+      "Bash(grep -oP 'driver-hal-develop\\\\\\\\tools\\\\\\\\[^:]+')",
+      "Bash(git checkout *)"
     ]
   }
 }

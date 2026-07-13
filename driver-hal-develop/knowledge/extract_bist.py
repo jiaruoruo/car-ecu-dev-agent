@@ -2,7 +2,6 @@
 提取 TLF35584 PDF 中 ABIST/INITERR/MONSF2 寄存器相关文本
 """
 import fitz
-import re
 
 PDF_PATH = r'D:\AI\myproject\driver-hal-develop\knowledge\Infineon-TLF35584-DS-v02_00-EN.pdf'
 OUT_PATH = r'D:\AI\myproject\driver-hal-develop\knowledge\bist_regs.txt'

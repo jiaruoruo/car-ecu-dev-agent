@@ -22,7 +22,7 @@ class TraceabilityTool(Tool):
         # 本阶段条目都应有指向上游的追溯
         item_ids = [getattr(it, "id", None) for it in getattr(artifact, "items", [])]
         item_ids = [i for i in item_ids if i]
-        traced = {l.source_id for l in links}
+        traced = {link.source_id for link in links}
         orphans = [i for i in item_ids if i not in traced]
         coverage = round(
             (len(item_ids) - len(orphans)) / max(len(item_ids), 1) * 100, 1)

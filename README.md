@@ -22,7 +22,7 @@
    cd car-ecu-dev-agent/car-ecu-dev-agent
    ```
 
-2. 安装依赖（仅需 Jinja2）：
+2. 安装依赖：
    ```bash
    pip install -r requirements.txt
    ```
@@ -59,7 +59,7 @@
      ```
 
 测试
-- 冒烟测试（若安装 pytest）：
+- 安装测试依赖（pydantic + jinja2 + pytest）并运行冒烟测试：
   ```bash
   python -m pytest tests/test_poc_p0_p3.py
   python -m pytest tests/test_poc_p4_p6.py

@@ -14,7 +14,6 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
@@ -138,7 +137,7 @@ class AuditRecorder:
 
         alog = out_dir / "audit.log"
         if alog.exists():
-            entries = [json.loads(l) for l in alog.read_text(encoding="utf-8").splitlines() if l.strip()]
+            entries = [json.loads(line) for line in alog.read_text(encoding="utf-8").splitlines() if line.strip()]
             chain = AuditChain()
             chain.entries = entries
             if not chain.verify():

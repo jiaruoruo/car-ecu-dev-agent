@@ -17,7 +17,7 @@ import yaml
 
 from adapter.domain_profile import DomainProfile
 from adapter._util import DRIVER_HAL_ROOT
-from adapter.skill_parser import find_skills_for_agent, SKILLS_DIR
+from adapter.skill_parser import find_skills_for_agent
 
 AGENTS_DIR = os.path.join(DRIVER_HAL_ROOT, "agents")
 

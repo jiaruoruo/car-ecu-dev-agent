@@ -23,8 +23,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from engine.vda_agent.core.feedback import QualityGate                 # noqa: E402
-from engine.vda_agent.core.schemas import Artifact, Stage, TraceLink   # noqa: E402
+from engine.vda_agent.core.schemas import Artifact, Stage   # noqa: E402
 from engine.vda_agent.factory import build_orchestrator                # noqa: E402
 from engine.vda_agent.stages import scenario as S                      # noqa: E402
 from engine.vda_agent.stages.coding_agent import _CodingGate           # noqa: E402

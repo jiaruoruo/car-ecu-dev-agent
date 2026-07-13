@@ -365,8 +365,8 @@ def as_fewshot(stage) -> str:
             lines.append(f"- {d.id} {d.name}：{d.description}（trace={','.join(d.trace)}）")
     elif stage == Stage.CODING:
         lines.append("产出：符合 MISRA C 的 AntiPinch.c/.h 源码。")
-        lines.append(f"- 头文件接口：ApwState_t/ApwCmd_t/ApwInputs_t/ApwOutputs_t；"
-                     f"函数 ApwCtrl_Init/ApwCtrl_Step/ApwCtrl_GetState。")
+        lines.append("- 头文件接口：ApwState_t/ApwCmd_t/ApwInputs_t/ApwOutputs_t；"
+                     "函数 ApwCtrl_Init/ApwCtrl_Step/ApwCtrl_GetState。")
         lines.append(f"- 状态机状态：{', '.join(DESIGN_UNITS[0].states)}")
         lines.append(f"- 防夹算法：{DESIGN_UNITS[1].algorithm}")
     elif stage == Stage.CODE_REVIEW:

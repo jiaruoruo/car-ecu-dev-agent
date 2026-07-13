@@ -44,7 +44,7 @@ class ImpactAnalyzer:
             art = getattr(r, "artifact", None) if r else None
             if not art:
                 continue
-            hit = {l.source_id for l in art.trace_links if l.target_id in changed}
+            hit = {link.source_id for link in art.trace_links if link.target_id in changed}
             if hit:
                 out[st] = hit
         return out

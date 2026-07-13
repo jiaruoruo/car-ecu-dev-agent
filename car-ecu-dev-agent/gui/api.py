@@ -55,9 +55,9 @@ def run_pipeline(domain: str, inject_defect: bool = False) -> dict:
             "items": len(art.items) if art else 0,
         })
         if art:
-            for l in art.trace_links:
-                matrix.append({"source": l.source_id, "relation": l.relation,
-                               "target": l.target_id, "stage": st.value})
+            for link in art.trace_links:
+                matrix.append({"source": link.source_id, "relation": link.relation,
+                               "target": link.target_id, "stage": st.value})
 
     ft = forward_traceability(results)
     all_ok = all(r.success for r in results.values()) and ft["passed"]

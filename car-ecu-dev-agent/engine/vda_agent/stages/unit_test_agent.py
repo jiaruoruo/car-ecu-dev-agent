@@ -51,7 +51,7 @@ class UnitTestAgent(BaseStageAgent):
 
     def produce_fallback(self, si, prev_tool_results, upstream, attempt) -> Artifact:
         trace = [self._link(tc) for tc in S.UNIT_TESTS]
-        trace = [l for sub in trace for l in sub]
+        trace = [link for sub in trace for link in sub]
         return Artifact(stage=self.stage, name="单元测试规格与结果", content=_render(S.UNIT_TESTS),
                         items=list(S.UNIT_TESTS), trace_links=trace, metadata={"feature": S.FEATURE})
 

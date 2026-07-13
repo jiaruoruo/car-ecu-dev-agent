@@ -17,7 +17,7 @@ for _s in (sys.stdout, sys.stderr):
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 from adapter.agent_spec_loader import load_agent_spec, discover_generic_domains   # noqa: E402
-from adapter.pipeline_factory import available_domains, build_orchestrator_for     # noqa: E402
+from adapter.pipeline_factory import build_orchestrator_for     # noqa: E402
 from adapter.forward_trace import forward_traceability                             # noqa: E402
 from domains.tlf35584.pipeline import build_pipeline as build_tlf                  # noqa: E402
 from adapter.domain_loader import load_profile as load_tlf                         # noqa: E402

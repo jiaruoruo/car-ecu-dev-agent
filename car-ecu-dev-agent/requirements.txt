@@ -1,2 +1,6 @@
 # Dependencies for car-ecu-dev-agent
 jinja2>=3.1
+pydantic>=2.5
+
+# Test dependencies (optional)
+pytest>=7.0

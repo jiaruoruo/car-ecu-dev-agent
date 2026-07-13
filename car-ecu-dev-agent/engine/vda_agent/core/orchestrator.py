@@ -17,15 +17,13 @@ from pathlib import Path
 from typing import Callable
 
 from .base_agent import BaseStageAgent
-from .execution import HumanGate
 from .guard import InputGuard
 from .impact import ImpactAnalyzer
-from .llm_client import LLMClient
 from .logging_utils import get_logger, get_structured_on_log, with_trace_id
 from .memory import MemorySystem
 from .metrics import PipelineMetrics, metrics_scope
 from .schemas import (
-    Artifact, NextAction, Stage, STAGE_ORDER, StageResult, to_jsonable,
+    Artifact, NextAction, Stage, STAGE_ORDER, StageResult,
 )
 from .tools import ToolRegistry
 
@@ -189,8 +187,8 @@ class Orchestrator:
         for stage in STAGE_ORDER:
             r = self.results.get(stage)
             if r and r.artifact:
-                for l in r.artifact.trace_links:
-                    rows.append(f"{l.source_id},{l.relation},{l.target_id},{stage.value}")
+                for link in r.artifact.trace_links:
+                    rows.append(f"{link.source_id},{link.relation},{link.target_id},{stage.value}")
         return artifacts, "\n".join(rows)
 
     def finalize_audit(self, out_dir: Path, sign_key: str | None = None) -> dict:

@@ -28,7 +28,6 @@ Checks:
 import os
 import re
 import sys
-import json
 
 # =============================================================================
 # 1. REFERENCE DATA (from params/default_params.json & datasheet)
@@ -166,14 +165,14 @@ def check_g01_addresses(output_dir):
     if mismatches:
         details = "Found %d/%d registers. Issues:\n%s" % (found, len(REF_REGISTERS), "\n".join(mismatches[:10]))
         return CheckResult("G01", "Register Address Consistency", False, details)
-    
+
     return CheckResult("G01", "Register Address Consistency", True, "All %d register addresses match datasheet" % len(REF_REGISTERS))
 
 
 def check_g02_sequences(output_dir):
     """G02: Protection unlock/lock sequence values"""
     files_to_check = ["ZCU_TLF35584_Types.h", "ZCU_TLF35584_Cfg.c", "ZCU_TLF35584.c"]
-    
+
     all_content = ""
     for fname in files_to_check:
         path = os.path.join(output_dir, fname)
@@ -195,7 +194,7 @@ def check_g02_sequences(output_dir):
 def check_g03_fwd_table(output_dir):
     """G03: FWD response table 16 entries"""
     files_to_check = ["ZCU_TLF35584_Cfg.c", "ZCU_TLF35584_Types.h"]
-    
+
     all_content = ""
     for fname in files_to_check:
         path = os.path.join(output_dir, fname)
@@ -204,7 +203,7 @@ def check_g03_fwd_table(output_dir):
                 all_content += f.read() + "\n"
 
     hex_constants = re.findall(r'0x([0-9A-F]{8})U', all_content, re.IGNORECASE)
-    
+
     if len(hex_constants) < 16:
         return CheckResult("G03", "FWD Response Table (16 entries)", False,
                           "Found %d entries, expected 16" % len(hex_constants))
@@ -237,7 +236,7 @@ def check_g04_fault_clear(output_dir):
         r"INITERR\s*,\s*0xFFU",
         r"MONSF0\s*,\s*0xFFU",
     ]
-    
+
     writes_ok = all(re.search(p, content) for p in fault_clear_patterns)
     readback_ok = bool(re.search(r"SYSFAIL.*verify|ReadAfterClear|read_after_clear", content, re.IGNORECASE))
 
@@ -262,7 +261,7 @@ def check_g05_prefix(output_dir):
                 all_content += f.read() + "\n"
 
     func_defs = re.findall(r'^(?:static\s+)?\w+(?:\s*\*)?\s+([A-Za-z_]\w*)\s*\(', all_content, re.MULTILINE)
-    
+
     violations = []
     for func in func_defs:
         if not func.startswith("Gp_TLF35584_"):
@@ -274,7 +273,7 @@ def check_g05_prefix(output_dir):
     if violations:
         return CheckResult("G05", "Global Prefix Consistency (Gp_TLF35584_)", False,
                           "%d violations:\n%s" % (len(violations), "\n".join(violations[:5])))
-    
+
     return CheckResult("G05", "Global Prefix Consistency (Gp_TLF35584_)", True,
                       "All %d non-static functions use Gp_TLF35584_ prefix" % total_non_static)
 
@@ -338,7 +337,7 @@ def check_g08_shadow_verify(output_dir):
 
     shadow_patterns = [r"RSYSPCFG0", r"RWDCFG0", r"RFWDCFG", r"RWWDCFG0"]
     found_shadows = sum(1 for p in shadow_patterns if re.search(p, content))
-    
+
     if found_shadows >= 3:
         return CheckResult("G08", "Shadow Register Verification", True,
                           "Found %d/4 shadow register verification patterns" % found_shadows)
@@ -439,7 +438,7 @@ def compute_quality_score(output_dir):
 
     # Dimension 1: Correctness (25%)
     d1_items = len(REF_REGISTERS)
-    d1_passed = sum(1 for name in REF_REGISTERS 
+    d1_passed = sum(1 for name in REF_REGISTERS
                     if re.search(r"0x%02XU" % REF_REGISTERS[name], all_content))
     d1_score = (d1_passed / d1_items) * 25.0 if d1_items > 0 else 0
 
@@ -543,7 +542,7 @@ def compute_quality_score(output_dir):
 
 def run_all_checks(output_dir):
     report = Report()
-    
+
     report.add(check_g01_addresses(output_dir))
     report.add(check_g02_sequences(output_dir))
     report.add(check_g03_fwd_table(output_dir))
@@ -556,13 +555,13 @@ def run_all_checks(output_dir):
     report.add(check_g10_devctrl_complement(output_dir))
     report.add(check_g11_files(output_dir))
     report.add(check_g12_api_signatures(output_dir))
-    
+
     score = compute_quality_score(output_dir)
     report.add(CheckResult("G13", "7-Dim Quality Score: %s/100 [%s]" % (score['total'], score['grade']),
                           score['total'] >= 85, score['grade']))
-    
+
     all_passed = report.summary()
-    
+
     print("\nQuality Score Details:")
     print("%s" % ("="*60))
     for dim, data in score['dimensions'].items():
@@ -570,7 +569,7 @@ def run_all_checks(output_dir):
     print("%s" % ("="*60))
     print("  Total: %s/100 -> Grade: %s" % (score['total'], score['grade']))
     print("%s" % ("="*60))
-    
+
     if not all_passed:
         print("\n[WARNING] Not all quality gates passed! Failed checks:")
         for r in report.results:
@@ -579,7 +578,7 @@ def run_all_checks(output_dir):
         print("\n[INFO] Please fix the above issues and re-run.")
     else:
         print("\n[PASS] All quality gates passed! Code is ready for next step.")
-    
+
     return all_passed, score
 
 
@@ -589,22 +588,22 @@ def main():
         sys.exit(1)
 
     command = sys.argv[1]
-    
+
     if command == "--all" or command == "--check":
         if len(sys.argv) < 3:
             print("Error: Missing output directory")
             sys.exit(1)
-        
+
         output_dir = sys.argv[-1]
-        
+
         if not os.path.isdir(output_dir):
             print("Error: Directory not found: %s" % output_dir)
             sys.exit(1)
-        
+
         print("[CHECK] TLF35584 PMIC Driver Consistency Checker v2.0")
         print("   Target: %s" % output_dir)
         print()
-        
+
         if command == "--all":
             run_all_checks(output_dir)
         else:
@@ -629,7 +628,7 @@ def main():
             else:
                 print("Unknown check: %s" % check_type)
                 print("Available: %s" % ", ".join(check_map.keys()))
-    
+
     elif command == "--score":
         if len(sys.argv) < 3:
             print("Error: Missing output directory")
@@ -642,7 +641,7 @@ def main():
             print("  %-30s %5.1f/%s" % (dim, data['score'], data['weight']))
         print("%s" % ("="*40))
         print("  Total: %s/100 -> Grade: %s" % (score['total'], score['grade']))
-    
+
     else:
         print("Unknown command: %s" % command)
         print("Usage: python checker/consistency_checker.py --all <output_dir>")

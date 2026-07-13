@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from ..core.base_agent import BaseStageAgent
 from ..core.feedback import QualityGate
-from ..core.schemas import Artifact, GateCheck, RiskLevel, Stage, Step, StructuredInput, TraceLink
+from ..core.schemas import Artifact, GateCheck, RiskLevel, Stage, Step, StructuredInput
 from ..core.llm_parse import extract_code
 from . import scenario as S
 

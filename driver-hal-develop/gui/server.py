@@ -12,7 +12,6 @@ Driver HAL Develop — Web GUI Backend Server
   4. 提供 REST API 与 Socket.IO 接口供前端使用
 """
 
-import os
 import re
 import json
 import sys
@@ -23,7 +22,7 @@ import uuid
 from pathlib import Path
 
 import yaml
-from flask import Flask, jsonify, request, send_file
+from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, emit
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -513,7 +512,7 @@ class ProjectFileWatcher(FileSystemEventHandler):
 
 class ProjectManager:
     """管理多个项目（工作空间），每个项目是一个本地目录。
-    
+
     项目列表持久化存储在 gui/projects_config.json 中。
     每个项目记录格式: {id, name, path, created_at}
     """
@@ -894,7 +893,7 @@ class ProjectManager:
 
     def _parse_github_url(self, url: str) -> tuple:
         """解析 GitHub URL，返回 (owner, repo, ref, path)。
-        
+
         支持格式:
         - https://github.com/user/repo
         - https://github.com/user/repo/tree/branch/path/to/dir
@@ -2628,7 +2627,7 @@ def api_setup_team_dir(project_id):
 @app.route("/api/projects/<project_id>/deploy_to_team", methods=["POST"])
 def api_deploy_to_team(project_id):
     """将 agent 或 skill 及其关联文件自动部署到 CLI 团队目录。
-    
+
     请求体: {type: "agent"|"skill", path: "<相对于PROJECT_ROOT的路径>", folder: "<CLI目录名>"}
     - agent: 复制 .md 到 <team_dir>/agents/，并复制关联的 skills/tools/knowledge/rules
     - skill: 复制目录到 <team_dir>/skills/，并复制关联的 tools/knowledge/rules
@@ -2873,16 +2872,20 @@ def api_agent_related_files(project_id, agent_name):
                 fm = yaml.safe_load(fm_match.group(1)) or {}
                 for ref in (fm.get("skills", []) or []):
                     p = _resolve_ref_path(ref, "skills")
-                    if p: add_file(str(p), "skills/" + p.name, "skill")
+                    if p:
+                        add_file(str(p), "skills/" + p.name, "skill")
                 for ref in (fm.get("tools", []) or []):
                     p = _resolve_ref_path(ref, "tools")
-                    if p: add_file(str(p), "tools/" + p.name, "tool")
+                    if p:
+                        add_file(str(p), "tools/" + p.name, "tool")
                 for ref in (fm.get("knowledge", []) or []):
                     p = _resolve_ref_path(ref, "knowledge")
-                    if p: add_file(str(p), "knowledge/" + p.name, "knowledge")
+                    if p:
+                        add_file(str(p), "knowledge/" + p.name, "knowledge")
                 for ref in (fm.get("rules", []) or []):
                     p = _resolve_ref_path(ref, "rules")
-                    if p: add_file(str(p), "rules/" + p.name, "rule")
+                    if p:
+                        add_file(str(p), "rules/" + p.name, "rule")
         except Exception:
             pass
 
@@ -2983,9 +2986,9 @@ def api_agent_run():
                 "items": len(art.items) if art else 0,
             })
             if art:
-                for l in art.trace_links:
-                    matrix.append({"source": l.source_id, "relation": l.relation,
-                                   "target": l.target_id, "stage": st.value})
+                for link in art.trace_links:
+                    matrix.append({"source": link.source_id, "relation": link.relation,
+                                   "target": link.target_id, "stage": st.value})
         ft = forward_traceability(results)
         all_ok = all(r.success for r in results.values()) and ft["passed"]
         return jsonify({"domain": domain, "asil": profile.asil,

@@ -9,7 +9,6 @@
 """
 from __future__ import annotations
 
-import os
 import sys
 
 for _s in (sys.stdout, sys.stderr):
@@ -21,7 +20,6 @@ for _s in (sys.stdout, sys.stderr):
 from adapter.skill_parser import (  # noqa: E402
     parse_skill,
     extract_deliverables,
-    extract_api_names,
     _split_slash_delimited,
 )
 from adapter.agent_spec_loader import load_agent_spec  # noqa: E402

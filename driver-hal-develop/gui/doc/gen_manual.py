@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Driver HAL 文档生成器 - 分段写入 HTML 避免超时"""
-import os, sys
+import os
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'driver-hal-manual.html')
 

@@ -21,7 +21,6 @@ import os
 import sys
 import json
 import shutil
-import difflib
 import hashlib
 from datetime import datetime
 

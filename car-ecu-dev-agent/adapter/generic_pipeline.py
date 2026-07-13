@@ -129,13 +129,13 @@ def _generate_code(profile, inject_defect: bool) -> list[tuple[str, str]]:
             header_lines.append(f"void {api}(void);")
         else:
             header_lines.append(f"Std_ReturnType {api}(void);")
-    header_lines.extend(["", f"#endif"])
+    header_lines.extend(["", "#endif"])
     header_content = "\n".join(header_lines) + "\n"
 
     # Build source
     src_lines = [f"/* {prefix}.c — {profile.feature} (ASIL-{profile.asil})",
-                 f" * Enriched stub (MISRA C:2012); replace with real implementation.",
-                 f" */",
+                 " * Enriched stub (MISRA C:2012); replace with real implementation.",
+                 " */",
                  f'#include "{prefix}.h"', ""]
     src_lines.append(f"typedef enum {{ {err_states} }} {prefix}ErrorType;")
     src_lines.append(f"typedef enum {{ {MOD}_UNINIT = 0u, {MOD}_READY = 1u }} {prefix}StateType;")
